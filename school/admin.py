@@ -1,10 +1,17 @@
 from django.contrib import admin
-from .models import Role, Series, Class, Parent, Student
+from .models import Role, Series, Class, Parent, Student, UserRole
+
 
 # Personalizando o admin para o modelo Role
 class RoleAdmin(admin.ModelAdmin):
-    list_display = ('name', 'description')
+    list_display = ('name', 'description', 'can_send_messages')  # Exibindo can_send_messages
     search_fields = ('name', 'description')
+    list_filter = ('can_send_messages',)  # Filtro por permissão de envio de mensagens
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'description', 'can_send_messages')
+        }),
+    )
 
 # Personalizando o admin para o modelo Series
 class SeriesAdmin(admin.ModelAdmin):
@@ -56,4 +63,5 @@ admin.site.register(Series, SeriesAdmin)
 admin.site.register(Class, ClassAdmin)
 admin.site.register(Parent, ParentAdmin)
 admin.site.register(Student, StudentAdmin)
+admin.site.register(UserRole)
 

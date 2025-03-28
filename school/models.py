@@ -5,13 +5,31 @@ from django.contrib.auth.models import User
 class Role(models.Model):
     name = models.CharField(max_length=50, unique=True)
     description = models.TextField(null=True, blank=True)
+    can_send_messages = models.BooleanField(default=False)  # Campo que define se o role pode enviar mensagens
 
     def __str__(self):
         return self.name
 
     class Meta:
-        verbose_name = "Papel"
-        verbose_name_plural = "Papéis"
+        verbose_name = "Permissão por perfil"
+        verbose_name_plural = "Permissão por perfil"
+
+
+
+# Modelo intermediário para associar User a Role
+class UserRole(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    role = models.ForeignKey(Role, on_delete=models.CASCADE)
+    can_send_messages = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.role.name}"
+    
+    class Meta:
+        verbose_name_plural = "Associar usuário com função"
+    
+    
+
 
 # Série
 class Series(models.Model):

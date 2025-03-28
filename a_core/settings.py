@@ -36,6 +36,7 @@ ENVIRONMENT = "development"  # Ou "production"
 SHARED_APPS = [
     'django_tenants',
     'a_tenant_manager',
+    'admin_interface',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -55,11 +56,12 @@ SHARED_APPS = [
     'school',
     'blog',
     'contact',
-   
+    'messaging',
 
 ]
 
 TENANT_APPS = [
+    'admin_interface',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -74,6 +76,7 @@ TENANT_APPS = [
     'school',
     'blog',
     'contact',
+    'messaging',
   
 ]
 
