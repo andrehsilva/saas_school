@@ -1,0 +1,17 @@
+{% if cta.active %}
+<div class="relative w-full h-96 bg-gray-800 flex items-center justify-center text-white text-center">
+    {% if cta.image %}
+        <div class="absolute inset-0">
+            <img src="{{ cta.image.url }}" alt="Banner" class="w-full h-full object-cover >
+        </div>
+    {% endif %}
+    <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+    <div class="relative z-10">
+        <h1 class="text-4xl font-bold">{{ cta.title }}</h1>
+        <p class="mt-2 text-lg">{{ cta.description }}</p>
+        <a href="{{ cta.btn_link }}" target="_blank" rel="noopener noreferrer" class="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105">
+            {{ cta.btn_texto }}
+        </a>
+    </div>
+</div>
+{% endif %}

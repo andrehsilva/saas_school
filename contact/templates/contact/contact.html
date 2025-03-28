@@ -1,0 +1,47 @@
+{% extends 'layouts/blank.html' %}
+
+{% block content %}
+<div class="max-w-lg mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
+    <h2 class="text-2xl font-semibold mb-4">Entre em Contato</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="mb-4 p-3 text-white bg-green-500 rounded">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="POST" class="space-y-4">
+        {% csrf_token %}
+        
+        <div>
+            <label class="block font-semibold">Nome</label>
+            {{ form.name }}
+        </div>
+
+        <div>
+            <label class="block font-semibold">E-mail</label>
+            {{ form.email }}
+        </div>
+
+        <div>
+            <label  class="block font-semibold">Telefone</label>
+            {{ form.phone }}
+
+            {% if form.phone.errors %}
+                <p class="text-red-500 text-sm">{{ form.phone.errors.as_text }}</p>
+            {% endif %}
+        </div>
+    
+            
+
+        <div>
+            <label class="block font-semibold">Mensagem</label>
+            {{ form.mensage }}
+        </div>
+
+        <button type="submit" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
+            Enviar
+        </button>
+    </form>
+</div>
+{% endblock %}

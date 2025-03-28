@@ -16,7 +16,8 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     image = models.ImageField(upload_to='avatars/', null=True, blank=True)
     displayname = models.CharField(max_length=20, null=True, blank=True)
-    cpf = models.CharField(max_length=11, unique=True, validators=[validate_cpf])
+    cpf = models.CharField(max_length=11, unique=True, null=True, blank=True, validators=[validate_cpf])  # CPF não é obrigatório
+    #cpf = models.CharField(max_length=11, unique=True, validators=[validate_cpf])
     phone = models.CharField(max_length=20, blank=True, null=True)
     info = models.TextField(null=True, blank=True) 
     

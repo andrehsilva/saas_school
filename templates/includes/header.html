@@ -11,8 +11,8 @@
     <ul class="navitems flex items-center justify-center h-full">
         <li>
             <!-- Verifica se está na página de post -->
-            {% if request.resolver_match.url_name == "home" %}
-                <a href="{% url 'home' %}" 
+            {% if request.resolver_match.url_name == "article" %}
+                <a href="{% url 'blog' %}" 
                     class="font-semibold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">
                     ← Voltar para as postagens
                 </a>        
@@ -24,6 +24,7 @@
             {% if request.user.is_authenticated %}
             
             <li><a href="/">Home</a></li>
+            <li><a href="/contact">Contato</a></li>
             <li x-data="{ dropdownOpen: false }" class="relative">
                 <a @click="dropdownOpen = !dropdownOpen" @click.away="dropdownOpen = false" class="cursor-pointer select-none">
                     <img class="h-8 w-8 rounded-full object-cover" src="{{ request.user.profile.avatar }}" alt="Avatar" />

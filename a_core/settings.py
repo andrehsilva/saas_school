@@ -52,6 +52,9 @@ SHARED_APPS = [
     # My apps
     'a_home',
     'a_users',
+    'school',
+    'blog',
+    'contact',
    
 
 ]
@@ -68,6 +71,9 @@ TENANT_APPS = [
     'allauth.account',
     'a_home',
     'a_users',
+    'school',
+    'blog',
+    'contact',
   
 ]
 
