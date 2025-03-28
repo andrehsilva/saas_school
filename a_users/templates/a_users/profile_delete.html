@@ -2,13 +2,13 @@
 
 {% block content %}
 
-<h1>Delete Account</h1>
-<p>Are you sure you want to delete your account?</p>
+<h1>Excluir conta</h1>
+<p>Tem certeza de que deseja excluir sua conta?</p>
 
 <form method='POST'>
     {% csrf_token %}
-    <button type="submit" class="button-red mt-6">Yes, I want to delete my account</button>
-    <a class="button button-gray ml-1" href="{{ request.META.HTTP_REFERER }}">Cancel</a>
+    <button type="submit" class="button-red mt-6">Sim, quero excluir minha conta</button>
+    <a class="button button-gray ml-1" href="{{ request.META.HTTP_REFERER }}">Cancelar</a>
 </form>
 
 {% endblock %}

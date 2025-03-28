@@ -10,6 +10,11 @@
         {% if profile.info %}
         <div class="mt-8 hyphens-auto">{{ profile.info|linebreaksbr }}</div>
         {% endif %}  
+        <!-- Adicionando os campos CPF e Phone -->
+        <div class="mt-4">
+            <p><strong>CPF:</strong> {{ profile.cpf }}</p>
+            <p><strong>Telefone (Whatsapp):</strong> {{ profile.phone }}</p>
+        </div>
     </div>
 </div>
 

@@ -2,23 +2,23 @@
 
 {% block content %}
 
-<h1 class="mb-8">Account Settings</h1>
+<h1 class="mb-8">Configurações da Conta</h1>
 
 <table class="w-full text-sm text-left text-gray-500">
     <tbody>
         <tr>
             <th scope="row" class="pt-4 pb-1 text-base font-bold text-gray-900">
-                Email address
+                Endereço de E-mail
             </th>
             <td id="email-address" class="pt-4 pb-1 pl-4">
-                {% if user.email %}{{ user.email }}{% else %}No Email{% endif %}
+                {% if user.email %}{{ user.email }}{% else %}Sem E-mail{% endif %}
             </td>
             <td class="pt-4 pb-1 pl-4">
                 <a id="email-edit" class="cursor-pointer font-medium text-blue-600 hover:underline"
                     hx-get="{% url 'profile-emailchange' %}"
                     hx-target="#email-address"
                     hx-swap="innerHTML" >
-                    Edit
+                    Editar
                 </a>
             </td>
         </tr>
@@ -28,20 +28,20 @@
             </th>
             <td class="pb-4 pl-4">
                 {% if user.emailaddress_set.first.verified %}
-                <span class="text-green-500">Verified</span>{% else %}
-                <span class="text-amber-500">Not verified</span>
+                <span class="text-green-500">Verificado</span>{% else %}
+                <span class="text-amber-500">Não verificado</span>
                 {% endif %}
             </td>
             <td class="pb-4 pl-4">
                 <a href="{% url 'profile-emailverify' %}" class="font-medium text-blue-600 hover:underline">
-                    {% if not user.emailaddress_set.first.verified %}Verify{% endif %}
+                    {% if not user.emailaddress_set.first.verified %}Verificar{% endif %}
                 </a>
             </td>
         </tr>
 
         <tr class="border-b">
             <th scope="row" class="py-4 text-base font-bold text-gray-900">
-                Username
+                Nome de Usuário
             </th>
             <td id="username" class="py-4 pl-4">
                 {{ user.username }}
@@ -51,26 +51,26 @@
                     hx-get="{% url 'profile-usernamechange' %}"
                     hx-target="#username"
                     hx-swap="innerHTML" >
-                    Edit
+                    Editar
                 </a>
             </td>
         </tr>
 
         <tr class="">
             <th scope="row" class="py-4 text-base font-bold text-gray-900">
-                Delete Account
+                Deletar Conta
             </th>
             <td class="py-4 pl-4">
-                Once deleted, account is gone. Forever.
+                Uma vez deletada, a conta será removida. Para sempre.
             </td>
             <td class="py-4 pl-4">
                 <a href="{% url 'profile-delete' %}" class="font-medium text-red-600 hover:underline">
-                    Delete
+                    Deletar
                 </a>
             </td>
         </tr>
     </tbody>
 </table>
 
-
 {% endblock %}
+
