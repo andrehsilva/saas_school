@@ -29,6 +29,7 @@ urlpatterns = [
     path('', include('blog.urls')),
     path('profile/', include('a_users.urls')),
     path('school/', include('school.urls')),
+    path('messages/', include('messaging.urls')),
     path('contact/', include('contact.urls')),
     path('@<username>/', profile_view, name="profile"),
 ]

@@ -46,7 +46,7 @@ class Series(models.Model):
 # Classe
 class Class(models.Model):
     name = models.CharField(max_length=50)
-    series = models.ForeignKey(Series, on_delete=models.CASCADE)
+    series = models.ForeignKey(Series, on_delete=models.CASCADE, related_name="classes")
     teacher = models.ForeignKey(User, related_name='classes_taught', on_delete=models.SET_NULL, null=True)
     students = models.ManyToManyField(User, related_name='enrolled_classes')
 

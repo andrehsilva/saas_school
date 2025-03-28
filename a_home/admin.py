@@ -9,3 +9,5 @@ admin.site.site_header = 'Administração do Sistema Escolar'
 # Personalizando o nome do site que aparece no menu do Django Admin
 admin.site.index_title = 'Bem-vindo à área administrativa'
 
+admin.site.register(SiteSetting)
+
