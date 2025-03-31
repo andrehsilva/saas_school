@@ -1,47 +1,45 @@
-{% extends 'layouts/blank.html' %}
+{% extends "account/base_entrance.html" %}
+{% load i18n %}
+
+{% block head_title %}
+    {% trans "Contact Us" %}
+{% endblock head_title %}
 
 {% block content %}
-<div class="max-w-lg mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
-    <h2 class="text-2xl font-semibold mb-4">Entre em Contato</h2>
-
-    {% if messages %}
-        {% for message in messages %}
-            <div class="mb-4 p-3 text-white bg-green-500 rounded">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
-
-    <form method="POST" class="space-y-4">
-        {% csrf_token %}
+    <div class="max-w-4x1 mx-auto bg-white rounded-lg shadow-sm">
+        <h1 class="text-4xl font-bold mb-4">{% trans "Contato" %}</h1>
         
-        <div>
-            <label class="block font-semibold">Nome</label>
-            {{ form.name }}
-        </div>
+        <p class="text-gray-600  mb-6">
+            {% trans " Gostou, quer conhecer a nossa solução? Envie-nos uma mensagem e entraremos em contato com você em breve." %}
+        </p>
 
-        <div>
-            <label class="block font-semibold">E-mail</label>
-            {{ form.email }}
-        </div>
-
-        <div>
-            <label  class="block font-semibold">Telefone</label>
-            {{ form.phone }}
-
-            {% if form.phone.errors %}
-                <p class="text-red-500 text-sm">{{ form.phone.errors.as_text }}</p>
-            {% endif %}
-        </div>
-    
+        <form method="POST" class="space-y-4">
+            {% csrf_token %}
             
+            <div>
+                <input type="text" name="name" placeholder="{% trans 'Nome' %}" 
+                       class="w-full rounded-md" required>
+            </div>
 
-        <div>
-            <label class="block font-semibold">Mensagem</label>
-            {{ form.mensage }}
-        </div>
+            <div>
+                <input type="email" name="email" placeholder="{% trans 'Melhor e-mail' %}" 
+                       class="w-full rounded-md" required>
+            </div>
 
-        <button type="submit" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
-            Enviar
-        </button>
-    </form>
-</div>
+            <div>
+                <input type="tel" name="phone" placeholder="{% trans 'Seu telefone, Whatssap' %}" 
+                       class="w-full rounded-md">
+            </div>
+
+            <div>
+                <textarea name="message" placeholder="{% trans 'Escreva sua mensagem' %}" 
+                          class="w-full rounded-md" rows="4" required></textarea>
+            </div>
+
+            <button type="submit" 
+                    class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition duration-200">
+                {% trans "Enviar mensagem" %}
+            </button>
+        </form>
+    </div>
 {% endblock %}
