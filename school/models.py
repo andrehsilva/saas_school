@@ -1,9 +1,12 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models.signals import post_migrate
+from django.dispatch import receiver
 
 # Papéis (Roles)
 class Role(models.Model):
     name = models.CharField(max_length=50, unique=True)
+    can_post = models.BooleanField(default=True)  # Define se o papel pode postar
 
     def __str__(self):
         return self.name
@@ -27,7 +30,8 @@ class Grade(models.Model):
 class Class(models.Model):
     name = models.CharField(max_length=50)
     grade = models.ForeignKey(Grade, on_delete=models.CASCADE)
-    teacher = models.ForeignKey(User, related_name='classes_taught', on_delete=models.SET_NULL, null=True)
+    teachers = models.ManyToManyField(User, related_name='classes_taught')  # Permite múltiplos professores
+    is_regular = models.BooleanField(default=True)  # Define se a classe é regular
 
     def __str__(self):
         return self.name
@@ -51,7 +55,7 @@ class Parent(models.Model):
 # Alunos
 class Student(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    class_assigned = models.ForeignKey(Class, on_delete=models.SET_NULL, null=True, related_name='students')
+    classes_assigned = models.ManyToManyField(Class, related_name='students')  # Agora um aluno pode estar em várias classes
 
     def __str__(self):
         return self.user.username

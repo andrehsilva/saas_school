@@ -1,9 +1,9 @@
-name: my-docker-project
+name: postgres
 
 services:
   postgres:
     image: postgres
-    container_name: my-postgres-container
+    container_name: postgres
     ports:
       - "5432:5432"
     environment:
