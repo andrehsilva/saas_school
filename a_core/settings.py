@@ -55,6 +55,7 @@ SHARED_APPS = [
     'a_users',
     'blog',
     'contact',
+    'school',
     
 
 ]
@@ -74,6 +75,7 @@ TENANT_APPS = [
     'a_users',
     'blog',
     'contact',
+    'school',
  
 ]
 
