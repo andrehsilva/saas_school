@@ -56,6 +56,7 @@ SHARED_APPS = [
     'blog',
     'contact',
     'school',
+    'message',
     
 
 ]
@@ -76,6 +77,7 @@ TENANT_APPS = [
     'blog',
     'contact',
     'school',
+    'message',
  
 ]
 

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Grade, Class, Role, Parent, Student
+from .models import Grade, Class, Role, Parent, Student, UserRole
 
 @admin.register(Grade)
 class GradeAdmin(admin.ModelAdmin):
@@ -20,6 +20,14 @@ class SchoolClassAdmin(admin.ModelAdmin):
 class RoleAdmin(admin.ModelAdmin):
     list_display = ('name',)
     search_fields = ('name',)
+
+@admin.register(UserRole)
+class RoleUserAdmin(admin.ModelAdmin):
+    list_display = ('user', 'role')
+    list_filter = ('role',)
+    search_fields = ('user__username', 'role__name')
+    verbose_name = "Papel do Usuário"
+    verbose_name_plural = "Papéis dos Usuários"
 
 @admin.register(Parent)
 class ParentAdmin(admin.ModelAdmin):
