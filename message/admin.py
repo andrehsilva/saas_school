@@ -1,6 +1,6 @@
 # message/admin.py
 from django.contrib import admin
-from .models import Message, MessageType
+from .models import Message, MessageType,ReceivedMessage
 
 class MessageAdmin(admin.ModelAdmin):
     list_display = ('title', 'created_at', 'created_by', 'get_classes', 'get_users', 'type')
@@ -16,6 +16,15 @@ class MessageAdmin(admin.ModelAdmin):
         return ", ".join([user.username for user in obj.users.all()])
     get_users.short_description = 'Usuários'
 
+
+
+class MessageTypeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'color')  # Exibir a cor na lista
+    search_fields = ('name',)
+
+
+
+admin.site.register(MessageType, MessageTypeAdmin)
 admin.site.register(Message, MessageAdmin)
-admin.site.register(MessageType)
+admin.site.register(ReceivedMessage)
 
