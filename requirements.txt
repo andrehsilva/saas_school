@@ -8,3 +8,4 @@ psycopg
 django-admin-interface
 django-storages
 boto3
+django-cleanup
