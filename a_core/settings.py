@@ -57,7 +57,7 @@ SHARED_APPS = [
     'contact',
     'school',
     'message',
-    'librarypdf'
+    'books'
     
 
 ]
@@ -79,7 +79,7 @@ TENANT_APPS = [
     'contact',
     'school',
     'message',
-    'librarypdf'
+    'books'
  
 ]
 

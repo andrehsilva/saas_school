@@ -15,34 +15,53 @@ from django.http import JsonResponse
 @login_required
 def messages_timeline(request):
     user = request.user
-
-    # Verificar se o usuário logado é um estudante
-    student = Student.objects.filter(user=user).first()
-
-    # Se não for estudante, verificar se é responsável por algum estudante
-    if not student:
-        try:
-            parent = Parent.objects.get(user=user)  # Obtém a instância de Parent
-            students = parent.children.all()  # Buscar os filhos
-        except Parent.DoesNotExist:
-            students = Student.objects.none()
-    else:
+    print(f"\n[DEBUG] Usuário autenticado: {user.username} (ID: {user.id})")  # Debug 1
+    
+    try:
+        # Verifica se é estudante
+        student = Student.objects.get(user=user)
+        print(f"[DEBUG] É estudante: {student}")  # Debug 2
         students = [student]
+        student_user_ids = [user.id]
+    except Student.DoesNotExist:
+        print("[DEBUG] Não é estudante, verificando se é pai...")  # Debug 3
+        try:
+            parent = Parent.objects.get(user=user)
+            print(f"[DEBUG] É pai/responsável: {parent}")  # Debug 4
+            students = parent.children.all()
+            student_user_ids = list(students.values_list('user__id', flat=True))
+            print(f"[DEBUG] IDs dos filhos: {student_user_ids}")  # Debug 5
+        except Parent.DoesNotExist:
+            print("[DEBUG] Não é estudante nem pai")  # Debug 6
+            students = Student.objects.none()
+            student_user_ids = []
 
-    # Converter estudantes para usuários
-    student_users = students.values_list('user', flat=True)
+    # Debug adicional
+    print(f"[DEBUG] Lista de estudantes: {students}")
+    print(f"[DEBUG] IDs de usuários estudantes: {student_user_ids}")
 
-    # Buscar turmas e séries associadas aos estudantes encontrados
+    # Restante da sua lógica...
     user_classes = Class.objects.filter(students__in=students).distinct()
     user_grades = Grade.objects.filter(class__in=user_classes).distinct()
 
+    # Debug das consultas
+    print(f"[DEBUG] Turmas encontradas: {user_classes}")
+    print(f"[DEBUG] Séries encontradas: {user_grades}")
+
     # Buscar mensagens diretas para o usuário e para os filhos do usuário (se for responsável)
-    direct_messages = Message.objects.filter(Q(users=user) | Q(users__id__in=student_users))
+    direct_messages = Message.objects.filter(Q(users=user) | Q(users__id__in=student_user_ids))
 
     # Buscar mensagens associadas a turmas e séries dos filhos
     class_messages = Message.objects.filter(classes__in=user_classes)
     grade_messages = Message.objects.filter(classes__grade__in=user_grades)
     received_messages = Message.objects.filter(received_by__recipient=user)
+
+    # Debug final
+    print("[DEBUG] Consultas executadas com sucesso")
+    print(f" - Mensagens diretas: {direct_messages.count()}")
+    print(f" - Mensagens por turma: {class_messages.count()}")
+    print(f" - Mensagens por série: {grade_messages.count()}")
+
 
     # Unindo todas as mensagens sem duplicação
     msgs = (
