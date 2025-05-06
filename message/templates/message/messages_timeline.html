@@ -1,94 +1,120 @@
 {% extends 'layouts/blank.html' %}
-
 {% block content %}
-<div class="max-w-4xl mx-auto mt-10">
-    <h1 class="text-2xl font-bold mb-4">Mensagens</h1>
+
+<div class="max-w-6xl mx-auto mt-10 px-4">
+    <h1 class="text-2xl font-bold mb-6">Mensagens</h1>
     
-    <!-- Filtro de tipo de mensagem -->
-    <form method="GET" class="mb-4">
-        <label for="type" class="block text-sm font-medium text-gray-700">Filtrar por tipo:</label>
-        <select name="type" id="type" class="mt-1 block w-full p-2 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                onchange="this.form.submit()">
-            <option value="">Todos</option>
-            {% for type in message_types %}
-            <option value="{{ type.id }}" {% if request.GET.type == type.id|stringformat:"s" %}selected{% endif %}>
-                {{ type.name }}
-            </option>
-            {% endfor %}
-        </select>
-    </form>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
 
-    <div class="space-y-4">
-        {% for message in msgs %}
-        <div class="bg-white shadow-md rounded-lg border">
-            
-            <!-- Cabeçalho da mensagem -->
-            <div class="bg-gray-100 p-3 rounded-t-lg border-b">
-                <div class="flex justify-between items-center">
+        <!-- COLUNA PRINCIPAL (75%) -->
+        <main class="md:col-span-3 space-y-6">
+            {% for message in msgs %}
+            <div class="bg-white shadow hover:shadow-lg transition-shadow rounded-2xl border border-gray-200 overflow-hidden">
+    
+                <!-- Cabeçalho -->
+                <div class="bg-gray-50 px-4 py-3 flex justify-between items-center border-b">
                     <div>
-                        <p class="font-bold text-lg">{{ message.created_by.username }}</p>
-                        <p class="text-gray-500 text-sm">{{ message.created_at|date:"d M Y H:i" }}</p>
+                        <p class="font-bold text-lg text-gray-800">{{ message.created_by.username }}</p>
+                        <p class="text-sm text-gray-500">{{ message.created_at|date:"d M Y H:i" }}</p>
                     </div>
-                   
                     {% if message.type %}
-                        <span class="px-2 py-1 text-sm font-semibold rounded-md" style="background-color: {{ message.type.color }}; color: white;">
-                            {{ message.type.name }}
-                        </span>
+                    <span class="px-3 py-1 text-sm font-medium rounded-full"
+                          style="background-color: {{ message.type.color }}; color: white;">
+                        {{ message.type.name }}
+                    </span>
                     {% endif %}
-
                 </div>
-            </div>
-
-            <!-- Conteúdo da mensagem -->
-            <div class="p-3">
-                <h2 class="text-xl font-semibold">{{ message.title }}</h2>
-                <p class="text-gray-700 mt-1">{{ message.context }}</p>
-
-                {% if message.image %}
-                <img src="{{ message.image.url }}" class="mt-3 rounded-lg max-h-60">
-                {% endif %}
-                
-                {% if message.attachments %}
-                <div class="mt-3">
-                    <a href="{{ message.attachments.url }}" download class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400">
-                        📎 Baixar Anexo
-                    </a>
+            
+                <!-- Conteúdo -->
+                <div class="px-4 py-3 space-y-2">
+                    <h2 class="text-xl font-semibold text-gray-900">{{ message.title }}</h2>
+                    <p class="text-gray-700 leading-relaxed">{{ message.context }}</p>
+            
+                    {% if message.image %}
+                    <img src="{{ message.image.url }}" alt="Imagem da mensagem" class="rounded-lg w-full max-h-60 object-cover mt-2">
+                    {% endif %}
+            
+                    {% if message.attachments %}
+                    <div class="pt-2">
+                        <a href="{{ message.attachments.url }}" download
+                           class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
+                            📎 Baixar Anexo
+                        </a>
+                    </div>
+                    {% endif %}
                 </div>
-                {% endif %}
-            </div>
-
-            <!-- Rodapé da mensagem -->
-            <div class="bg-gray-50 p-3 rounded-b-lg text-sm text-gray-600 border-t">
-                <div class="mt-3 text-sm text-gray-500">
-                    <p>
-                        {% if message.id not in read_messages %}
-                        <button onclick="markAsRead({{ message.id }})" class="px-3 py-1 bg-blue-500 text-white rounded">Marcar como lido</button>
-                        {% else %}
-                        <span class="text-green-600">Lida</span>
-                        {% endif %}
+            
+                <!-- Rodapé -->
+                <div class="bg-gray-50 px-4 py-3 text-sm text-gray-700 border-t space-y-1">
+                    {% if message.classes.exists %}
+                    <p><strong>Turmas:</strong>
+                        {% for class in message.classes.all %}
+                        <span class="font-medium">{{ class.name }}</span>{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
                     </p>
+                    {% endif %}
+            
+                    {% if message.users.exists %}
+                    <p><strong>Usuários:</strong>
+                        {% for user in message.users.all %}
+                        <span class="font-medium">{{ user.username }}</span>{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </p>
+                    {% endif %}
                 </div>
-                {% if message.classes.exists %}
-                <p><strong>Enviado para as turmas:</strong>
-                    {% for class in message.classes.all %}
-                    <span class="font-bold">{{ class.name }}</span>{% if not forloop.last %}, {% endif %}
-                    {% endfor %}
-                </p>
+            </div>
+            {% empty %}
+            <p class="text-gray-500">Nenhuma mensagem encontrada.</p>
+            {% endfor %}
+
+            <!-- Paginação -->
+            <div class="flex justify-center space-x-2 mt-6">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&type={{ selected_type }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Anterior</a>
                 {% endif %}
 
-                {% if message.users.exists %}
-                <p><strong>Enviado para:</strong>
-                    {% for user in message.users.all %}
-                    <span class="font-bold">{{ user.username }}</span>{% if not forloop.last %}, {% endif %}
-                    {% endfor %}
-                </p>
+                <span class="px-3 py-1 bg-blue-500 text-white rounded">{{ page_obj.number }}</span>
+
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&type={{ selected_type }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Próxima</a>
                 {% endif %}
             </div>
-        </div>
-        {% empty %}
-        <p class="text-gray-500">Nenhuma mensagem encontrada.</p>
-        {% endfor %}
+        </main>
+        <!-- COLUNA LATERAL ESQUERDA (25%) -->
+        <aside class="md:col-span-1 bg-gray-50 p-4 rounded-2xl border border-gray-200 shadow-sm h-fit">
+            <h2 class="text-lg font-semibold mb-4">Filtros</h2>
+            <form method="GET" class="space-y-4">
+                
+                <!-- Filtro por tipo -->
+                <div>
+                    <label for="type" class="block text-sm font-medium text-gray-700 mb-1">Tipo de mensagem:</label>
+                    <select name="type" id="type"
+                            class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                            onchange="this.form.submit()">
+                        <option value="">Todos</option>
+                        {% for type in message_types %}
+                        <option value="{{ type.id }}" {% if request.GET.type == type.id|stringformat:"s" %}selected{% endif %}>
+                            {{ type.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <p class="block text-sm font-medium text-gray-700">Título ou conteúdo:</p>
+                <div class="flex rounded-md shadow-sm">
+                    
+                    <input type="text" name="q" id="q" value="{{ search_query }}"
+                           class="flex-1 min-w-0 p-2 border border-gray-300 rounded-l-md focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Digite..." />
+                    <button type="submit"
+                            class="px-3 py-1.5 text-sm bg-blue-100 text-blue-700 rounded-r-md hover:bg-blue-200 transition">
+                        Filtrar
+                    </button>
+                </div>
+                
+            </form>
+        </aside>
     </div>
 </div>
-{% endblock %}
 
+<script src="//unpkg.com/alpinejs" defer></script>
+{% endblock %}

@@ -8,6 +8,9 @@ from school.models import Class, Grade, Student, Parent
 from django.contrib import messages as msg
 from django.http import JsonResponse
 
+from django.core.paginator import Paginator
+
+
 
 
 
@@ -86,14 +89,26 @@ def messages_timeline(request):
     # Filtrar mensagens não lidas
     unread_messages = msgs.exclude(id__in=read_messages)
 
+    search_query = request.GET.get('q', '')
+    if search_query:
+        msgs = msgs.filter(
+            Q(title__icontains=search_query) |
+            Q(context__icontains=search_query) |
+            Q(created_at__icontains=search_query)
+        )
 
-
+    # Paginação - 10 mensagens por página
+    paginator = Paginator(msgs, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     return render(request, 'message/messages_timeline.html', {
-        'msgs': msgs,
+        'msgs': page_obj,  # Página com os resultados paginados
+        'page_obj': page_obj,  # Para paginação no template
         'message_types': message_types,
-        'selected_type': selected_type,  
-        'unread_count': unread_messages.count()# Para manter a seleção no template
+        'selected_type': selected_type,
+        'unread_count': unread_messages.count(),
+        'search_query': search_query,  # Para manter o termo no template
         
     })
 
