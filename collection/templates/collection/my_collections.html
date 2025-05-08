@@ -4,20 +4,17 @@
 {% block content %}
 <div id="pdf-modal-container"></div>
 <div class="max-w-7xl mx-auto mt-10 px-4">
-    <h1 class="text-2xl font-bold mb-6">Books - Meus livros e documentos</h1>
+    <h1 class="text-2xl font-bold mb-6">Minhas coleções</h1>
 
     <form method="get" class="mb-4 flex gap-2">
         <input type="text" name="q" placeholder="Buscar..." value="{{ search_query }}" class="input input-bordered w-full" />
         <button type="submit" class="btn btn-primary">Pesquisar</button>
     </form>
-    <!-- Modal container -->
-    
 
-    {% if documents %}
+    {% if documents.object_list %}
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {% for doc in documents %}
+        {% for doc in documents.object_list %}
         <div class="bg-white shadow hover:shadow-lg transition-shadow rounded-2xl border border-gray-200 overflow-hidden">
-            
             {% if doc.thumbnail %}
             <div class="w-full h-48 overflow-hidden">
                 <img class="w-full h-full object-cover" src="{{ doc.thumbnail.url }}" alt="Capa de {{ doc.title }}">
@@ -53,33 +50,36 @@
 
             <div class="p-4 border-t">
                 <button 
-                    hx-get="{% url 'view_pdf' doc.id %}" 
+                    hx-get="{% url 'view_html' doc.id %}" 
                     hx-target="#pdf-modal-container" 
-                    hx-swap="innerHTML" 
-                    class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors duration-200 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    Visualizar
+                    hx-swap="innerHTML"
+                    class="w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded">
+                    Visualizar HTML
                 </button>
             </div>
         </div>
         {% endfor %}
     </div>
 
-    <!-- Paginação -->
-    <!-- Paginação -->
-    <div class="mt-8 flex justify-center space-x-2">
-        {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Anterior</a>
-        {% endif %}
-    
-        <span class="px-3 py-1 bg-blue-500 text-white rounded">{{ page_obj.number }}</span>
-    
-        {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Próxima</a>
-        {% endif %}
+    <!-- Paginação com números -->
+    <div class="mt-8 flex justify-center">
+        <nav class="inline-flex space-x-1" aria-label="Pagination">
+            {% if documents.has_previous %}
+                <a href="?page={{ documents.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}" class="px-3 py-1 rounded-md bg-gray-200 hover:bg-gray-300 text-sm">Anterior</a>
+            {% endif %}
+
+            {% for num in documents.paginator.page_range %}
+                {% if documents.number == num %}
+                    <span class="px-3 py-1 rounded-md bg-blue-500 text-white text-sm">{{ num }}</span>
+                {% elif num > documents.number|add:'-3' and num < documents.number|add:'3' %}
+                    <a href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}" class="px-3 py-1 rounded-md bg-gray-100 hover:bg-gray-300 text-sm">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if documents.has_next %}
+                <a href="?page={{ documents.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}" class="px-3 py-1 rounded-md bg-gray-200 hover:bg-gray-300 text-sm">Próxima</a>
+            {% endif %}
+        </nav>
     </div>
 
     {% else %}

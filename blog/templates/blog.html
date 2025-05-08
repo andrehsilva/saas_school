@@ -9,7 +9,7 @@
     
 
 <!-- Pesquisa e Categorias -->
-<div class="max-w-6xl mx-auto px-4 mt-6">
+<div class="max-w-7xl mx-auto px-4 mt-6">
     <form method="get" action="{% url 'blog' %}" class="bg-white p-6 rounded-lg shadow-md flex flex-wrap justify-between items-center gap-4">
         <input 
             type="text" 
@@ -37,7 +37,7 @@
 
 <!-- Alerta de Nenhum Resultado Encontrado -->
 {% if no_results %}
-    <div class="max-w-6xl mx-auto px-4 mt-6">
+    <div class="max-w-7xl mx-auto px-4 mt-6">
         <div class="bg-yellow-100 border-l-4 border-yellow-400 text-yellow-800 p-4 rounded-md shadow-md" role="alert">
             Não encontramos resultados para sua busca.
         </div>
@@ -45,7 +45,7 @@
 {% endif %}
 
 <!-- Grid de postagens -->
-<div id="blog" class="max-w-6xl mx-auto px-4 mt-6">
+<div id="blog" class="max-w-7xl mx-auto px-4 mt-6">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         {% for item in blog %}
         <div class="bg-white shadow-lg rounded-lg overflow-hidden">
@@ -100,7 +100,7 @@
 
 
     <!-- Últimos artigos -->
-<div class="max-w-6xl mx-auto px-4 mt-12 mb-6">
+<div class="max-w-7xl mx-auto px-4 mt-12 mb-6">
     <h2 class="text-2xl font-bold text-center mb-4">Artigos em destaques!</h2>
     <div class="bg-gray-200 p-6 rounded-lg flex flex-wrap gap-3 justify-center">
         {% for item in blog_latest|slice:":3" %}

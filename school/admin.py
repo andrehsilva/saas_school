@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import Grade, Class, Role, Parent, Student, UserRole
 
+
 @admin.register(Grade)
 class GradeAdmin(admin.ModelAdmin):
     list_display = ('name',)

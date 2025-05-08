@@ -30,6 +30,7 @@ urlpatterns = [
     path('contact/', include('contact.urls')),
     path('messages/', include('message.urls')),
     path('books/', include('books.urls')),
+    path('collection/', include('collection.urls')),
     path('@<username>/', profile_view, name="profile"),
 ]
 

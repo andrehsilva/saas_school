@@ -43,6 +43,10 @@ class ReceivedDocument(models.Model):
 
     def __str__(self):
         return f"{self.recipient.username} - {self.document.title}"
+    
+    class Meta:
+        verbose_name = "Recebido"
+        verbose_name_plural = "Recebidos"
 
 
 class DocumentReadLog(models.Model):

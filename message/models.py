@@ -49,6 +49,10 @@ class ReceivedMessage(models.Model):
     def __str__(self):
         return f"{self.recipient.username} - {self.message.title}"
     
+    class Meta:
+        verbose_name = "Recebida"
+        verbose_name_plural = "Recebidas"
+    
 
 class MessageReadLog(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
