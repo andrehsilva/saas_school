@@ -1,5 +1,10 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from django.urls import path
 from .models import Grade, Class, Role, Parent, Student, UserRole
+from .admin_views import import_users_view
+
+from django.contrib.auth.models import User
 
 
 @admin.register(Grade)
@@ -48,3 +53,14 @@ class StudentAdmin(admin.ModelAdmin):
         return ", ".join([c.name for c in obj.classes_assigned.all()])
     get_classes.short_description = "Classes"
 
+
+class CustomUserAdmin(UserAdmin):
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path("import-users/", self.admin_site.admin_view(import_users_view), name="import-users"),
+        ]
+        return custom_urls + urls
+
+admin.site.unregister(User)
+admin.site.register(User, CustomUserAdmin)
