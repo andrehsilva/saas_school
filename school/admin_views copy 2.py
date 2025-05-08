@@ -3,8 +3,6 @@ from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 from django.contrib import messages
 import csv
-from django.http import HttpResponse
-from django.contrib.auth import get_user_model
 
 def import_users_view(request):
     if request.method == "POST":
@@ -72,19 +70,3 @@ def import_users_view(request):
         return redirect("/admin/auth/user/")
 
     return render(request, "admin/import_users.html")
-
-
-
-User = get_user_model()
-
-def export_users_view(request):
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="usuarios.csv"'
-
-    writer = csv.writer(response)
-    writer.writerow(['username', 'email', 'first_name', 'last_name'])
-
-    for user in User.objects.all():
-        writer.writerow([user.username, user.email, user.first_name, user.last_name])
-
-    return response
