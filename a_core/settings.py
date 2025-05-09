@@ -76,7 +76,8 @@ TENANT_APPS = [
     'school',
     'message',
     'books',
-    'collection'
+    'collection',
+    'support'
  
 ]
 
