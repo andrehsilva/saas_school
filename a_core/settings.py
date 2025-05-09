@@ -53,12 +53,7 @@ SHARED_APPS = [
     # My apps
     'a_home',
     'a_users',
-    'blog',
-    'contact',
-    'school',
-    'message',
-    'books',
-    'collection'
+   
     
 
 ]
