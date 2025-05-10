@@ -1,0 +1,49 @@
+{% extends 'layouts/blank.html' %}
+{% block content %}
+<div class="max-w-4xl mx-auto mt-10 px-4">
+    <h1 class="text-2xl font-bold mb-6">Ticket #{{ ticket.ticket_number }}</h1>
+
+    <div class="bg-white border rounded-xl p-4 mb-6">
+        <h2 class="text-xl font-semibold">{{ ticket.subject }}</h2>
+        <p class="text-sm text-gray-500">Criado em: {{ ticket.created_at|date:"d/m/Y H:i" }}</p>
+        <span class="
+            {% if ticket.status == 'open' %}
+                bg-green-100 text-green-700
+            {% else %}
+                bg-gray-200 text-gray-600
+            {% endif %}">
+            {{ ticket.get_status_display }}
+        </span>
+    </div>
+
+    <div class="space-y-4 mb-10">
+        {% for message in messages %}
+        <div class="bg-gray-50 border rounded-xl p-4">
+            <div class="flex justify-between text-sm text-gray-600 mb-2">
+                <p><strong>{{ message.sender.get_full_name|default:message.sender.username }}</strong></p>
+                <p>{{ message.created_at|date:"d/m/Y H:i" }}</p>
+            </div>
+            <p class="text-gray-800">{{ message.message }}</p>
+            {% if message.attachment %}
+            <a href="{{ message.attachment.url }}" download class="block mt-2 text-blue-600 text-sm hover:underline">📎 Baixar Anexo</a>
+            {% endif %}
+        </div>
+        {% empty %}
+        <p class="text-gray-500">Nenhuma mensagem ainda.</p>
+        {% endfor %}
+    </div>
+
+    {% if ticket.status != 'closed' %}
+    <form method="post" enctype="multipart/form-data" class="space-y-4">
+        {% csrf_token %}
+        <textarea name="message" rows="4" required class="w-full border rounded-md p-2" placeholder="Escreva sua mensagem..."></textarea>
+        <input type="file" name="attachment" class="block w-full text-sm text-gray-500">
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg">Enviar mensagem</button>
+    </form>
+    {% else %}
+    <div class="bg-yellow-100 border border-yellow-300 text-yellow-800 p-4 rounded-lg text-sm">
+        Este ticket está fechado. Não é possível enviar novas mensagens.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

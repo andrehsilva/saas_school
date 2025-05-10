@@ -1,0 +1,24 @@
+{% extends 'layouts/blank.html' %}
+{% block content %}
+<div class="max-w-3xl mx-auto mt-10 px-4">
+    <h1 class="text-2xl font-bold mb-6">Abrir novo ticket</h1>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-4 bg-white border rounded-xl p-6">
+        {% csrf_token %}
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Assunto</label>
+            <input type="text" name="subject" required class="w-full border rounded-md p-2" placeholder="Digite o assunto do ticket">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Mensagem</label>
+            <textarea name="message" rows="5" required class="w-full border rounded-md p-2" placeholder="Descreva o problema ou dúvida"></textarea>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Anexo (opcional)</label>
+            <input type="file" name="attachment" class="block w-full text-sm text-gray-500">
+        </div>
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg">Criar ticket</button>
+    </form>
+</div>
+{% endblock %}
+

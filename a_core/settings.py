@@ -68,7 +68,8 @@ TENANT_APPS = [
     'message',
     'books',
     'collection',
-    'support'
+    'ticket'
+   
 ]
 
 INSTALLED_APPS = SHARED_APPS + [

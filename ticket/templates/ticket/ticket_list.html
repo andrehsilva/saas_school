@@ -1,0 +1,36 @@
+{% extends 'layouts/blank.html' %}
+{% block content %}
+<div class="max-w-5xl mx-auto mt-10 px-4">
+    <h1 class="text-2xl font-bold mb-6">Meus Tickets</h1>
+
+    <div class="space-y-4">
+        {% for ticket in tickets %}
+        <a href="{% url 'ticket_detail' ticket.id %}" class="block bg-white rounded-2xl border hover:shadow-lg transition p-4 space-y-1">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-800">{{ ticket.subject }}</h2>
+                    <p class="text-sm text-gray-500">Número: {{ ticket.ticket_number }}</p>
+                </div>
+                <span class="
+                    {% if ticket.status == 'open' %}
+                        bg-green-100 text-green-700
+                    {% else %}
+                        bg-gray-200 text-gray-600
+                    {% endif %}">
+                    {{ ticket.get_status_display }}
+                </span>
+            </div>
+            <p class="text-sm text-gray-500">Criado em: {{ ticket.created_at|date:"d/m/Y H:i" }}</p>
+        </a>
+        {% empty %}
+        <p class="text-gray-500">Nenhum ticket encontrado.</p>
+        {% endfor %}
+    </div>
+
+    <div class="mt-6">
+        <a href="{% url 'create_ticket' %}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg">
+            Abrir novo ticket
+        </a>
+    </div>
+</div>
+{% endblock %}
