@@ -106,6 +106,7 @@ class Parent(models.Model):
     user = models.OneToOneField(
         User, 
         on_delete=models.CASCADE,
+        related_name='parent_profile',  
         verbose_name=_("Usuário"),
         help_text=_("Usuário do pai, mãe ou responsável.")
     )

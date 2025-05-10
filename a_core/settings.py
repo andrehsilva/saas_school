@@ -34,51 +34,41 @@ ENVIRONMENT = "development"  # Ou "production"
 # Application definition
 
 SHARED_APPS = [
-    'django_tenants',
-    'a_tenant_manager',
-    'admin_interface',
-    'django.contrib.admin',
-    'django.contrib.auth',
+    'django_tenants',  # obrigatório primeiro
+    'a_tenant_manager',  # app que gerencia tenants
     'django.contrib.contenttypes',
+    'django.contrib.auth',
     'django.contrib.sessions',
+    'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    # Bibliotecas de terceiros (shared)
+    'admin_interface',
+    'colorfield',
     'django_cleanup.apps.CleanupConfig',
     'django_htmx',
-    'colorfield',
-    'django.contrib.sites',
+    
+    # Allauth (deve ser shared)
     'allauth',
     'allauth.account',
     
-    # My apps
-    'a_home',
-    'a_users',
-   
-    
-
+    # Seus apps compartilhados
+    'a_home',  # verifique se precisa ser shared
+    'a_users',  # verifique se precisa ser shared
+    'school',   # MOVI PARA SHARED - assumindo que school_role é compartilhado
 ]
 
 TENANT_APPS = [
-    'admin_interface',
     'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'django.contrib.sites',
-    'allauth',
-    'allauth.account',
-    'a_home',
-    'a_users',
+    
+    # Apps específicos por tenant
     'blog',
     'contact',
-    'school',
     'message',
     'books',
     'collection',
     'support'
- 
 ]
 
 INSTALLED_APPS = SHARED_APPS + [
@@ -218,3 +208,8 @@ SILENCED_SYSTEM_CHECKS = ["security.W019"]
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
+
+
+# Tamanho máximo de upload (20MB)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 20971520
+FILE_UPLOAD_MAX_MEMORY_SIZE = 20971520

@@ -35,4 +35,9 @@ class Profile(models.Model):
         if self.image:
             return self.image.url
         return f'{settings.STATIC_URL}images/avatar.svg'
+    
+    class Meta:
+        verbose_name = ("Perfil do usuário")
+        verbose_name_plural = ("Perfis de usuários")
+
 

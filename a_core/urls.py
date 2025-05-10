@@ -32,6 +32,7 @@ urlpatterns = [
     path('books/', include('books.urls')),
     path('school/', include('school.urls')), 
     path('collection/', include('collection.urls')),
+    path('support/', include(('support.urls', 'support'), namespace='support')),
     path('@<username>/', profile_view, name="profile"),
 ]
 
