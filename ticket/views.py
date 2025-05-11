@@ -7,25 +7,56 @@ from school.models import Parent
 from django.utils.crypto import get_random_string
 from django.shortcuts import redirect
 from .models import Ticket, TicketAllowedResponder
-
+from django.core.paginator import Paginator
 
 def generate_ticket_number():
     return get_random_string(8).upper()
 
+
 @login_required
 def ticket_list(request):
     user = request.user
+    search_query = request.GET.get('q', '').strip().lower()
+
+    # Mapeamento de status em português para valores do banco
+    status_map = {
+        'aberto': 'open',
+        'fechado': 'closed',
+        'em andamento': 'in_progress',
+        'andamento': 'in_progress',  # opção alternativa
+    }
+
     try:
         parent = Parent.objects.get(user=user)
-        tickets = Ticket.objects.filter(parent=parent).order_by('-created_at')
+        tickets = Ticket.objects.filter(parent=parent)
     except Parent.DoesNotExist:
         if TicketAllowedResponder.objects.filter(user=user).exists():
-            tickets = Ticket.objects.all().order_by('-created_at')
+            tickets = Ticket.objects.all()
         else:
             tickets = Ticket.objects.none()
-    
+
+    if search_query:
+        # Substitui valor da busca se for um status em português
+        status_value = status_map.get(search_query)
+        if status_value:
+            tickets = tickets.filter(status=status_value)
+        else:
+            tickets = tickets.filter(
+                Q(subject__icontains=search_query) |
+                Q(ticket_number__icontains=search_query) |
+                Q(created_at__icontains=search_query)
+            )
+
+    tickets = tickets.order_by('-created_at')
+
+    paginator = Paginator(tickets, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     return render(request, 'ticket/ticket_list.html', {
-        'tickets': tickets
+        'tickets': page_obj,
+        'page_obj': page_obj,
+        'search_query': request.GET.get('q', ''),  # mantém o valor original no input
     })
 
 @login_required
@@ -41,7 +72,7 @@ def ticket_detail(request, ticket_id):
     if is_parent and ticket.parent.user != user and not is_responder:
         return redirect('ticket_list')
 
-    if request.method == 'POST' and ticket.status != 'fechado':
+    if request.method == 'POST' and ticket.status != 'closed':
         message = request.POST.get('message')
         attachment = request.FILES.get('attachment')
 
@@ -52,6 +83,11 @@ def ticket_detail(request, ticket_id):
                 message=message,
                 attachment=attachment
             )
+            # Atualiza o status para "em_andamento" se estiver "aberto"
+            if ticket.status == 'open':
+                ticket.status = 'in_progress'
+                ticket.save()
+
             msg.success(request, "Mensagem enviada com sucesso!")
             return redirect('ticket_detail', ticket_id=ticket.id)
 
@@ -109,3 +145,4 @@ def close_ticket(request, ticket_id):
     ticket.save()
     msg.success(request, "Ticket fechado com sucesso.")
     return redirect('ticket_detail', ticket_id=ticket.id)
+

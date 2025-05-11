@@ -1,7 +1,20 @@
 {% extends 'layouts/blank.html' %}
 {% block content %}
-<div class="max-w-5xl mx-auto mt-10 px-4">
+<div class="max-w-7xl mx-auto mt-10 px-4">
     <h1 class="text-2xl font-bold mb-6">Meus Tickets</h1>
+
+    <!-- Formulário de busca -->
+    <form method="get" class="mb-6 flex flex-col sm:flex-row sm:items-center gap-3 w-full">
+      <div class="flex flex-grow w-full">
+          <input type="text" name="q" placeholder="Buscar por assunto, número ou status"
+                 value="{{ search_query }}"
+                 class="flex-grow px-4 py-2 border rounded-l-lg shadow-sm text-sm" />
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-lg text-sm">
+              Buscar
+          </button>
+      </div>
+    </form>
+
 
     <div class="space-y-4">
         {% for ticket in tickets %}
@@ -11,14 +24,28 @@
                     <h2 class="text-lg font-semibold text-gray-800">{{ ticket.subject }}</h2>
                     <p class="text-sm text-gray-500">Número: {{ ticket.ticket_number }}</p>
                 </div>
-                <span class="
-                    {% if ticket.status == 'open' %}
-                        bg-green-100 text-green-700
-                    {% else %}
-                        bg-gray-200 text-gray-600
-                    {% endif %}">
-                    {{ ticket.get_status_display }}
+                {% if ticket.status == 'open' %}
+                <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-green-800 bg-green-200 rounded-full">
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.293 13.707a1 1 0 011.414 0L14 9.414l-1.414-1.414L9 11.586 7.707 10.293 6.293 11.707l2 2z"/>
+                    </svg>
+                    Aberto
                 </span>
+                {% elif ticket.status == 'closed' %}
+                <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-600 bg-gray-300 rounded-full">
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M6 2a1 1 0 00-.993.883L5 3v14a1 1 0 001.993.117L7 17V3a1 1 0 00-1-1zm8 0a1 1 0 00-.993.883L13 3v14a1 1 0 001.993.117L15 17V3a1 1 0 00-1-1z"/>
+                    </svg>
+                    Fechado
+                </span>
+                {% else %}
+                <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-200 rounded-full">
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 8h4v4H8V8z"/>
+                    </svg>
+                    Em andamento
+                </span>
+                {% endif %}
             </div>
             <p class="text-sm text-gray-500">Criado em: {{ ticket.created_at|date:"d/m/Y H:i" }}</p>
         </a>
@@ -27,10 +54,27 @@
         {% endfor %}
     </div>
 
+    {% if request.user.roles.all.0.role.name == "Parent" %}
     <div class="mt-6">
         <a href="{% url 'create_ticket' %}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg">
             Abrir novo ticket
         </a>
     </div>
+    {% endif %}
+
+    <!-- Paginação -->
+    {% if page_obj.has_other_pages %}
+    <div class="flex justify-center space-x-2 mt-6">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&type={{ selected_type }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Anterior</a>
+        {% endif %}
+
+        <span class="px-3 py-1 bg-blue-500 text-white rounded">{{ page_obj.number }}</span>
+
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&type={{ selected_type }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Próxima</a>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
