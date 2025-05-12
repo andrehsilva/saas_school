@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages as msg
 from django.db.models import Q
-from .models import Ticket, TicketMessage, TicketAllowedResponder
+from .models import Ticket, TicketMessage, TicketAllowedResponder, TicketCategory
 from school.models import Parent
 from django.utils.crypto import get_random_string
 from django.shortcuts import redirect
@@ -42,10 +42,11 @@ def ticket_list(request):
             tickets = tickets.filter(status=status_value)
         else:
             tickets = tickets.filter(
-                Q(subject__icontains=search_query) |
-                Q(ticket_number__icontains=search_query) |
-                Q(created_at__icontains=search_query)
-            )
+            Q(subject__icontains=search_query) |
+            Q(ticket_number__icontains=search_query) |
+            Q(category__name__icontains=search_query) |  # <-- ADICIONADO
+            Q(created_at__icontains=search_query)
+        )
 
     tickets = tickets.order_by('-created_at')
 
@@ -109,27 +110,40 @@ def create_ticket(request):
         msg.error(request, "Apenas responsáveis podem criar tickets.")
         return redirect('ticket_list')
 
+    categories = TicketCategory.objects.all()
+
     if request.method == 'POST':
         subject = request.POST.get('subject')
         message = request.POST.get('message')
+        category_id = request.POST.get('category')
         attachment = request.FILES.get('attachment')
 
         if subject and message:
+            category = TicketCategory.objects.filter(id=category_id).first()
+
             ticket = Ticket.objects.create(
                 parent=parent,
                 subject=subject,
+                category=category,
                 ticket_number=generate_ticket_number()
             )
+
             TicketMessage.objects.create(
                 ticket=ticket,
                 sender=user,
                 message=message,
                 attachment=attachment
             )
+
             msg.success(request, "Ticket criado com sucesso!")
             return redirect('ticket_detail', ticket_id=ticket.id)
 
-    return render(request, 'ticket/create_ticket.html')
+        else:
+            msg.error(request, "Assunto e mensagem são obrigatórios.")
+
+    return render(request, 'ticket/create_ticket.html', {'categories': categories})
+
+
 
 @login_required
 def close_ticket(request, ticket_id):

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Ticket, TicketMessage, TicketAllowedResponder
+from .models import Ticket, TicketMessage, TicketAllowedResponder, TicketCategory
 
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
@@ -18,3 +18,8 @@ class TicketMessageAdmin(admin.ModelAdmin):
 class TicketAllowedResponderAdmin(admin.ModelAdmin):
     list_display = ['user']
     search_fields = ['user__username', 'user__email']
+    verbose_name = "Usuário com permissão"
+    verbose_name_plural = "Usuários com permissões"
+
+admin.site.register(TicketCategory)
+
