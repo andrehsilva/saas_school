@@ -1,3 +1,4 @@
+{% load navigator_tags %}
 {% load static %}
 <header class="flex items-center justify-between bg-gray-800 h-20 px-8 text-white sticky top-0 z-40"    
     {% if color %}style="background-color: {{ color }};"{% endif %}>
@@ -8,53 +9,45 @@
             <span class="text-lg font-bold">{% if request.tenant %}{{ request.tenant.name}}{% else %} MySaas {% endif %}</span>
         </a>
     </div>
-    <ul class="navitems flex items-center justify-center h-full">
-        <li>
-            <!-- Verifica se está na página de post -->
-            {% if request.resolver_match.url_name == "article" %}
-                <a href="{% url 'blog' %}" 
-                    class="font-semibold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">
-                    ← Voltar para as postagens
-                </a>        
-            {% endif %}
-            </li>
-        </ul>
+
     <nav class="block relative">
         <ul class="navitems flex items-center justify-center h-full">
             {% if not request.user.is_authenticated %}
-            <li><a href="/contact">Contato</a></li>
-            {% endif %}
-            {% if request.user.is_authenticated %}
-            <li><a href="/">Home</a></li>
-            <li><a href="/collection">Jogos/Coleções</a></li>
-            <li><a href="/books">Meus livros</a></li>
-            <li><a href="/messages">Mensagens</a></li>
-            <li><a href="/ticket">Tickets</a></li>
-            
-            <li x-data="{ dropdownOpen: false }" class="relative">
-                <a @click="dropdownOpen = !dropdownOpen" @click.away="dropdownOpen = false" class="cursor-pointer select-none">
-                    <img class="h-8 w-8 rounded-full object-cover" src="{{ request.user.profile.avatar }}" alt="Avatar" />
-                    {{ request.user.profile.name }}
-                    <img x-bind:class="dropdownOpen && 'rotate-180 duration-300'" class="w-4" src="https://img.icons8.com/small/32/ffffff/expand-arrow.png" alt="Dropdown" />
-                </a>
-                <div x-show="dropdownOpen" x-cloak class="absolute right-0 bg-white text-black shadow rounded-lg w-40 p-2 z-20"
-                x-transition:enter="duration-300 ease-out"
-                x-transition:enter-start="opacity-0 -translate-y-5 scale-90"
-                x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-                >
-                    <ul class="hoverlist [&>li>a]:justify-end">
-                        <li><a href="{% url 'profile' %}">Meu Perfil</a></li>
-                        <li><a href="{% url 'profile-edit' %}">Editar Perfil</a></li>
-                        <li><a href="{% url 'profile-settings' %}">Configurações</a></li>
-                        <li><a href="{% url 'account_logout' %}">Sair</a></li>
-                    </ul>
-                </div>
-            </li>
-            
+                <li><a href="/contact">Contato</a></li>
+                <li><a href="{% url 'account_login' %}">Login</a></li>
+                <li><a href="{% url 'account_signup' %}?next={% url 'profile-onboarding' %}">Inscrever-se</a></li>
             
             {% else %}
-            <li><a href="{% url 'account_login' %}">Login</a></li>
-            <li><a href="{% url 'account_signup' %}?next={% url 'profile-onboarding' %}">Inscrever-se</a></li>
+                <!-- Links para usuários autenticados -->
+                {% get_nav_links as navigation_links %}
+                {% for link in navigation_links %}
+                    <li>
+                        <a href="{{ link.url }}" class="{% if request.path == link.url %}active{% endif %}">
+                            {{ link.title }}
+                        </a>
+                    </li>
+                {% endfor %}
+
+                <!-- Dropdown do perfil -->
+                <li x-data="{ dropdownOpen: false }" class="relative">
+                    <a @click="dropdownOpen = !dropdownOpen" @click.away="dropdownOpen = false" class="cursor-pointer select-none">
+                        <img class="h-8 w-8 rounded-full object-cover" src="{{ request.user.profile.avatar }}" alt="Avatar" />
+                        {{ request.user.profile.name }}
+                        <img x-bind:class="dropdownOpen && 'rotate-180 duration-300'" class="w-4" src="https://img.icons8.com/small/32/ffffff/expand-arrow.png" alt="Dropdown" />
+                    </a>
+                    <div x-show="dropdownOpen" x-cloak class="absolute right-0 bg-white text-black shadow rounded-lg w-40 p-2 z-20"
+                    x-transition:enter="duration-300 ease-out"
+                    x-transition:enter-start="opacity-0 -translate-y-5 scale-90"
+                    x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                    >
+                        <ul class="hoverlist [&>li>a]:justify-end">
+                            <li><a href="{% url 'profile' %}">Meu Perfil</a></li>
+                            <li><a href="{% url 'profile-edit' %}">Editar Perfil</a></li>
+                            <li><a href="{% url 'profile-settings' %}">Configurações</a></li>
+                            <li><a href="{% url 'account_logout' %}">Sair</a></li>
+                        </ul>
+                    </div>
+                </li>
             {% endif %}
         </ul>
     </nav>

@@ -56,7 +56,7 @@ SHARED_APPS = [
     # Seus apps compartilhados
     'a_home',  # verifique se precisa ser shared
     'a_users',  # verifique se precisa ser shared
-    'school',   # MOVI PARA SHARED - assumindo que school_role é compartilhado
+    
 ]
 
 TENANT_APPS = [
@@ -68,7 +68,9 @@ TENANT_APPS = [
     'message',
     'books',
     'collection',
-    'ticket'
+    'ticket',
+    'navigator',
+    'school',   # MOVI PARA SHARED - assumindo que school_role é compartilhado
    
 ]
 
