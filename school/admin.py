@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.urls import path
-from .models import Grade, Class, Role, Parent, Student, UserRole
+from .models import Grade, Class, Role, Parent, Student, UserRole, Subject
 from .admin_views import import_users_view
 
 from django.contrib.auth.models import User
@@ -46,6 +46,7 @@ class ParentAdmin(admin.ModelAdmin):
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
+    search_fields = ('user__username', 'user__first_name', 'user__last_name')
     list_display = ('user', 'get_classes')  # Substitui class_assigned por get_classes
     list_filter = ('classes_assigned',)  # Pode não funcionar, talvez precise de um filtro customizado
 
@@ -64,3 +65,9 @@ class CustomUserAdmin(UserAdmin):
 
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
+
+@admin.register(Subject)
+class SubjectAdmin(admin.ModelAdmin):
+    list_display = ('name', 'grade')
+    search_fields = ('name', 'code')
+    list_filter = ('grade',)

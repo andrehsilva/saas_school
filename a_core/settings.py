@@ -34,45 +34,47 @@ ENVIRONMENT = "development"  # Ou "production"
 # Application definition
 
 SHARED_APPS = [
+    
     'django_tenants',  # obrigatório primeiro
-    'a_tenant_manager',  # app que gerencia tenants
+    'a_tenant_manager',
     'django.contrib.contenttypes',
+    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
-    # Bibliotecas de terceiros (shared)
     'admin_interface',
     'colorfield',
     'django_cleanup.apps.CleanupConfig',
     'django_htmx',
-    
-    # Allauth (deve ser shared)
-    'allauth',
-    'allauth.account',
-    
-    # Seus apps compartilhados
-    'a_home',  # verifique se precisa ser shared
-    'a_users',  # verifique se precisa ser shared
-    
+    'a_home',
+    'a_users',
 ]
 
 TENANT_APPS = [
     'django.contrib.admin',
-    
-    # Apps específicos por tenant
+    'django.contrib.auth',
+    'django.contrib.sessions',
+    'django.contrib.sites',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+
+    # Allauth por tenant
+    'allauth',
+    'allauth.account',
+
+    # Apps por tenant
     'blog',
     'contact',
     'message',
     'books',
     'collection',
     'ticket',
-    'navigator',
-    'school',   # MOVI PARA SHARED - assumindo que school_role é compartilhado
-   
+    'school',
+    'navigator'
 ]
+
 
 INSTALLED_APPS = SHARED_APPS + [
     app for app in TENANT_APPS if app not in SHARED_APPS

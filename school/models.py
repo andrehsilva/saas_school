@@ -146,3 +146,38 @@ class Student(models.Model):
     class Meta:
         verbose_name = _("Aluno")
         verbose_name_plural = _("Alunos")
+
+
+class Subject(models.Model):
+    name = models.CharField(
+        max_length=100,
+        verbose_name=_("Nome da Disciplina"),
+        help_text=_("Nome da disciplina, como Matemática, História ou Ciências.")
+    )
+    code = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name=_("Código"),
+        help_text=_("Código único para a disciplina.")
+    )
+    grade = models.ForeignKey(
+        Grade,
+        on_delete=models.CASCADE,
+        related_name="subjects",
+        verbose_name=_("Série"),
+        help_text=_("Série à qual essa disciplina pertence.")
+    )
+    teachers = models.ManyToManyField(
+        User,
+        related_name="subjects_taught",
+        verbose_name=_("Professores"),
+        help_text=_("Professores que lecionam essa disciplina.")
+    )
+
+    def __str__(self):
+        return f"{self.name} ({self.grade.name})"
+
+    class Meta:
+        verbose_name = _("Disciplina")
+        verbose_name_plural = _("Disciplinas")
+        unique_together = ("name", "grade")
