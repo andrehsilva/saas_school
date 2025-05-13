@@ -65,6 +65,8 @@ TENANT_APPS = [
     'allauth.account',
 
     # Apps por tenant
+    'a_home',
+    'a_users',
     'blog',
     'contact',
     'message',

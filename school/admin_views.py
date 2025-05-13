@@ -18,7 +18,7 @@ def import_users_view(request):
 
         created = 0
         for row in reader:
-            username = row.get("nome_de_usuario")
+            username = row.get("usuario")
             email = row.get("email")
             first_name = row.get("nome")
             last_name = row.get("sobrenome")
@@ -57,7 +57,7 @@ def import_users_view(request):
                             student.save()  # Garante que M2M é persistido
 
                 # Responsável
-                elif papel.strip().lower() == "responsável":
+                elif papel.strip().lower() == "responsavel":
                     parent, created_parent = Parent.objects.get_or_create(user=user)
                     filhos_emails = [f.strip() for f in filhos_str.split(",") if f.strip()]
                     for filho_email in filhos_emails:

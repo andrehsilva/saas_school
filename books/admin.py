@@ -7,6 +7,7 @@ class DocumentAdmin(admin.ModelAdmin):
     list_display = ('title', 'uploaded_at', 'get_target_users', 'get_target_classes', 'get_target_grades','image')
     search_fields = ('title',)
     list_filter = ('uploaded_at',)
+    
 
     def get_target_users(self, obj):
         return ", ".join([user.username for user in obj.target_users.all()])
