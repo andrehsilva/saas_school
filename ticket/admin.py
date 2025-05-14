@@ -4,6 +4,7 @@ from .models import Ticket, TicketMessage, TicketAllowedResponder, TicketCategor
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
     list_display = ['ticket_number', 'subject', 'parent', 'status', 'created_at']
+    list_editable = ['status']  # ← Permite edição direta
     search_fields = ['ticket_number', 'subject', 'parent__user__username']
     list_filter = ['status', 'created_at']
     readonly_fields = ['ticket_number', 'created_at']
