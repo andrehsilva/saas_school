@@ -5,7 +5,7 @@ from django.db.models import Q
 from .models import Message, ReceivedMessage, MessageType, MessageReadLog
 
 from school.models import Class, Grade, Student, Parent
-from django.contrib import messages as msg
+from django.contrib import messages
 from django.http import JsonResponse
 
 from django.core.paginator import Paginator

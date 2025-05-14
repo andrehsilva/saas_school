@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.contrib.auth.models import User
 from django.contrib.auth.views import redirect_to_login
-from django.contrib import messages
+from django.contrib import messages as msg
 from .forms import *
 
 def profile_view(request, username=None):
@@ -57,7 +57,7 @@ def profile_emailchange(request):
             # Check if the email already exists
             email = form.cleaned_data['email']
             if User.objects.filter(email=email).exclude(id=request.user.id).exists():
-                messages.warning(request, f'{email} is already in use.')
+                msg.warning(request, f'{email} is already in use.')
                 return redirect('profile-settings')
             
             form.save() 
@@ -69,7 +69,7 @@ def profile_emailchange(request):
             
             return redirect('profile-settings')
         else:
-            messages.warning(request, 'Email not valid or already in use')
+            msg.warning(request, 'Email not valid or already in use')
             return redirect('profile-settings')
         
     return redirect('profile-settings')
@@ -86,10 +86,10 @@ def profile_usernamechange(request):
         
         if form.is_valid():
             form.save()
-            messages.success(request, 'Username updated successfully.')
+            msg.success(request, 'Username updated successfully.')
             return redirect('profile-settings')
         else:
-            messages.warning(request, 'Username not valid or already in use')
+            msg.warning(request, 'Username not valid or already in use')
             return redirect('profile-settings')
     
     return redirect('profile-settings')    
@@ -107,7 +107,7 @@ def profile_delete_view(request):
     if request.method == "POST":
         logout(request)
         user.delete()
-        messages.success(request, 'Account deleted, what a pity')
+        msg.success(request, 'Account deleted, what a pity')
         return redirect('home')
     
     return render(request, 'a_users/profile_delete.html')

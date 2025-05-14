@@ -1,0 +1,148 @@
+{% extends 'layouts/blank.html' %}
+{% block content %}
+
+<div class="max-w-7xl mx-auto mt-10 px-4">
+    <h1 class="text-2xl font-bold mb-6">Notas e Avaliações</h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <!-- COLUNA PRINCIPAL -->
+        <main class="md:col-span-3 space-y-6">
+            {% for note in notes %}
+            <div class="bg-white shadow hover:shadow-lg transition-shadow rounded-2xl border border-gray-200 overflow-hidden">
+                <div class="bg-gray-50 px-4 py-3 flex justify-between items-center border-b">
+                    <div class="flex items-center gap-4">
+                        <div>
+                            <p class="font-semibold text-gray-800">{{ note.student.user.get_full_name }}</p>
+                            <p class="text-sm text-gray-500">
+                                {{ note.subject.name }} • {{ note.date|date:"d/m/Y" }}
+                            </p>
+                            
+                            <span class="inline-flex items-center px-2 py-1 text-sm font-medium text-indigo-800 bg-indigo-100 rounded-full">
+                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM10 8a1 1 0 011 1v2a1 1 0 11-2 0V9a1 1 0 011-1z"/>
+                                </svg>
+                                {{ note.evaluation_period }}
+                            </span>
+                            {% if note.attachment %}
+                                <a href="{{ note.attachment.url }}" download 
+                                    class="mt-3 inline-flex items-center text-sm {% if message.sender == request.user %}text-blue-200 hover:text-white{% else %}text-gray-600 hover:text-gray-800{% endif %}">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    Baixar Arquivo
+                                </a>
+                            {% endif %}
+                        </div>                      
+                    </div>
+                    {% if note.grade or note.weight %}  <!-- CONDIÇÃO ADICIONADA -->
+                    <div class="flex gap-4 items-center">
+                        {% if note.score %}  <!-- CONDIÇÃO PARA NOTA -->
+                        <div class="text-right">
+                            <p class="text-sm text-gray-500">Nota</p>
+                            <p class="text-lg font-bold text-blue-600">{{ note.score }}</p>
+                        </div>
+                        {% endif %}
+                        {% if note.weight %}  <!-- CONDIÇÃO PARA PESO -->
+                        <div class="text-right">
+                            <p class="text-sm text-gray-500">Peso</p>
+                            <p class="text-lg font-medium">{{ note.weight }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="px-4 py-3 space-y-2">
+                    <h2 class="text-xl font-semibold">{{ note.title }}</h2>
+                    
+                    {% if note.description %}
+                    <div class="prose max-w-none">
+                        <p class="text-gray-700">{{ note.description }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    
+                    {% if note.performance %}
+                    <div class="mt-4 bg-yellow-50 p-4 rounded-lg">
+                        <h3 class="font-medium text-yellow-800 mb-2">Desempenho:</h3>
+                        <p class="text-yellow-700">{{ note.performance }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="bg-white p-4 rounded-lg shadow">
+                <p class="text-gray-500">Nenhuma nota encontrada.</p>
+            </div>
+            {% endfor %}
+
+            <!-- Paginação -->
+            {% if page_obj.paginator.num_pages > 1 %}
+            <div class="flex justify-center space-x-2 mt-6">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&subject={{ selected_subject }}&class={{ selected_class }}&date_from={{ date_from }}&date_to={{ date_to }}"
+                   class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">
+                    Anterior
+                </a>
+                {% endif %}
+
+                <span class="px-3 py-1 bg-blue-500 text-white rounded">
+                    {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                </span>
+
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&subject={{ selected_subject }}&class={{ selected_class }}&date_from={{ date_from }}&date_to={{ date_to }}"
+                   class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">
+                    Próxima
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </main>
+
+        <!-- BARRA LATERAL DE FILTROS -->
+        <aside class="md:col-span-1 bg-gray-50 p-4 rounded-2xl border border-gray-200 shadow-sm h-fit">
+            <h2 class="text-lg font-semibold mb-4">Filtrar Notas</h2>
+            <form method="GET" class="space-y-4">
+                <!-- Disciplina -->
+                <div>
+                    <label class="block text-sm font-medium mb-1">Disciplina</label>
+                    <select name="subject" class="w-full p-2 border rounded-md">
+                        <option value="">Todas</option>
+                        {% for subject in subjects %}
+                        <option value="{{ subject.id }}" {% if selected_subject == subject.id %}selected{% endif %}>
+                            {{ subject.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Data -->
+                <div>
+                    <label class="block text-sm font-medium mb-1">Período</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="date" name="date_from" value="{{ date_from }}"
+                               class="p-1 border rounded-md text-sm">
+                        <input type="date" name="date_to" value="{{ date_to }}"
+                               class="p-1 border rounded-md text-sm">
+                    </div>
+                </div>
+
+                <!-- Pesquisa -->
+                <div>
+                    <label class="block text-sm font-medium mb-1">Pesquisar</label>
+                    <input type="text" name="q" value="{{ search_query }}"
+                           class="w-full p-2 border rounded-md"
+                           placeholder="Título ou comentários...">
+                </div>
+
+                <button type="submit"
+                        class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition">
+                    Aplicar Filtros
+                </button>
+            </form>
+        </aside>
+    </div>
+</div>
+
+{% endblock %}

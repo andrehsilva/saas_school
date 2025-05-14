@@ -33,6 +33,7 @@ urlpatterns = [
     path('school/', include('school.urls')), 
     path('collection/', include('collection.urls')),
     path('ticket/', include('ticket.urls')),
+    path('notes/', include('note.urls')), # Suas notas
     path('@<username>/', profile_view, name="profile"),
 ]
 

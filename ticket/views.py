@@ -92,10 +92,10 @@ def ticket_detail(request, ticket_id):
             msg.success(request, "Mensagem enviada com sucesso!")
             return redirect('ticket_detail', ticket_id=ticket.id)
 
-    messages = ticket.messages.all().order_by('created_at')
+    messagesc = ticket.messages.all().order_by('created_at')
     return render(request, 'ticket/ticket_detail.html', {
         'ticket': ticket,
-        'messages': messages,
+        'messages': messagesc,
         'is_responder': is_responder,
         'allowed_responders': allowed_responders,
     })
@@ -136,7 +136,7 @@ def create_ticket(request):
             )
 
             msg.success(request, "Ticket criado com sucesso!")
-            return redirect('ticket_detail', ticket_id=ticket.id)
+            return redirect('ticket_list')
 
         else:
             msg.error(request, "Assunto e mensagem são obrigatórios.")

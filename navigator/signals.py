@@ -10,7 +10,7 @@ DEFAULT_LINKS = [
     {'title': 'Meus Livros', 'url': '/books/', 'order': 3},
     {'title': 'Mensagens', 'url': '/messages/', 'order': 4},
     {'title': 'Tickets', 'url': '/ticket/', 'order': 5},
-    {'title': 'Boletim', 'url': '/boletim/', 'order': 6},
+    {'title': 'Boletim', 'url': '/notes/', 'order': 6},
 ]
 
 @receiver(post_migrate)

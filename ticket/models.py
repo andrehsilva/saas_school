@@ -46,6 +46,7 @@ class Ticket(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        default='Acadêmico/Pedagógico',
         related_name='tickets',
         verbose_name="Categoria",
         help_text="Categoria à qual o ticket pertence."
