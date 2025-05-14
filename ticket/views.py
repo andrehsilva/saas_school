@@ -5,25 +5,26 @@ from django.db.models import Q
 from .models import Ticket, TicketMessage, TicketAllowedResponder, TicketCategory
 from school.models import Parent
 from django.utils.crypto import get_random_string
-from django.shortcuts import redirect
-from .models import Ticket, TicketAllowedResponder
 from django.core.paginator import Paginator
+from django.urls import reverse
+from notification.utils import send_notification
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 def generate_ticket_number():
     return get_random_string(8).upper()
-
 
 @login_required
 def ticket_list(request):
     user = request.user
     search_query = request.GET.get('q', '').strip().lower()
 
-    # Mapeamento de status em português para valores do banco
     status_map = {
         'aberto': 'open',
         'fechado': 'closed',
         'em andamento': 'in_progress',
-        'andamento': 'in_progress',  # opção alternativa
+        'andamento': 'in_progress',
     }
 
     try:
@@ -36,20 +37,18 @@ def ticket_list(request):
             tickets = Ticket.objects.none()
 
     if search_query:
-        # Substitui valor da busca se for um status em português
         status_value = status_map.get(search_query)
         if status_value:
             tickets = tickets.filter(status=status_value)
         else:
             tickets = tickets.filter(
-            Q(subject__icontains=search_query) |
-            Q(ticket_number__icontains=search_query) |
-            Q(category__name__icontains=search_query) |  # <-- ADICIONADO
-            Q(created_at__icontains=search_query)
-        )
+                Q(subject__icontains=search_query) |
+                Q(ticket_number__icontains=search_query) |
+                Q(category__name__icontains=search_query) |
+                Q(created_at__icontains=search_query)
+            )
 
     tickets = tickets.order_by('-created_at')
-
     paginator = Paginator(tickets, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -57,15 +56,13 @@ def ticket_list(request):
     return render(request, 'ticket/ticket_list.html', {
         'tickets': page_obj,
         'page_obj': page_obj,
-        'search_query': request.GET.get('q', ''),  # mantém o valor original no input
+        'search_query': request.GET.get('q', ''),
     })
 
 @login_required
 def ticket_detail(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id)
     user = request.user
-
-    # Verifica permissão
     is_parent = hasattr(user, 'parent')
     is_responder = TicketAllowedResponder.objects.filter(user=user).exists()
     allowed_responders = TicketAllowedResponder.objects.values_list('user', flat=True)
@@ -84,10 +81,31 @@ def ticket_detail(request, ticket_id):
                 message=message,
                 attachment=attachment
             )
-            # Atualiza o status para "em_andamento" se estiver "aberto"
+
             if ticket.status == 'open':
                 ticket.status = 'in_progress'
                 ticket.save()
+
+            # Notificação ao responder
+            ticket_url = request.build_absolute_uri(reverse('ticket_detail', args=[ticket.id]))
+            subject = f"Resposta ao Ticket: {ticket.subject}"
+
+            if is_parent:
+                responder_ids = TicketAllowedResponder.objects.values_list('user', flat=True)
+                for responder_id in responder_ids:
+                    send_notification(
+                        recipient_id=responder_id,
+                        title=subject,
+                        message="O responsável respondeu ao ticket.",
+                        url=ticket_url
+                    )
+            else:
+                send_notification(
+                    recipient=ticket.parent.user,
+                    title=subject,
+                    message="Seu ticket recebeu uma nova resposta.",
+                    url=ticket_url
+                )
 
             msg.success(request, "Mensagem enviada com sucesso!")
             return redirect('ticket_detail', ticket_id=ticket.id)
@@ -99,7 +117,6 @@ def ticket_detail(request, ticket_id):
         'is_responder': is_responder,
         'allowed_responders': allowed_responders,
     })
-
 
 @login_required
 def create_ticket(request):
@@ -135,28 +152,44 @@ def create_ticket(request):
                 attachment=attachment
             )
 
+            # Notificar todos os respondentes
+            responder_ids = TicketAllowedResponder.objects.values_list('user', flat=True)
+            ticket_url = request.build_absolute_uri(reverse('ticket_detail', args=[ticket.id]))
+            for responder_id in responder_ids:
+                send_notification(
+                    recipient_id=responder_id,
+                    title="Novo Ticket Criado",
+                    message=f"Um novo ticket foi criado: {subject}",
+                    url=ticket_url
+                )
+
             msg.success(request, "Ticket criado com sucesso!")
             return redirect('ticket_list')
-
         else:
             msg.error(request, "Assunto e mensagem são obrigatórios.")
 
     return render(request, 'ticket/create_ticket.html', {'categories': categories})
-
-
 
 @login_required
 def close_ticket(request, ticket_id):
     user = request.user
     ticket = get_object_or_404(Ticket, id=ticket_id)
 
-    # Verifica se o usuário tem permissão para fechar
     if not TicketAllowedResponder.objects.filter(user=user).exists():
         msg.error(request, "Você não tem permissão para fechar este ticket.")
         return redirect('ticket_detail', ticket_id=ticket.id)
 
     ticket.status = 'fechado'
     ticket.save()
+
+    # Notificação ao responsável
+    ticket_url = request.build_absolute_uri(reverse('ticket_detail', args=[ticket.id]))
+    send_notification(
+        recipient=ticket.parent.user,
+        title="Ticket Fechado",
+        message=f"O ticket '{ticket.subject}' foi fechado.",
+        url=ticket_url
+    )
+
     msg.success(request, "Ticket fechado com sucesso.")
     return redirect('ticket_detail', ticket_id=ticket.id)
-

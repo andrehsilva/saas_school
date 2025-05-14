@@ -75,7 +75,8 @@ TENANT_APPS = [
     'ticket',
     'school',
     'navigator',
-    'note'
+    'note',
+    'notification'
     
 ]
 
