@@ -23,6 +23,7 @@ from a_home.views import *
 from blog.views import *
 
 urlpatterns = [
+  
     path('admin/', admin.site.urls),
     path('', include('blog.urls')),
     path('accounts/', include('allauth.urls')),
@@ -35,6 +36,7 @@ urlpatterns = [
     path('ticket/', include('ticket.urls')),
     path('notes/', include('note.urls')), # Suas notas
     path('@<username>/', profile_view, name="profile"),
+    path('notifications/', include('notification.urls')),
 ]
 
 # Only used when DEBUG=True, whitenoise can serve files when DEBUG=False

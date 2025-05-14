@@ -20,14 +20,17 @@
             {% else %}
                 <!-- Links para usuários autenticados -->
                 {% get_nav_links as navigation_links %}
+                
                 {% for link in navigation_links %}
                     <li>
                         <a href="{{ link.url }}" class="{% if request.path == link.url %}active{% endif %}">
                             {{ link.title }}
                         </a>
                     </li>
+                    
                 {% endfor %}
-
+                 
+                  
                 <!-- Dropdown do perfil -->
                 <li x-data="{ dropdownOpen: false }" class="relative">
                     <a @click="dropdownOpen = !dropdownOpen" @click.away="dropdownOpen = false" class="cursor-pointer select-none">
@@ -48,6 +51,16 @@
                         </ul>
                     </div>
                 </li>
+                <!-- Exemplo ideal -->
+                <div class="relative" id="notification-bell">
+                    <button id="toggleNotifications" class="relative">
+                    🔔<span id="notification-count" class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1">2</span>
+                    </button>
+                
+                    <div id="notification-list" class="absolute right-0 mt-2 w-80 bg-white border border-gray-200 shadow-lg rounded-lg hidden z-50">
+                      <ul id="notification-items" class="divide-y divide-gray-100"></ul>
+                    </div>
+                  </div>
             {% endif %}
         </ul>
     </nav>

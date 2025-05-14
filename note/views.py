@@ -4,6 +4,8 @@ from django.db.models import Q
 from django.core.paginator import Paginator
 from .models import Note
 from school.models import Student, Parent, Subject, Grade
+from django.shortcuts import get_object_or_404
+from django.http import HttpResponseForbidden
 
 @login_required
 def notes_timeline(request):
@@ -65,3 +67,32 @@ def notes_timeline(request):
         'date_from': date_from or '',
         'date_to': date_to or '',
     })
+
+
+
+@login_required
+def note_detail(request, note_id):
+    note = get_object_or_404(Note, id=note_id)
+
+    # Verificação de permissão
+    user = request.user
+    is_allowed = False
+
+    try:
+        # Se for o próprio aluno
+        is_allowed = note.student.user == user
+    except:
+        pass
+
+    try:
+        # Se for um responsável do aluno
+        parent = Parent.objects.get(user=user)
+        if note.student in parent.children.all():
+            is_allowed = True
+    except Parent.DoesNotExist:
+        pass
+
+    if not is_allowed:
+        return HttpResponseForbidden("Você não tem permissão para ver essa nota.")
+
+    return render(request, 'note/note_detail.html', {'note': note})

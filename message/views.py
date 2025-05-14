@@ -123,3 +123,10 @@ def mark_as_read(request, message_id):
         MessageReadLog.objects.create(user=user, message=message, read=True)
 
     return JsonResponse({"success": True})
+
+from django.shortcuts import render, get_object_or_404
+from .models import Message
+
+def message_detail(request, id):
+    message = get_object_or_404(Message, id=id)
+    return render(request, 'message_detail.html', {'message': message})

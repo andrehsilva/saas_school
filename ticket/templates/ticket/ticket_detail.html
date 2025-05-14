@@ -6,6 +6,36 @@
     <div class="flex items-center justify-between mb-8">
 
         <h1 class="text-3xl font-bold text-gray-900">Ticket #{{ ticket.ticket_number }}</h1>
+
+        <!-- Status Update (para respondentes) -->
+        {% if is_responder %}
+        <form method="post" action="{% url 'ticket_detail' ticket_id=ticket.id %}" class="flex items-center gap-2">
+            {% csrf_token %}
+            <select name="status" onchange="this.form.submit()" 
+                    class="px-3 py-1 border rounded-md text-sm font-medium focus:ring-blue-500 focus:border-blue-500
+                           {% if ticket.status == 'closed' %}bg-red-100 text-red-700
+                           {% elif ticket.status == 'open' %}bg-green-100 text-green-700
+                           {% else %}bg-gray-100 text-gray-600{% endif %}">
+                {% for value, display in ticket.STATUS_CHOICES %}
+                <option value="{{ value }}" {% if ticket.status == value %}selected{% endif %}>
+                    {{ display }}
+                </option>
+                {% endfor %}
+            </select>
+        </form>
+        {% else %}
+        <!-- Exibir status normal para não-respondentes -->
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium 
+            {% if ticket.status == 'closed' %}bg-red-100 text-red-700
+            {% elif ticket.status == 'open' %}bg-green-100 text-green-700
+            {% else %}bg-gray-100 text-gray-600{% endif %}">
+            <svg class="w-2 h-2 mr-2" fill="currentColor" viewBox="0 0 8 8">
+                <circle cx="4" cy="4" r="4" />
+            </svg>
+            {{ ticket.get_status_display }}
+        </span>
+        {% endif %}
+
         <span class="inline-flex items-center px-2 py-1 text-sm font-medium text-indigo-600 bg-indigo-100 ">Criado por:
             {{ ticket.parent.user.get_full_name|default:ticket.parent.user.username }}
             </span>
@@ -34,15 +64,7 @@
                     {{ ticket.category.name }}
                 </span>
                 {% endif %}
-        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium 
-            {% if ticket.status == 'closed' %}bg-red-100 text-red-700
-            {% elif ticket.status == 'open' %}bg-green-100 text-green-700
-            {% else %}bg-gray-100 text-gray-600{% endif %}">
-            <svg class="w-2 h-2 mr-2" fill="currentColor" viewBox="0 0 8 8">
-                <circle cx="4" cy="4" r="4" />
-            </svg>
-            {{ ticket.get_status_display }}
-        </span>
+        
     </div>
     
     <!-- Detalhes do Ticket -->
@@ -56,7 +78,7 @@
 
     <!-- Histórico de Mensagens -->
     <div class="space-y-6 mb-12">
-        {% for message in messages %}
+        {% for message in ticket_messages %}
             <div class="flex {% if message.sender == request.user %}justify-end{% else %}justify-start{% endif %}">
                 <div class="{% if message.sender == request.user %}bg-blue-600 text-white{% else %}bg-gray-100{% endif %} 
                     rounded-xl p-4 max-w-md shadow-sm transition-transform duration-100 hover:scale-[1.02]

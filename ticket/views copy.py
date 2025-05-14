@@ -66,110 +66,70 @@ def ticket_detail(request, ticket_id):
     is_parent = hasattr(user, 'parent')
     is_responder = TicketAllowedResponder.objects.filter(user=user).exists()
 
-    # Verificação de permissão
     if is_parent and ticket.parent.user != user and not is_responder:
         return redirect('ticket_list')
 
-    if request.method == 'POST':
-        # Processar atualização de status
-        if 'status' in request.POST and is_responder:
-            new_status = request.POST.get('status')
-            current_status = ticket.status
+    if request.method == 'POST' and ticket.status != 'closed':
+       
 
-            if new_status in dict(Ticket.STATUS_CHOICES):
-                ticket.status = new_status
+        message = request.POST.get('message')
+        attachment = request.FILES.get('attachment')
+
+        if message:
+            TicketMessage.objects.create(
+                ticket=ticket,
+                sender=user,
+                message=message,
+                attachment=attachment
+            )
+
+            if ticket.status == 'open':
+                ticket.status = 'in_progress'
                 ticket.save()
 
-                # Notificar apenas se o status mudou
-                if current_status != new_status:
-                    ticket_url = request.build_absolute_uri(
-                        reverse('ticket_detail', args=[ticket.id])
-                    )
+            # Notificação para o usuário da escola (respondente)
+            ticket_url = request.build_absolute_uri(reverse('ticket_detail', args=[ticket.id]))
+            subject = f"Resposta ao Ticket: {ticket.subject}"
 
-                    # Notificar o responsável
+            if is_parent:
+                # Notificar os respondentes da escola (usuários com permissão)
+                responder_ids = TicketAllowedResponder.objects.values_list('user', flat=True)
+                for responder_id in responder_ids:
                     send_notification(
-                        recipient=ticket.parent.user,
-                        title=f"Status do Ticket Atualizado - #{ticket.ticket_number}",
-                        message=f"O status do ticket foi alterado para: {ticket.get_status_display()}",
-                        url=ticket_url
-                    )
-
-                    # Notificar outros respondentes
-                    responders = TicketAllowedResponder.objects.exclude(user=user)
-                    for responder in responders:
-                        send_notification(
-                            recipient=responder.user,
-                            title=f"Status Atualizado - #{ticket.ticket_number}",
-                            message=f"{user.get_full_name()} alterou o status para: {ticket.get_status_display()}",
-                            url=ticket_url
-                        )
-
-                msg.success(request, "Status do ticket atualizado com sucesso!")
-                return redirect('ticket_detail', ticket_id=ticket.id)
-
-        # Processar nova mensagem se o ticket não estiver fechado
-        if ticket.status != 'closed':
-            message_text = request.POST.get('message')
-            attachment = request.FILES.get('attachment')
-
-            if message_text:
-                TicketMessage.objects.create(
-                    ticket=ticket,
-                    sender=user,
-                    message=message_text,
-                    attachment=attachment
-                )
-
-                # Atualizar status para "em andamento" se era "aberto"
-                if ticket.status == 'open':
-                    ticket.status = 'in_progress'
-                    ticket.save()
-
-                ticket_url = request.build_absolute_uri(
-                    reverse('ticket_detail', args=[ticket.id])
-                )
-                subject = f"Resposta ao Ticket: {ticket.subject}"
-
-                # Lógica de notificação
-                if is_parent:
-                    # Notificar respondentes
-                    responders = TicketAllowedResponder.objects.all()
-                    for responder in responders:
-                        send_notification(
-                            recipient=responder.user,
-                            title=subject,
-                            message=f"Nova resposta de {user.get_full_name()}",
-                            url=ticket_url
-                        )
-                else:
-                    # Notificar o responsável
-                    send_notification(
-                        recipient=ticket.parent.user,
+                        recipient_id=responder_id,
                         title=subject,
-                        message="Sua solicitação recebeu uma nova resposta",
+                        message="O responsável respondeu ao ticket.",
                         url=ticket_url
                     )
-                    # Notificar outros respondentes
-                    responders = TicketAllowedResponder.objects.exclude(user=user)
-                    for responder in responders:
-                        send_notification(
-                            recipient=responder.user,
-                            title=subject,
-                            message=f"Resposta adicionada por {user.get_full_name()}",
-                            url=ticket_url
-                        )
+            else:
+                # Notificar o criador (pai) que o ticket foi respondido
+                send_notification(
+                    recipient=ticket.parent.user,
+                    title=subject,
+                    message="Seu ticket recebeu uma nova resposta.",
+                    url=ticket_url
+                )
 
-                msg.success(request, "Mensagem enviada com sucesso!")
-                return redirect('ticket_detail', ticket_id=ticket.id)
+                # Notificar outros respondentes que uma resposta foi dada
+                responder_ids = TicketAllowedResponder.objects.values_list('user', flat=True)
+                for responder_id in responder_ids:
+                    send_notification(
+                        recipient_id=responder_id,
+                        title=subject,
+                        message="O usuário da escola respondeu ao ticket.",
+                        url=ticket_url
+                    )
 
-    # Carregar mensagens
-    ticket_messages = ticket.messages.all().order_by('created_at')
+            msg.success(request, "Mensagem enviada com sucesso!")
+            return redirect('ticket_detail', ticket_id=ticket.id)
 
+    messagesc = ticket.messages.all().order_by('created_at')
     return render(request, 'ticket/ticket_detail.html', {
         'ticket': ticket,
-        'ticket_messages': ticket_messages,
+        'ticket_messages': messagesc,
         'is_responder': is_responder,
-    })    
+    })
+    
    
     
 

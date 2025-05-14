@@ -1,0 +1,61 @@
+{% extends 'layouts/blank.html' %}
+{% block content %}
+
+<div class="max-w-3xl mx-auto mt-10 px-4">
+    <div class="bg-white shadow rounded-2xl border border-gray-200 overflow-hidden">
+        
+        <!-- Cabeçalho -->
+        <div class="bg-gray-50 px-4 py-3 flex justify-between items-center border-b">
+            <div class="text-sm text-gray-500">
+                Enviado por: <span class="font-bold text-gray-800">{{ message.created_by.username }}</span> |
+                {{ message.created_at|date:"d M Y - H:i" }}
+            </div>
+            {% if message.type %}
+            <span class="px-3 py-1 text-sm font-medium rounded-full"
+                  style="background-color: {{ message.type.color }}; color: white;">
+                {{ message.type.name }}
+            </span>
+            {% endif %}
+        </div>
+
+        <!-- Conteúdo -->
+        <div class="px-4 py-5 space-y-4">
+            <h1 class="text-2xl font-semibold text-gray-900">{{ message.title }}</h1>
+            <p class="text-gray-700 leading-relaxed">{{ message.context }}</p>
+
+            {% if message.image %}
+            <img src="{{ message.image.url }}" alt="Imagem da mensagem" class="rounded-lg w-full max-h-60 object-cover">
+            {% endif %}
+
+            {% if message.attachments %}
+            <div>
+                <a href="{{ message.attachments.url }}" download
+                   class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
+                    📎 Baixar Anexo
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Rodapé -->
+        <div class="bg-gray-50 px-4 py-3 text-sm text-gray-700 border-t space-y-1">
+            {% if message.classes.exists %}
+            <p><strong>Turmas:</strong>
+                {% for class in message.classes.all %}
+                <span class="font-medium">{{ class.name }}</span>{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+            {% endif %}
+
+            {% if message.users.exists %}
+            <p><strong>Usuários:</strong>
+                {% for user in message.users.all %}
+                <span class="font-medium">{{ user.username }}</span>{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
