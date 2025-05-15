@@ -81,6 +81,7 @@ class Class(models.Model):
         verbose_name=_("Série"),
         help_text=_("Série escolar associada à classe.")
     )
+
     teachers = models.ManyToManyField(
         User, 
         related_name='classes_taught',

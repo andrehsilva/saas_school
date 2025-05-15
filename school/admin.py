@@ -12,15 +12,26 @@ class GradeAdmin(admin.ModelAdmin):
     list_display = ('name',)
     search_fields = ('name',)
 
+
 @admin.register(Class)
 class SchoolClassAdmin(admin.ModelAdmin):
-    list_display = ('name', 'grade', 'get_teachers')
+    list_display = ('name', 'grade', 'get_teachers', 'get_teacher_roles')
     list_filter = ('grade',)
     search_fields = ('name',)
 
     def get_teachers(self, obj):
         return ", ".join([t.username for t in obj.teachers.all()])
     get_teachers.short_description = "Professores"
+
+    def get_teacher_roles(self, obj):
+        # Para cada professor da turma, pega os papéis que ele tem
+        roles_list = []
+        for teacher in obj.teachers.all():
+            roles = UserRole.objects.filter(user=teacher).select_related('role')
+            roles_names = [r.role.name for r in roles]
+            roles_list.append(f"{teacher.username}: {', '.join(roles_names)}")
+        return "; ".join(roles_list)
+    get_teacher_roles.short_description = "Perfis dos Professores"
 
 @admin.register(Role)
 class RoleAdmin(admin.ModelAdmin):

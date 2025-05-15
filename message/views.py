@@ -5,6 +5,7 @@ from django.db.models import Q
 from .models import Message, ReceivedMessage, MessageType, MessageReadLog, Event
 
 from school.models import Class, Grade, Student, Parent
+
 from django.contrib import messages
 from django.http import JsonResponse
 
@@ -131,12 +132,36 @@ def message_detail(request, id):
     message = get_object_or_404(Message, id=id)
     return render(request, 'message/message_detail.html', {'message': message})
 
-
-
 @login_required
-def eventos_json(request):
-    eventos = Event.objects.all()
-    print(eventos)
+def event_json(request):
+    user = request.user
+    eventos = Event.objects.none()
+
+    try:
+        # Se for aluno
+        student = Student.objects.get(user=user)
+        turmas = student.classes.all()
+        eventos = Event.objects.filter(classes__in=turmas)
+
+    except Student.DoesNotExist:
+        try:
+            # Se for pai
+            parent = Parent.objects.get(user=user)
+            filhos = parent.children.all()
+            turmas = Class.objects.filter(students__in=filhos).distinct()
+            eventos = Event.objects.filter(classes__in=turmas)
+
+        except Parent.DoesNotExist:
+            # Se for professor (usando role)
+            if hasattr(user, 'role') and user.role == 'teacher':
+                turmas = Class.objects.filter(class_teacher=user)
+                eventos = Event.objects.filter(classes__in=turmas)
+            else:
+                # Coordenadores, diretores ou admin (sem filtro)
+                eventos = Event.objects.all()
+
+    eventos = eventos.distinct()
+
     data = [
         {
             "title": evento.titulo,
@@ -147,5 +172,6 @@ def eventos_json(request):
     ]
     return JsonResponse(data, safe=False)
 
-def calendario_view(request):
-    return render(request, 'message/calendario.html')
+
+def calendar_view(request):
+    return render(request, 'message/calendar.html')

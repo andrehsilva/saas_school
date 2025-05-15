@@ -76,4 +76,45 @@ class MessageTypeAdmin(admin.ModelAdmin):
 admin.site.register(MessageType, MessageTypeAdmin)
 admin.site.register(Message, MessageAdmin)
 admin.site.register(ReceivedMessage)
-admin.site.register(Event)
+
+
+
+class EventAdmin(admin.ModelAdmin):
+    list_display = ('titulo', 'inicio', 'fim', 'get_classes')
+    list_filter = ('inicio',)
+    search_fields = ('titulo',)
+    filter_horizontal = ('classes',)
+    date_hierarchy = 'inicio'
+    ordering = ('-inicio',)
+
+    fieldsets = (
+        (("Informações do Evento"), {
+            'fields': ('titulo', 'inicio', 'fim')
+        }),
+        (("Turmas Destinatárias"), {
+            'fields': ('classes',)
+        }),
+    )
+
+    def get_classes(self, obj):
+        return ", ".join([cls.name for cls in obj.classes.all()])
+    get_classes.short_description = ("Turmas")
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        obj = form.instance
+        notified_users = set()
+
+        # Notificar alunos das turmas selecionadas
+        for turma in obj.classes.all():
+            for aluno in turma.students.all():
+                if aluno.user and aluno.user not in notified_users:
+                    send_notification(
+                        recipient=aluno.user,
+                        title=f"Novo evento: {obj.titulo}",
+                        message=f"Sua turma {turma.name} tem um novo evento agendado.",
+                        url=reverse('message:calendar')
+                    )
+                    notified_users.add(aluno.user)
+
+admin.site.register(Event, EventAdmin)

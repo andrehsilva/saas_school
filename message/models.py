@@ -168,6 +168,7 @@ class Event(models.Model):
     titulo = models.CharField(max_length=200)
     inicio = models.DateTimeField()
     fim = models.DateTimeField(null=True, blank=True)
+    classes = models.ManyToManyField('school.Class', related_name='events')
 
     def __str__(self):
         return self.titulo

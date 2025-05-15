@@ -2,7 +2,13 @@
 {% block content %}
 
 <div class="max-w-7xl mx-auto mt-10 px-4">
-    <h1 class="text-2xl font-bold mb-6">Mensagens</h1>
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">Mensagens</h1>
+        <a href="{% url 'message:calendar' %}"
+           class="inline-flex items-center px-8 py-4 bg-green-600 text-white text-sm font-semibold rounded-lg shadow hover:bg-green-700 transition">
+            📅  Calendário - Meus eventos!
+        </a>
+    </div>
     
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
 
@@ -14,7 +20,8 @@
                 <!-- Cabeçalho -->
                 <div class="bg-gray-50 px-4 py-3 flex justify-between items-center border-b">
                     <div class="flex flex-wrap gap-2 text-lg text-gray-500">
-                        <span class="text-sm text-gray-500 flex">Enviado por:</span><p class="font-bold text-sm text-gray-800">{{ message.created_by.username }}</p>
+                        <span class="text-sm text-gray-500 flex">Enviado por:</span>
+                        <p class="font-bold text-sm text-gray-800">{{ message.created_by.username }}</p>
                         <p class="text-sm text-gray-500">  |  {{ message.created_at|date:"d M Y - H:i" }}</p>
                     </div>
                     {% if message.type %}
@@ -80,7 +87,8 @@
                 {% endif %}
             </div>
         </main>
-        <!-- COLUNA LATERAL ESQUERDA (25%) -->
+
+        <!-- COLUNA LATERAL (25%) -->
         <aside class="md:col-span-1 bg-gray-50 p-4 rounded-2xl border border-gray-200 shadow-sm h-fit">
             <h2 class="text-lg font-semibold mb-4">Filtros</h2>
             <form method="GET" class="space-y-4">
@@ -99,18 +107,21 @@
                         {% endfor %}
                     </select>
                 </div>
-                <p class="block text-sm font-medium text-gray-700">Título ou conteúdo:</p>
-                <div class="flex items-stretch rounded-md shadow-sm w-fit">
-                    <input type="text" name="q" id="q" value="{{ search_query }}"
-                           class="w-40 text-sm border border-gray-300 rounded-l-md px-2 py-1 focus:ring-blue-500 focus:border-blue-500"
-                           placeholder="Digite..." />
-                    <button type="submit"
-                            class="text-sm bg-blue-100 text-blue-700 border border-gray-300 border-l-0 rounded-r-md px-3 py-1 hover:bg-blue-200 transition">
-                        Filtrar
-                    </button>
-                  </div>
+
+                <!-- Filtro por texto -->
+                <div>
+                    <p class="block text-sm font-medium text-gray-700">Título ou conteúdo:</p>
+                    <div class="flex items-stretch rounded-md shadow-sm w-fit">
+                        <input type="text" name="q" id="q" value="{{ search_query }}"
+                               class="w-40 text-sm border border-gray-300 rounded-l-md px-2 py-1 focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="Digite..." />
+                        <button type="submit"
+                                class="text-sm bg-blue-100 text-blue-700 border border-gray-300 border-l-0 rounded-r-md px-3 py-1 hover:bg-blue-200 transition">
+                            Filtrar
+                        </button>
+                    </div>
+                </div>
                   
-                
             </form>
         </aside>
     </div>
