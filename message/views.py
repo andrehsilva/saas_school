@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect
 from django.db.models import Q
-from .models import Message, ReceivedMessage, MessageType, MessageReadLog
+from .models import Message, ReceivedMessage, MessageType, MessageReadLog, Event
 
 from school.models import Class, Grade, Student, Parent
 from django.contrib import messages
@@ -129,4 +129,23 @@ from .models import Message
 
 def message_detail(request, id):
     message = get_object_or_404(Message, id=id)
-    return render(request, 'message_detail.html', {'message': message})
+    return render(request, 'message/message_detail.html', {'message': message})
+
+
+
+@login_required
+def eventos_json(request):
+    eventos = Event.objects.all()
+    print(eventos)
+    data = [
+        {
+            "title": evento.titulo,
+            "start": evento.inicio.isoformat(),
+            "end": evento.fim.isoformat() if evento.fim else None,
+        }
+        for evento in eventos
+    ]
+    return JsonResponse(data, safe=False)
+
+def calendario_view(request):
+    return render(request, 'message/calendario.html')

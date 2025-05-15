@@ -162,3 +162,16 @@ class MessageReadLog(models.Model):
         verbose_name = _("Log de Leitura")
         verbose_name_plural = _("Logs de Leitura")
         unique_together = ('user', 'message')
+
+
+class Event(models.Model):
+    titulo = models.CharField(max_length=200)
+    inicio = models.DateTimeField()
+    fim = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return self.titulo
+
+    class Meta:
+        verbose_name = _("Evento")
+        verbose_name_plural = _("Eventos")

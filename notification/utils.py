@@ -37,4 +37,5 @@ def send_notification(recipient=None, recipient_id=None, title="", message="", u
         message=message,
         url=url
     )
+    print(f"Enviando notificação para")
 

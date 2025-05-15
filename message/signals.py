@@ -4,6 +4,7 @@ from django.dispatch import receiver
 from .models import MessageType
 
 
+
 @receiver(post_migrate)
 def create_default_message_types(sender, **kwargs):
     """Cria os tipos de mensagem padrão com cores após a migração."""
@@ -22,4 +23,5 @@ def create_default_message_types(sender, **kwargs):
 
         for type_name, color in default_types.items():
             MessageType.objects.get_or_create(name=type_name, defaults={'color': color})
+
 
