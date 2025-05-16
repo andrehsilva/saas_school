@@ -59,6 +59,12 @@ class Grade(models.Model):
         verbose_name=_("Nome da Série"),
         help_text=_("Nome da série escolar (ex: 1º Ano, 6ª Série).")
     )
+    coordinators = models.ManyToManyField(
+        User,
+        related_name='coordinated_grades',
+        verbose_name="Coordenadores"
+    )
+
 
     def __str__(self):
         return self.name
