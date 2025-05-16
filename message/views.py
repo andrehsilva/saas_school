@@ -72,13 +72,11 @@ def message_detail(request, id):
     
     # Verificar se o usuário tem permissão para ver a mensagem
     has_permission = (
-        # É o remetente
-        message.created_by == user or
-        # Está na lista de usuários destinatários
-        message.users.filter(id=user.id).exists() or
-        # Pertence a uma turma destinatária
-        user.student.classes_assigned.filter(id__in=message.classes.values_list('id', flat=True)).exists()
-    )
+    message.created_by == user or
+    message.users.filter(id=user.id).exists() or
+    # Aluno matriculado nas turmas da mensagem:
+    user.student.classes_assigned.filter(id__in=message.classes.values_list('id', flat=True)).exists()
+)
     
     if not has_permission:
         raise PermissionDenied("Você não tem permissão para visualizar esta mensagem")
@@ -108,9 +106,10 @@ def event_json(request):
         
         # Professor/Coordenador/Diretor
         except Parent.DoesNotExist:
+            # Novo (usando related_name do GradeCoordinator):
             turmas = Class.objects.filter(
-                Q(teachers=user) | 
-                Q(grade__coordinators=user)
+                Q(teachers=user) |
+                Q(grade__grade_coordinators__user=user)  # Acesso via GradeCoordinator
             )
             eventos = Event.objects.filter(classes__in=turmas)
     

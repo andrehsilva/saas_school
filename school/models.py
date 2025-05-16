@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 
 
 
@@ -47,8 +48,8 @@ class UserRole(models.Model):
         return f"{self.user.username} - {self.role.name}"
 
     class Meta:
-        verbose_name = _("Papel do Usuário")
-        verbose_name_plural = _("Papéis dos Usuários")
+        verbose_name = "Papel Geral do Usuário"
+        verbose_name_plural = "Papéis Gerais dos Usuários"
         unique_together = ('user', 'role')
 
 
@@ -59,52 +60,115 @@ class Grade(models.Model):
         verbose_name=_("Nome da Série"),
         help_text=_("Nome da série escolar (ex: 1º Ano, 6ª Série).")
     )
+    
     coordinators = models.ManyToManyField(
         User,
+        through='GradeCoordinator',  # Usando o modelo corrigido
         related_name='coordinated_grades',
-        verbose_name="Coordenadores"
+        verbose_name=_("Designações")
     )
-
+    class Meta:
+        verbose_name = _("Série")
+        verbose_name_plural = _("Séries")
+        permissions = [
+            ("global_director_access", _("Acesso completo de diretor a todas as séries")),
+        ]
 
     def __str__(self):
         return self.name
 
+    def current_coordinators(self):
+        return self.grade_coordinators.filter(
+            start_date__lte=timezone.now(),
+            end_date__gte=timezone.now()
+        )
+
+class GradeCoordinator(models.Model):
+    ROLE_CHOICES = (
+        ('CO', _('Coordenador')),
+        ('DI', _('Diretor de Série')),
+    )
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name=_("Usuário"),
+        related_name='grade_coordinations'
+    )
+    
+    grade = models.ForeignKey(  # ForeignKey para Grade
+        Grade,
+        on_delete=models.CASCADE,
+        verbose_name=_("Série"),
+        related_name='grade_coordinators'
+    )
+    
+    role = models.CharField(
+        max_length=2,
+        choices=ROLE_CHOICES,
+        default='CO',
+        verbose_name=_("Tipo de Cargo")
+    )
+    
+    start_date = models.DateField(
+        verbose_name=_("Data de Início")
+    )
+    
+    end_date = models.DateField(
+        verbose_name=_("Data de Término"),
+        null=True,
+        blank=True
+    )
+
     class Meta:
-        verbose_name = _("Série")
-        verbose_name_plural = _("Séries")
+        verbose_name = _("Designação de Cargo")
+        verbose_name_plural = _("Designações de Cargos")
+        unique_together = ('user', 'grade', 'role')  # Campos válidos
+
+    def __str__(self):
+        return f"{self.user} - {self.get_role_display()} ({self.grade})"
+    
 
 
-# Classe
-class Class(models.Model):
+
+
+class Class(models.Model):  # Nome alterado
     name = models.CharField(
         max_length=50,
-        verbose_name=_("Nome da Classe"),
-        help_text=_("Nome ou código identificador da classe (ex: Turma A, 6B).")
+        verbose_name=_("Turma"),
+        help_text=_("Identificador único da turma (ex: Turma A, 6º Ano B).")  # Ajuste no help_text
     )
     grade = models.ForeignKey(
         Grade, 
         on_delete=models.CASCADE,
         verbose_name=_("Série"),
-        help_text=_("Série escolar associada à classe.")
+        related_name='classrooms',  # Novo related_name
+        help_text=_("Série escolar associada à turma.")
     )
     teachers = models.ManyToManyField(
         User, 
-        related_name='classes_taught',
+        related_name='classrooms_taught',  # Atualizado
         verbose_name=_("Professores"),
-        help_text=_("Professores responsáveis por esta classe.")
+        help_text=_("Professores responsáveis por esta turma.")
     )
     is_regular = models.BooleanField(
         default=True,
-        verbose_name=_("Classe Regular"),
-        help_text=_("Indica se esta classe é uma classe regular.")
+        verbose_name=_("Turma Regular"),
+        help_text=_("Indica se esta é uma turma regular.")
+    )
+    academic_year = models.PositiveSmallIntegerField(  # Novo campo sugerido
+        verbose_name=_("Ano Letivo"),
+        help_text=_("Ano de referência para a turma"),
+        default=timezone.now().year
     )
 
     def __str__(self):
-        return self.name
+        return f"{self.grade.name} - {self.name} ({self.academic_year})"  # Melhoria na representação
 
     class Meta:
-        verbose_name = _("Classe")
-        verbose_name_plural = _("Classes")
+        verbose_name = _("Turma")
+        verbose_name_plural = _("Turmas")
+        unique_together = ('name', 'grade', 'academic_year')  # Garante unicidade
 
 
 # Pais
@@ -131,7 +195,6 @@ class Parent(models.Model):
         verbose_name_plural = _("Pais")
 
 
-# Alunos
 class Student(models.Model):
     user = models.OneToOneField(
         User, 
@@ -139,11 +202,11 @@ class Student(models.Model):
         verbose_name=_("Usuário"),
         help_text=_("Usuário correspondente ao aluno.")
     )
-    classes_assigned = models.ManyToManyField(
+    classes_assigned = models.ManyToManyField(  # Nome do campo atualizado
         Class, 
         related_name='students',
-        verbose_name=_("Classes"),
-        help_text=_("Classes nas quais o aluno está matriculado.")
+        verbose_name=_("Turmas"),
+        help_text=_("Turmas nas quais o aluno está matriculado.")
     )
 
     def __str__(self):
@@ -152,6 +215,7 @@ class Student(models.Model):
     class Meta:
         verbose_name = _("Aluno")
         verbose_name_plural = _("Alunos")
+
 
         
 class Subject(models.Model):

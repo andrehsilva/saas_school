@@ -56,7 +56,7 @@ class MessageAdmin(admin.ModelAdmin):
         grades = Grade.objects.filter(id__in=grade_ids)
 
         for grade in grades:
-            for turma in grade.class_set.all():
+            for turma in grade.classrooms.all():
                 for aluno in turma.students.all():
                     if aluno.user not in notified_users:
                         send_notification(
