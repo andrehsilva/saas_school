@@ -81,7 +81,6 @@ class Class(models.Model):
         verbose_name=_("Série"),
         help_text=_("Série escolar associada à classe.")
     )
-
     teachers = models.ManyToManyField(
         User, 
         related_name='classes_taught',
@@ -148,7 +147,7 @@ class Student(models.Model):
         verbose_name = _("Aluno")
         verbose_name_plural = _("Alunos")
 
-
+        
 class Subject(models.Model):
     name = models.CharField(
         max_length=100,

@@ -37,14 +37,15 @@ SHARED_APPS = [
     
     'django_tenants',  # obrigatório primeiro
     'a_tenant_manager',
-   
-    'django.contrib.admin',
+    'allauth',
+    'allauth.account',
+    'django.contrib.auth', 
     'django.contrib.contenttypes',  
-    'django.contrib.auth',
     'django.contrib.sessions',
-    'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.admin',
+    'django.contrib.sites',
     'colorfield',
     'django_cleanup.apps.CleanupConfig',
     'django_htmx',
@@ -54,11 +55,13 @@ SHARED_APPS = [
 
 TENANT_APPS = [
  
-    'django.contrib.auth',
+    'django.contrib.auth', 
+ 
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.admin',
 
     # Allauth por tenant
     'allauth',

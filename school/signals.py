@@ -19,3 +19,4 @@ def create_default_roles(sender, **kwargs):
 
         # Garante que todas as classes criadas sejam regulares
         Class.objects.filter(is_regular__isnull=True).update(is_regular=True)    
+
