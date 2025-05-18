@@ -2,34 +2,23 @@
 from django.db.models.signals import post_migrate
 from django.dispatch import receiver
 from .models import MessageType
-from school.models import Role, Class
-
 
 
 @receiver(post_migrate)
-def create_default_roles(sender, **kwargs):
-    if sender.name == 'school':
-        default_roles = {
-            'Director': {'can_post': True, 'description': 'Acesso completo de diretor'},
-            'Coordinator': {'can_post': True, 'description': 'Coordenador de série'},
-            'Teacher': {'can_post': True, 'description': 'Professor da turma'},
-            'Parent': {'can_post': False, 'description': 'Responsável por aluno'},
-            'Student': {'can_post': False, 'description': 'Estudante'}
+def create_default_message_types(sender, **kwargs):
+    """Cria os tipos de mensagem padrão com cores após a migração."""
+    if sender.name == 'message':
+        default_types = {
+            'Pedagógica': '#3498db',  # Azul
+            'Dia-a-dia': '#2ecc71',  # Verde
+            'Informativa': '#f1c40f',  # Amarelo
+            'Evento': '#9b59b6',  # Roxo
+            'Atenção/Comunicado Importante': '#e74c3c',  # Vermelho
+            'Saúde/Enfermaria': '#1abc9c',  # Verde-água
+            'Cultural e Social': '#e67e22',  # Laranja
+            'Feedback de Pais/Entrevistas': '#95a5a6',  # Cinza
+            'Reconhecimento e Premiações': '#ff69b4',  # Rosa
         }
 
-        for role_name, config in default_roles.items():
-            try:
-                role_obj, created = Role.objects.get_or_create(
-                    name=role_name,
-                    defaults=config
-                )
-                # Atualiza se já existe e há diferenças
-                if not created and (role_obj.can_post != config['can_post'] or role_obj.description != config['description']):
-                    role_obj.can_post = config['can_post']
-                    role_obj.description = config['description']
-                    role_obj.save()
-            except Exception as e:
-                print(f"Erro ao processar papel {role_name}: {str(e)}")
-
-        # Garante valor padrão para classes (redundante se default=True no model)
-        Class.objects.filter(is_regular__isnull=True).update(is_regular=True)
+        for type_name, color in default_types.items():
+            MessageType.objects.get_or_create(name=type_name, defaults={'color': color})

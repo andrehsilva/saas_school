@@ -88,30 +88,10 @@ def message_detail(request, id):
 @login_required
 def event_json(request):
     user = request.user
-    eventos = Event.objects.none()
+    context = get_user_visibility_context(user)  # Usando o contexto centralizado
     
-    # Aluno
-    try:
-        student = Student.objects.get(user=user)
-        turmas = student.classes_assigned.all()
-        eventos = Event.objects.filter(classes__in=turmas)
-    
-    # Responsável
-    except Student.DoesNotExist:
-        try:
-            parent = Parent.objects.get(user=user)
-            filhos = parent.children.all()
-            turmas = Class.objects.filter(students__in=filhos)
-            eventos = Event.objects.filter(classes__in=turmas)
-        
-        # Professor/Coordenador/Diretor
-        except Parent.DoesNotExist:
-            # Novo (usando related_name do GradeCoordinator):
-            turmas = Class.objects.filter(
-                Q(teachers=user) |
-                Q(grade__grade_coordinators__user=user)  # Acesso via GradeCoordinator
-            )
-            eventos = Event.objects.filter(classes__in=turmas)
+    # Obter eventos baseados nas turmas do contexto
+    eventos = Event.objects.filter(classes__in=context["user_classes"])
     
     # Formatar dados
     data = [{

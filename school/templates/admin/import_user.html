@@ -1,0 +1,14 @@
+<!-- templates/admin/import_users.html -->
+{% extends "admin/change_list.html" %}
+
+{% block object-tools %}
+<div class="import-export-buttons">
+    <form action="{% url 'school:import-users' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="csv_file" accept=".csv">
+        <button type="submit" class="button">Importar Usuários</button>
+    </form>
+    <a href="{% url 'school:export-users' %}" class="button">Exportar Usuários</a>
+</div>
+{{ block.super }}
+{% endblock %}

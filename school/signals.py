@@ -1,22 +1,34 @@
+# message/signals.py
 from django.db.models.signals import post_migrate
 from django.dispatch import receiver
 from .models import Role, Class
 
-# Signals
+
+
 @receiver(post_migrate)
 def create_default_roles(sender, **kwargs):
-    """Cria os papéis padrão sempre que o app 'school' for migrado."""
     if sender.name == 'school':
         default_roles = {
-            'Director': True,
-            'Coordinator': True,
-            'Teacher': True,
-            'Parent': False,
-            'Student': False
+            'Diretor': {'can_post': True, 'description': 'Acesso completo de diretor'},
+            'Coordinador': {'can_post': True, 'description': 'Coordenador de série'},
+            'Professor': {'can_post': True, 'description': 'Professor da turma'},
+            'Responsável': {'can_post': False, 'description': 'Responsável por aluno'},
+            'Aluno': {'can_post': False, 'description': 'Estudante'}
         }
-        for role, can_post in default_roles.items():
-            Role.objects.get_or_create(name=role, defaults={'can_post': can_post})
 
-        # Garante que todas as classes criadas sejam regulares
-        Class.objects.filter(is_regular__isnull=True).update(is_regular=True)    
+        for role_name, config in default_roles.items():
+            try:
+                role_obj, created = Role.objects.get_or_create(
+                    name=role_name,
+                    defaults=config
+                )
+                # Atualiza se já existe e há diferenças
+                if not created and (role_obj.can_post != config['can_post'] or role_obj.description != config['description']):
+                    role_obj.can_post = config['can_post']
+                    role_obj.description = config['description']
+                    role_obj.save()
+            except Exception as e:
+                print(f"Erro ao processar papel {role_name}: {str(e)}")
 
+        # Garante valor padrão para classes (redundante se default=True no model)
+        Class.objects.filter(is_regular__isnull=True).update(is_regular=True)

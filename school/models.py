@@ -3,15 +3,19 @@ from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
-
-
 # Papéis (Roles)
 class Role(models.Model):
     name = models.CharField(
-        max_length=50, 
-        unique=True, 
+        max_length=50,
+        unique=True,
         verbose_name=_("Nome"),
         help_text=_("Nome do papel ou função (ex: Professor, Responsável, Aluno).")
+    )
+    description = models.TextField(
+        _("Descrição"),
+        blank=True,
+        null=True,
+        help_text=_("Descrição opcional do papel.")
     )
     can_post = models.BooleanField(
         default=True,
@@ -27,18 +31,17 @@ class Role(models.Model):
         verbose_name_plural = _("Papéis")
 
 
-# Relacionamento entre Usuário e Papel
 class UserRole(models.Model):
     user = models.ForeignKey(
-        User, 
-        on_delete=models.CASCADE, 
+        User,
+        on_delete=models.CASCADE,
         related_name="roles",
         verbose_name=_("Usuário"),
         help_text=_("Usuário associado ao papel.")
     )
     role = models.ForeignKey(
-        Role, 
-        on_delete=models.CASCADE, 
+        Role,
+        on_delete=models.CASCADE,
         related_name="users",
         verbose_name=_("Papel"),
         help_text=_("Papel atribuído ao usuário.")
@@ -48,106 +51,67 @@ class UserRole(models.Model):
         return f"{self.user.username} - {self.role.name}"
 
     class Meta:
-        verbose_name = "Papel Geral do Usuário"
-        verbose_name_plural = "Papéis Gerais dos Usuários"
+        verbose_name = _("Papel Geral do Usuário")
+        verbose_name_plural = _("Papéis Gerais dos Usuários")
         unique_together = ('user', 'role')
 
 
-# Série
 class Grade(models.Model):
     name = models.CharField(
         max_length=50,
+        unique=True,
         verbose_name=_("Nome da Série"),
-        help_text=_("Nome da série escolar (ex: 1º Ano, 6ª Série).")
+        help_text=_("Ex: 1º Ano, 6ª Série")
     )
-    
+    # Coordenadores e diretores diretamente vinculados à série
     coordinators = models.ManyToManyField(
         User,
-        through='GradeCoordinator',  # Usando o modelo corrigido
+        blank=True,
         related_name='coordinated_grades',
-        verbose_name=_("Designações")
+        verbose_name=_("Coordenadores"),
+        help_text=_("Usuários com papel de coordenação nesta série")
     )
-    class Meta:
-        verbose_name = _("Série")
-        verbose_name_plural = _("Séries")
-        permissions = [
-            ("global_director_access", _("Acesso completo de diretor a todas as séries")),
-        ]
+    directors = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name='directed_grades',
+        verbose_name=_("Diretores de Série"),
+        help_text=_("Usuários com papel de direção nesta série")
+    )
 
+    colaborator = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name='colaborated_grades',
+        verbose_name=_("Colaboradores de Série"),
+        help_text=_("Usuários com papel de colaborador nesta série")
+    )
+    
     def __str__(self):
         return self.name
 
-    def current_coordinators(self):
-        return self.grade_coordinators.filter(
-            start_date__lte=timezone.now(),
-            end_date__gte=timezone.now()
-        )
-
-class GradeCoordinator(models.Model):
-    ROLE_CHOICES = (
-        ('CO', _('Coordenador')),
-        ('DI', _('Diretor de Série')),
-    )
-
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        verbose_name=_("Usuário"),
-        related_name='grade_coordinations'
-    )
-    
-    grade = models.ForeignKey(  # ForeignKey para Grade
-        Grade,
-        on_delete=models.CASCADE,
-        verbose_name=_("Série"),
-        related_name='grade_coordinators'
-    )
-    
-    role = models.CharField(
-        max_length=2,
-        choices=ROLE_CHOICES,
-        default='CO',
-        verbose_name=_("Tipo de Cargo")
-    )
-    
-    start_date = models.DateField(
-        verbose_name=_("Data de Início")
-    )
-    
-    end_date = models.DateField(
-        verbose_name=_("Data de Término"),
-        null=True,
-        blank=True
-    )
-
     class Meta:
-        verbose_name = _("Designação de Cargo")
-        verbose_name_plural = _("Designações de Cargos")
-        unique_together = ('user', 'grade', 'role')  # Campos válidos
+        verbose_name = _("Série")
+        verbose_name_plural = _("Séries")
 
-    def __str__(self):
-        return f"{self.user} - {self.get_role_display()} ({self.grade})"
     
 
-
-
-
-class Class(models.Model):  # Nome alterado
+class Class(models.Model):
     name = models.CharField(
         max_length=50,
         verbose_name=_("Turma"),
-        help_text=_("Identificador único da turma (ex: Turma A, 6º Ano B).")  # Ajuste no help_text
+        help_text=_("Identificador único da turma (ex: Turma A, 6º Ano B).")
     )
     grade = models.ForeignKey(
-        Grade, 
+        Grade,
         on_delete=models.CASCADE,
+        related_name='classrooms',
         verbose_name=_("Série"),
-        related_name='classrooms',  # Novo related_name
-        help_text=_("Série escolar associada à turma.")
+        help_text=_("Séries escolares associada à turma.")
     )
     teachers = models.ManyToManyField(
-        User, 
-        related_name='classrooms_taught',  # Atualizado
+        User,
+        related_name='classrooms_taught',
         verbose_name=_("Professores"),
         help_text=_("Professores responsáveis por esta turma.")
     )
@@ -156,54 +120,30 @@ class Class(models.Model):  # Nome alterado
         verbose_name=_("Turma Regular"),
         help_text=_("Indica se esta é uma turma regular.")
     )
-    academic_year = models.PositiveSmallIntegerField(  # Novo campo sugerido
+    academic_year = models.PositiveSmallIntegerField(
+        default=timezone.now().year,
         verbose_name=_("Ano Letivo"),
-        help_text=_("Ano de referência para a turma"),
-        default=timezone.now().year
+        help_text=_("Ano de referência para a turma.")
     )
 
     def __str__(self):
-        return f"{self.grade.name} - {self.name} ({self.academic_year})"  # Melhoria na representação
+        return f"{self.grade.name} - {self.name} ({self.academic_year})"
 
     class Meta:
         verbose_name = _("Turma")
         verbose_name_plural = _("Turmas")
-        unique_together = ('name', 'grade', 'academic_year')  # Garante unicidade
-
-
-# Pais
-class Parent(models.Model):
-    user = models.OneToOneField(
-        User, 
-        on_delete=models.CASCADE,
-        related_name='parent_profile',  
-        verbose_name=_("Usuário"),
-        help_text=_("Usuário do pai, mãe ou responsável.")
-    )
-    children = models.ManyToManyField(
-        'Student', 
-        related_name='parents',
-        verbose_name=_("Filhos"),
-        help_text=_("Alunos associados a este responsável.")
-    )
-
-    def __str__(self):
-        return f"Parent of {', '.join([child.user.username for child in self.children.all()])}"
-
-    class Meta:
-        verbose_name = _("Pai/Mãe")
-        verbose_name_plural = _("Pais")
+        unique_together = ('name', 'grade', 'academic_year')
 
 
 class Student(models.Model):
     user = models.OneToOneField(
-        User, 
+        User,
         on_delete=models.CASCADE,
         verbose_name=_("Usuário"),
         help_text=_("Usuário correspondente ao aluno.")
     )
-    classes_assigned = models.ManyToManyField(  # Nome do campo atualizado
-        Class, 
+    classes_assigned = models.ManyToManyField(
+        Class,
         related_name='students',
         verbose_name=_("Turmas"),
         help_text=_("Turmas nas quais o aluno está matriculado.")
@@ -217,7 +157,27 @@ class Student(models.Model):
         verbose_name_plural = _("Alunos")
 
 
-        
+class Parent(models.Model):
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='parent_profile',
+        verbose_name=_("Usuário")
+    )
+    children = models.ManyToManyField(
+        Student,
+        related_name='parents',
+        verbose_name=_("Filhos")
+    )
+
+    def __str__(self):
+        return f"Responsável: {self.user.get_full_name()}"
+
+    class Meta:
+        verbose_name = _("Pai/Mãe")
+        verbose_name_plural = _("Pais")
+
+
 class Subject(models.Model):
     name = models.CharField(
         max_length=100,
@@ -234,14 +194,12 @@ class Subject(models.Model):
         Grade,
         on_delete=models.CASCADE,
         related_name="subjects",
-        verbose_name=_("Série"),
-        help_text=_("Série à qual essa disciplina pertence.")
+        verbose_name=_("Série")
     )
     teachers = models.ManyToManyField(
         User,
         related_name="subjects_taught",
-        verbose_name=_("Professores"),
-        help_text=_("Professores que lecionam essa disciplina.")
+        verbose_name=_("Professores")
     )
 
     def __str__(self):

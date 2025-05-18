@@ -1,8 +1,6 @@
 from django.db.models import Q
 from books.models import Document
-from school.models import GradeCoordinator
-from django.utils import timezone
-from message.utils import get_user_visibility_context  # Ou copie a função para cá
+from message.utils import get_user_visibility_context  # Importação corrigida
 
 def get_accessible_documents(user):
     """
@@ -10,8 +8,8 @@ def get_accessible_documents(user):
     """
     context = get_user_visibility_context(user)
     
-    # Diretores globais e coordenadores/diretores ativos veem tudo
-    if context.get('is_global_director') or context.get('is_coordinator'):
+    # Acesso total para diretores globais e gestores de série
+    if context.get('is_global_director') or context.get('has_coordination_role'):
         return Document.objects.all()
     
     # Filtros para outros usuários
@@ -36,13 +34,11 @@ def has_document_access(user, document):
     # Acesso direto ou permissão global
     if document.target_users.filter(id=user.id).exists():
         return True
-    if context.get('is_global_director') or context.get('is_coordinator'):
+    if context.get('is_global_director') or context.get('has_coordination_role'):
         return True
     
     # Acesso via turmas/séries
-    if document.target_classes.filter(id__in=context["user_classes"]).exists():
-        return True
-    if document.target_grades.filter(id__in=context["user_grades"]).exists():
-        return True
-    
-    return False
+    return (
+        document.target_classes.filter(id__in=context["user_classes"]).exists() or
+        document.target_grades.filter(id__in=context["user_grades"]).exists()
+    )

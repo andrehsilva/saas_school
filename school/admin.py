@@ -1,165 +1,193 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
-from django.urls import path
-from django.contrib.admin import SimpleListFilter
-from django.utils.translation import gettext_lazy as _
-from .models import Grade, Class, Role, Parent, Student, UserRole, Subject, GradeCoordinator
-from .admin_views import import_users_view
-from django.utils import timezone
-from django.contrib.auth.models import Permission
-from django.contrib.contenttypes.models import ContentType
+from django.urls import path, reverse
+from django.utils.html import format_html
+from django.http import HttpResponseRedirect
+from django.db.models import Count
 
-class CustomUserAdmin(UserAdmin):
-    fieldsets = (
-        (None, {'fields': ('username', 'password')}),
-        (_('Informações Pessoais'), {'fields': ('first_name', 'last_name', 'email')}),
-        (_('Permissões'), {
-            'fields': ('is_active', 'is_staff', 'is_superuser', 'groups'),
-        }),
-        (_('Permissões Específicas'), {  # Nova seção adicionada
-            'fields': ('user_permissions',),
-        }),
-        (_('Datas Importantes'), {'fields': ('last_login', 'date_joined')}),
-    )
+from .models import (
+    Role,
+    UserRole,
+    Grade,
+    Class,
+    Student,
+    Parent,
+    Subject,
+)
+from .admin_views import import_users_view, export_users_view
 
+# —————————————————————————————————————————————
+# 1) Registre seu Role ANTES de usá‑lo em autocomplete_fields
+# —————————————————————————————————————————————
+@admin.register(Role)
+class RoleAdmin(admin.ModelAdmin):
+    list_display    = ('name', 'description', 'can_post')
+    search_fields   = ('name',)
+    ordering        = ('name',)
+
+
+# —————————————————————————————————————————————
+# 2) Inlines para o UserAdmin
+# —————————————————————————————————————————————
+class UserRoleInline(admin.TabularInline):
+    model = UserRole
+    extra = 0
+    autocomplete_fields = ['role']  # agora funciona sem erro
+
+
+class StudentInline(admin.StackedInline):
+    model = Student
+    fk_name = 'user'
+    extra = 0
+    max_num = 1
+    filter_horizontal = ['classes_assigned']
+
+
+class ParentInline(admin.StackedInline):
+    model = Parent
+    fk_name = 'user'
+    extra = 0
+    max_num = 1
+    filter_horizontal = ['children']
+
+
+# —————————————————————————————————————————————
+# 3) Custom UserAdmin com botões Import/Export
+# —————————————————————————————————————————————
+class CustomUserAdmin(BaseUserAdmin):
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
-            path("import-users/", self.admin_site.admin_view(import_users_view), name="import-users"),
+            path(
+                'import-users/',
+                self.admin_site.admin_view(import_users_view),
+                name='import-users'
+            ),
+            path(
+                'export-users/',
+                self.admin_site.admin_view(export_users_view),
+                name='export-users'
+            ),
         ]
         return custom_urls + urls
 
-# Substitua o UserAdmin padrão pelo CustomUserAdmin
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context.update({
+            'has_import_export': True,
+            'import_url': reverse('admin:import-users'),
+            'export_url': reverse('admin:export-users')
+        })
+        return super().changelist_view(request, extra_context=extra_context)
+
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
 
 
-class GradeCoordinatorInline(admin.TabularInline):
-    model = GradeCoordinator
-    extra = 1
-    fields = ('user', 'role', 'grade', 'start_date', 'end_date')  # Campo grade adicionado
-    autocomplete_fields = ['user', 'grade']  # Para busca rápida
+# —————————————————————————————————————————————
+# 4) Admins dos demais modelos
+# —————————————————————————————————————————————
+@admin.register(UserRole)
+class UserRoleAdmin(admin.ModelAdmin):
+    list_display        = ('user', 'role')
+    list_filter         = ('role',)
+    autocomplete_fields = ['user', 'role']
+    search_fields       = ('user__username', 'role__name')
+    list_select_related = ('user', 'role')
+
 
 @admin.register(Grade)
 class GradeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'current_coordinators')
-    inlines = [GradeCoordinatorInline]  # Adiciona as designações como inline
-    search_fields = ('name',)
+    list_display        = ('name', 'coordinators_count', 'directors_count', 'colaborator_count')
+    filter_horizontal   = ('coordinators', 'directors', 'colaborator')
+    search_fields       = ('name',)
 
-    class Meta:
-        permissions = [
-            ("global_director_access", "Acesso completo de diretor a todas as séries"),
-        ]
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(
+            _coordinators = Count('coordinators'),
+            _directors    = Count('directors'),
+            _colaborators = Count('colaborator'),
+        )
+
+    def coordinators_count(self, obj): return obj._coordinators
+    def directors_count(self,   obj): return obj._directors
+    def colaborator_count(self,  obj): return obj._colaborators
+
+    coordinators_count.admin_order_field = '_coordinators'
+    directors_count.admin_order_field    = '_directors'
+    colaborator_count.admin_order_field  = '_colaborators'
+
+    coordinators_count.short_description = "Coordenadores"
+    directors_count.short_description    = "Diretores"
+    colaborator_count.short_description  = "Colaboradores"
 
 
-
-# Configuração do GradeCoordinatorAdmin
-
-@admin.register(GradeCoordinator)
-class GradeCoordinatorAdmin(admin.ModelAdmin):
-    list_display = ('user', 'grade', 'role', 'start_date', 'end_date', 'is_active')
-    list_filter = ('grade', 'role')
-    search_fields = ('user__username', 'grade__name')
-    
-    def is_active(self, obj):
-        today = timezone.now().date()
-        return obj.start_date <= today and (obj.end_date is None or obj.end_date >= today)
-    is_active.boolean = True
-
-# Turmas (Classes)
 @admin.register(Class)
-class SchoolClassAdmin(admin.ModelAdmin):
-    list_display = ('name', 'grade', 'teachers_count', 'students_count')
-    list_filter = ('grade', 'teachers')
-    search_fields = ('name', 'grade__name')
-    filter_horizontal = ('teachers',)
+class ClassAdmin(admin.ModelAdmin):
+    list_display        = ('name', 'grade', 'academic_year', 'is_regular', 'teachers_count')
+    list_filter         = ('grade', 'academic_year', 'is_regular')
+    filter_horizontal   = ('teachers',)
     autocomplete_fields = ['grade']
-    
-    def teachers_count(self, obj):
-        return obj.teachers.count()
-    teachers_count.short_description = _("Qtd. Professores")
-    
-    def students_count(self, obj):
-        return obj.students.count()
-    students_count.short_description = _("Qtd. Alunos")
+    search_fields       = ('name', 'grade__name')
+    list_select_related = ('grade',)
 
-# Alunos e Responsáveis
-class ClassFilter(SimpleListFilter):
-    title = _('Turma')
-    parameter_name = 'class'
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(
+            _teachers = Count('teachers')
+        )
+    def teachers_count(self, obj): return obj._teachers
 
-    def lookups(self, request, model_admin):
-        return Class.objects.values_list('id', 'name')
+    teachers_count.admin_order_field = '_teachers'
+    teachers_count.short_description    = "Professores"
 
-    def queryset(self, request, queryset):
-        if self.value():
-            return queryset.filter(classes_assigned__id=self.value())
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ('user', 'classes_list')
-    search_fields = ('user__username', 'user__first_name', 'user__last_name')
-    list_filter = (ClassFilter, 'classes_assigned__grade')
-    filter_horizontal = ('classes_assigned',)
-    
-    def classes_list(self, obj):
-        return ", ".join([c.name for c in obj.classes_assigned.all()[:3]])
-    classes_list.short_description = _("Turmas")
+    list_display        = ('user', 'classes_count')
+    raw_id_fields       = ('user',)
+    filter_horizontal   = ('classes_assigned',)
+    search_fields       = ('user__username',)
+    list_select_related = ('user',)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(
+            _classes = Count('classes_assigned')
+        )
+    def classes_count(self, obj): return obj._classes
+
+    classes_count.admin_order_field = '_classes'
+    classes_count.short_description    = "Turmas"
+
 
 @admin.register(Parent)
 class ParentAdmin(admin.ModelAdmin):
-    list_display = ('user', 'children_list')
-    search_fields = ('user__username', 'children__user__username')
-    filter_horizontal = ('children',)
-    
-    def children_list(self, obj):
-        return ", ".join([child.user.username for child in obj.children.all()[:3]])
-    children_list.short_description = _("Filhos")
+    list_display        = ('user', 'children_list')
+    raw_id_fields       = ('user',)
+    filter_horizontal   = ('children',)
+    search_fields       = ('user__username', 'children__user__username')
+    list_select_related = ('user',)
 
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related('children__user')
+    def children_list(self, obj):
+        return ", ".join([c.user.username for c in obj.children.all()])
 
-# Disciplinas e Papéis
+    children_list.short_description = "Filhos"
+
+
 @admin.register(Subject)
 class SubjectAdmin(admin.ModelAdmin):
-    list_display = ('name', 'code', 'grade', 'teachers_count')
-    search_fields = ('name', 'code')
-    list_filter = ('grade',)
-    filter_horizontal = ('teachers',)
-    
-    def teachers_count(self, obj):
-        return obj.teachers.count()
-    teachers_count.short_description = _("Qtd. Professores")
-
-@admin.register(Role)
-class RoleAdmin(admin.ModelAdmin):
-    list_display = ('name', 'can_post')
-    list_filter = ('can_post',)
-    search_fields = ('name',)
-
-@admin.register(UserRole)
-class UserRoleAdmin(admin.ModelAdmin):
-    list_display = ('user', 'role')  # Campo corrigido
-    list_filter = ('role', 'user__is_staff')
-    search_fields = ('user__username', 'role__name')
-    verbose_name = _("Papel do Usuário")
-    verbose_name_plural = _("Papéis dos Usuários")
-
-    def assignment_date(self, obj):
-        """Data de atribuição do papel (se necessário)"""
-        # Implemente esta lógica se tiver um campo de data no modelo
-        return "N/A"
-    assignment_date.short_description = _("Data de Atribuição")
-
-
-class CustomPermissionAdmin(admin.ModelAdmin):
-    list_display = ('name', 'codename', 'content_type')
-    list_filter = ('content_type',)
+    list_display        = ('name', 'code', 'grade', 'teachers_count')
+    list_filter         = ('grade',)
+    filter_horizontal   = ('teachers',)
+    autocomplete_fields = ['grade']
+    search_fields       = ('name', 'code', 'grade__name')
+    list_select_related = ('grade',)
 
     def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        grade_ct = ContentType.objects.get_for_model(Grade)
-        return qs.filter(content_type=grade_ct)
+        return super().get_queryset(request).annotate(_teachers=Count('teachers'))
+    def teachers_count(self, obj): return obj._teachers
 
-admin.site.register(Permission, CustomPermissionAdmin)
+    teachers_count.admin_order_field = '_teachers'
+    teachers_count.short_description    = "Professores"
