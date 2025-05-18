@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
 from school.models import Class
+from django.urls import reverse
 
 
 class MessageType(models.Model):
@@ -94,6 +95,9 @@ class Message(models.Model):
 
     def __str__(self):
         return self.title
+    
+    def get_absolute_url(self):
+        return reverse('message:message_detail', args=['message', self.id])
 
     class Meta:
         verbose_name = _("Mensagem")

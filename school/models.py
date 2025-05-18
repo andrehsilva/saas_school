@@ -128,7 +128,15 @@ class Class(models.Model):
 
     def __str__(self):
         return f"{self.grade.name} - {self.name} ({self.academic_year})"
+    
 
+    def get_all_members(self):
+        members = list(self.teachers.all())
+        members += [student.user for student in self.students.all()]
+        members += list(self.grade.coordinators.all())
+        members += list(self.grade.directors.all())
+        return list(set(members))
+    
     class Meta:
         verbose_name = _("Turma")
         verbose_name_plural = _("Turmas")

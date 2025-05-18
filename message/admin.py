@@ -3,6 +3,8 @@ from django.urls import reverse
 from .models import Message, MessageType, ReceivedMessage, Event
 from notification.utils import send_notification
 from school.models import Class, Student, Grade
+from django.urls import reverse
+from django.http import HttpResponseRedirect
 
 
 class MessageAdmin(admin.ModelAdmin):
@@ -27,6 +29,11 @@ class MessageAdmin(admin.ModelAdmin):
         super().save_related(request, form, formsets, change)
         obj = form.instance
         notified_users = set()
+    
+    def response_add(self, request, obj, post_url_continue=None):
+        return HttpResponseRedirect(
+            reverse('message:message_detail', args=['message', obj.id])
+        )
 
         # Notificar usuários selecionados diretamente
         for user in obj.users.all():
