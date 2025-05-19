@@ -7,7 +7,7 @@ from school.models import Parent
 from django.utils.crypto import get_random_string
 from django.core.paginator import Paginator
 from django.urls import reverse
-from notification.utils import send_notification
+
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -80,30 +80,7 @@ def ticket_detail(request, ticket_id):
                 ticket.status = new_status
                 ticket.save()
 
-                # Notificar apenas se o status mudou
-                if current_status != new_status:
-                    ticket_url = request.build_absolute_uri(
-                        reverse('ticket_detail', args=[ticket.id])
-                    )
-
-                    # Notificar o responsável
-                    send_notification(
-                        recipient=ticket.parent.user,
-                        title=f"Status do Ticket Atualizado - #{ticket.ticket_number}",
-                        message=f"O status do ticket foi alterado para: {ticket.get_status_display()}",
-                        url=ticket_url
-                    )
-
-                    # Notificar outros respondentes
-                    responders = TicketAllowedResponder.objects.exclude(user=user)
-                    for responder in responders:
-                        send_notification(
-                            recipient=responder.user,
-                            title=f"Status Atualizado - #{ticket.ticket_number}",
-                            message=f"{user.get_full_name()} alterou o status para: {ticket.get_status_display()}",
-                            url=ticket_url
-                        )
-
+                
                 msg.success(request, "Status do ticket atualizado com sucesso!")
                 return redirect('ticket_detail', ticket_id=ticket.id)
 
@@ -130,34 +107,7 @@ def ticket_detail(request, ticket_id):
                 )
                 subject = f"Resposta ao Ticket: {ticket.subject}"
 
-                # Lógica de notificação
-                if is_parent:
-                    # Notificar respondentes
-                    responders = TicketAllowedResponder.objects.all()
-                    for responder in responders:
-                        send_notification(
-                            recipient=responder.user,
-                            title=subject,
-                            message=f"Nova resposta de {user.get_full_name()}",
-                            url=ticket_url
-                        )
-                else:
-                    # Notificar o responsável
-                    send_notification(
-                        recipient=ticket.parent.user,
-                        title=subject,
-                        message="Sua solicitação recebeu uma nova resposta",
-                        url=ticket_url
-                    )
-                    # Notificar outros respondentes
-                    responders = TicketAllowedResponder.objects.exclude(user=user)
-                    for responder in responders:
-                        send_notification(
-                            recipient=responder.user,
-                            title=subject,
-                            message=f"Resposta adicionada por {user.get_full_name()}",
-                            url=ticket_url
-                        )
+
 
                 msg.success(request, "Mensagem enviada com sucesso!")
                 return redirect('ticket_detail', ticket_id=ticket.id)
@@ -209,17 +159,6 @@ def create_ticket(request):
                 attachment=attachment
             )
 
-            # Notificar todos os respondentes
-            responder_ids = TicketAllowedResponder.objects.values_list('user', flat=True)
-            ticket_url = request.build_absolute_uri(reverse('ticket_detail', args=[ticket.id]))
-            for responder_id in responder_ids:
-                send_notification(
-                    recipient_id=responder_id,
-                    title="Novo Ticket Criado",
-                    message=f"Um novo ticket foi criado: {subject}",
-                    url=ticket_url
-                )
-
             msg.success(request, "Ticket criado com sucesso!")
             return redirect('ticket_list')
         else:
@@ -241,12 +180,7 @@ def close_ticket(request, ticket_id):
 
     # Notificação ao responsável
     ticket_url = request.build_absolute_uri(reverse('ticket_detail', args=[ticket.id]))
-    send_notification(
-        recipient=ticket.parent.user,
-        title="Ticket Fechado",
-        message=f"O ticket '{ticket.subject}' foi fechado.",
-        url=ticket_url
-    )
+   
 
     msg.success(request, "Ticket fechado com sucesso.")
     return redirect('ticket_detail', ticket_id=ticket.id)

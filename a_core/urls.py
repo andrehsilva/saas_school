@@ -37,7 +37,7 @@ urlpatterns = [
     path('ticket/', include('ticket.urls')),
     path('notes/', include('note.urls')), # Suas notas
     path('@<username>/', profile_view, name="profile"),
-    path('notifications/', include('notification.urls')),
+
 ]
 
 # Only used when DEBUG=True, whitenoise can serve files when DEBUG=False

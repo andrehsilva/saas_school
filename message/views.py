@@ -1,111 +1,79 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from django.http import JsonResponse
 from django.core.paginator import Paginator
-from .models import Message, ReceivedMessage, MessageType, MessageReadLog, Event
-from notification.models import Notification, NotificationRecipient
-from school.models import Class, Grade, Student, Parent
-from .utils import get_user_visibility_context, get_visible_messages
 from django.core.exceptions import PermissionDenied
-from .decorators import message_permission_required
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+
+from .models import Message, MessageType, MessageReadLog, Event
+
+from .utils import get_user_visibility_context, get_visible_messages
+
 
 
 @login_required
 def messages_timeline(request):
     user = request.user
     context = get_user_visibility_context(user)
-    
-    # Mensagens tradicionais (CORREÇÃO AQUI)
-    visible_messages = get_visible_messages(user)  # Definindo a variável
-    
-    # Notificações
-    notifications = Notification.objects.filter(
-        Q(recipients=user) |
-        Q(classrooms__in=context["user_classes"])
-    ).distinct().order_by('-created_at')
-    
-    # Combinação e ordenação
-    all_items = list(visible_messages) + list(notifications)
-    sorted_items = sorted(all_items, key=lambda x: x.created_at, reverse=True)
-    
-    # Paginação
-    paginator = Paginator(sorted_items, 10)
+    visible_messages = get_visible_messages(user)
+
+    # Aplicar filtros
+    selected_type = request.GET.get('type','').strip()
+    search_query = request.GET.get('q', '')
+
+    # Filtro por tipo
+    if selected_type and selected_type.isdigit():
+        visible_messages = visible_messages.filter(type_id=int(selected_type))
+
+    # Filtro por texto (busca)
+    if search_query:
+        visible_messages = visible_messages.filter(
+            Q(title__icontains=search_query) | 
+            Q(context__icontains=search_query)
+        )
+
+    # Construir lista de itens
+    all_items = [
+        {"type": "message", "item": msg, "created_at": msg.created_at}
+        for msg in visible_messages
+    ]
+
+    # Ordenar e paginar
+    sorted_items = sorted(all_items, key=lambda x: x["created_at"], reverse=True)
+    paginator = Paginator(sorted_items, 5)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
-    # Cálculo de não lidos (CORREÇÃO AQUI)
-    read_messages = MessageReadLog.objects.filter(user=user).values_list('message_id', flat=True)
-    unread_messages_count = visible_messages.exclude(id__in=read_messages).count()  # Usando a variável definida
-    
-    read_notifications = NotificationRecipient.objects.filter(user=user, is_read=True).values_list('notification_id', flat=True)
-    unread_notifications_count = notifications.exclude(id__in=read_notifications).count()
-    
-    unread_count = unread_messages_count + unread_notifications_count
-    
-    # Filtros
-    message_types = MessageType.objects.all()
-    selected_type = request.GET.get('type')
-    search_query = request.GET.get('q', '')
-    
+
     return render(request, 'message/messages_timeline.html', {
         'page_obj': page_obj,
-        'message_types': message_types,
+        'message_types': MessageType.objects.all(),
         'selected_type': selected_type,
-        'unread_count': unread_count,
         'search_query': search_query,
     })
 
-@login_required
-def mark_as_read(request, item_type, item_id):
-    user = request.user
-    response = {"success": False}
-    
-    if item_type == 'message':
-        message = get_object_or_404(Message, id=item_id)
-        if not MessageReadLog.objects.filter(user=user, message=message).exists():
-            MessageReadLog.objects.create(user=user, message=message, read=True)
-            response["success"] = True
-            
-    elif item_type == 'notification':
-        notification = get_object_or_404(Notification, id=item_id)
-        NotificationRecipient.objects.update_or_create(
-            user=user,
-            notification=notification,
-            defaults={'is_read': True}
-        )
-        response["success"] = True
-    
-    return JsonResponse(response)
+
+
+
 
 @login_required
-def message_detail(request, id, item_type):
-    if item_type == 'message':
-        item = get_object_or_404(Message, id=id)
-        template = 'message/message_detail.html'
-        
-        # Verificação de permissão original
-        has_permission = (
-            item.created_by == request.user or
-            item.users.filter(id=request.user.id).exists() or
-            request.user.student.classes_assigned.filter(id__in=item.classes.values_list('id', flat=True)).exists()
+def message_detail(request, id):
+    message = get_object_or_404(Message, id=id)
+
+    # Verificação de permissão
+    has_permission = (
+        message.created_by == request.user or
+        message.users.filter(id=request.user.id).exists() or
+        (
+            hasattr(request.user, 'student') and
+            request.user.student.classes_assigned.filter(id__in=message.classes.values_list('id', flat=True)).exists()
         )
-        
-    elif item_type == 'notification':
-        item = get_object_or_404(Notification, id=id)
-        template = 'notification/notification_detail.html'
-        
-        # Verificação de permissão para notificação
-        has_permission = (
-            item.recipients.filter(id=request.user.id).exists() or
-            item.classrooms.filter(id__in=request.user.student.classes_assigned.values_list('id', flat=True)).exists()
-        )
-    
+    )
+
     if not has_permission:
         raise PermissionDenied("Você não tem permissão para visualizar este conteúdo")
-    
-    return render(request, template, {item_type: item})
 
+    return render(request, 'message/message_detail.html', {'message': message})
 
 
 @login_required

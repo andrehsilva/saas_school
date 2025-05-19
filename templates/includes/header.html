@@ -30,62 +30,6 @@
                         </a>
                     </li>
                 {% endfor %}
-                <li class="relative">
-                    <a href="{% url 'notification:unread' %}">
-                        <i class="fas fa-bell"></i>
-                        {% if notification_unread_count > 0 %}
-                            <span class="absolute top-0 right-0 bg-red-600 rounded-full text-xs px-1">
-                                {{ notification_unread_count }}
-                            </span>
-                        {% endif %}
-                    </a>
-                </li>
-
-                <!-- Dropdown de notificações -->
-                <li class="relative" x-data="{ open: false }">
-                    <button @click="open = !open" class="p-2 hover:bg-gray-100 rounded-full relative">
-                        🔔
-                        {% if header_notifications %}
-                            <span class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full px-1.5">
-                                {{ header_notifications|length }}
-                            </span>
-                        {% endif %}
-                    </button>
-
-                    <div x-show="open" @click.outside="open = false"
-                         class="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                        <div class="p-4">
-                            <h3 class="font-semibold mb-2">Notificações</h3>
-
-                            {% for notification in header_notifications %}
-                                <div class="p-3 hover:bg-gray-50 border-b last:border-0">
-                                    <div class="flex justify-between items-start">
-                                        <div>
-                                            <p class="font-medium text-sm">{{ notification.notification.title }}</p>
-                                            <p class="text-gray-600 text-xs mt-1">
-                                                {{ notification.notification.message|truncatechars:40 }}
-                                            </p>
-                                        </div>
-                                        <button onclick="markAsRead('notification', {{ notification.notification.id }})"
-                                                class="text-gray-400 hover:text-gray-600 text-xs">
-                                            Marcar como lida
-                                        </button>
-                                    </div>
-                                    <small class="text-gray-400 text-xs block mt-2">
-                                        {{ notification.notification.created_at|timesince }} atrás
-                                    </small>
-                                </div>
-                            {% empty %}
-                                <p class="text-gray-500 text-sm py-2">Nenhuma notificação nova</p>
-                            {% endfor %}
-
-                            <a href="{% url 'message:messages_timeline' %}"
-                               class="block text-center text-blue-600 text-sm mt-3 hover:underline">
-                                Ver todas
-                            </a>
-                        </div>
-                    </div>
-                </li>
 
                 <!-- Dropdown do perfil -->
                 <li x-data="{ dropdownOpen: false }" class="relative">

@@ -32,7 +32,7 @@ def import_users_view(request):
             "professor": "Professor",
             "coordenador": "Coordenador",
             "diretor": "Diretor",
-            "colaborador": "colaborador"
+            "colaborador": "Colaborador"
         }
 
         created = 0

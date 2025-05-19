@@ -109,15 +109,7 @@
     </style>
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' class="{% block class %}{% endblock %}">
-    <p>Notificações não lidas: {{ notification_unread_count }}</p>
-
-<ul>
-  {% for n in header_notifications %}
-    <li>{{ n.notification.title }}</li>
-  {% empty %}
-    <li>Nenhuma notificação</li>
-  {% endfor %}
-</ul>
+    
 	
     {% include 'includes/messages.html' %}
 
@@ -128,53 +120,7 @@
     {% endblock %}
 
     {% block javascript %}
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const bell = document.getElementById("toggleNotifications");
-            const list = document.getElementById("notification-list");
-            const items = document.getElementById("notification-items");
-            const count = document.getElementById("notification-count");
-        
-            function loadNotifications() {
-                fetch("/notifications/unread/")
-                    .then(response => response.json())
-                    .then(data => {
-                        items.innerHTML = "";
-        
-                        if (data.notifications.length > 0) {
-                            count.textContent = data.notifications.length;
-                            count.classList.remove("hidden");
-                        } else {
-                            count.textContent = '';
-                            count.classList.add("hidden");
-                        }
-        
-                        data.notifications.forEach(notification => {
-                            const li = document.createElement("li");
-                            li.innerHTML = `
-                                <a href="/notifications/read/${notification.id}/" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
-                                    <strong class="block font-semibold">${notification.title}</strong>
-                                    <span class="block">${notification.message}</span>
-                                    <small class="text-gray-500">${notification.created_at}</small>
-                                </a>
-                            `;
-                            items.appendChild(li);
-                        });
-                    })
-                    .catch(error => {
-                        console.error("Erro ao carregar notificações:", error);
-                    });
-            }
-        
-            bell.addEventListener("click", () => {
-                list.classList.toggle("hidden");
-                loadNotifications();
-            });
-        
-            // Carrega notificações ao iniciar a página
-            loadNotifications();
-        });
-        </script>
+   
         
     
 

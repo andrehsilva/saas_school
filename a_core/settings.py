@@ -79,7 +79,7 @@ TENANT_APPS = [
     'school',
     'navigator',
     'note',
-    'notification'
+ 
     
 ]
 
@@ -122,8 +122,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'notification.context_processors.header_notifications',
-                'notification.context_processors.notification_count',
+               
                
             ],
         },
