@@ -6,7 +6,7 @@ from school.models import Class, Student, Grade
 from django.urls import reverse
 from django.http import HttpResponseRedirect
 
-
+  
 class MessageAdmin(admin.ModelAdmin):
     list_display = ('title', 'created_at', 'created_by', 'get_classes', 'get_users', 'type')
     list_filter = ('created_at', 'type')
@@ -29,32 +29,28 @@ class MessageAdmin(admin.ModelAdmin):
         super().save_related(request, form, formsets, change)
         obj = form.instance
         notified_users = set()
-    
-    def response_add(self, request, obj, post_url_continue=None):
-        return HttpResponseRedirect(
-            reverse('message:message_detail', args=['message', obj.id])
-        )
 
         # Notificar usuários selecionados diretamente
         for user in obj.users.all():
             if user not in notified_users:
                 send_notification(
-                    recipient=user,
                     title=f"Nova mensagem: {obj.title}",
                     message=f"Você recebeu uma nova mensagem de {obj.created_by.get_full_name() or obj.created_by.username}: \"{obj.title}\".",
-                    url=reverse('message:message_detail', args=[obj.id])
+                    url=reverse('message:message_detail', args=['message', obj.id]),
+                    users=[user],
                 )
                 notified_users.add(user)
 
         # Notificar alunos das turmas selecionadas
         for turma in obj.classes.all():
             for aluno in turma.students.all():
-                if aluno.user not in notified_users:
+                if aluno.user and aluno.user not in notified_users:
                     send_notification(
-                        recipient=aluno.user,
                         title=f"Mensagem para sua turma: {obj.title}",
                         message=f"Você recebeu uma nova mensagem enviada à turma {turma.name}.",
-                        url=reverse('message:message_detail', args=[obj.id])
+                        url=reverse('message:message_detail', args=['message', obj.id]),
+                        users=[aluno.user],
+                        classes=[turma],
                     )
                     notified_users.add(aluno.user)
 
@@ -65,14 +61,20 @@ class MessageAdmin(admin.ModelAdmin):
         for grade in grades:
             for turma in grade.classrooms.all():
                 for aluno in turma.students.all():
-                    if aluno.user not in notified_users:
+                    if aluno.user and aluno.user not in notified_users:
                         send_notification(
-                            recipient=aluno.user,
                             title=f"Mensagem para sua série: {obj.title}",
                             message=f"Você recebeu uma nova mensagem enviada para a série {grade.name}.",
-                            url=reverse('message:message_detail', args=[obj.id])
+                            url=reverse('message:message_detail', args=['message', obj.id]),
+                            users=[aluno.user],
                         )
                         notified_users.add(aluno.user)
+
+    def response_add(self, request, obj, post_url_continue=None):
+        return HttpResponseRedirect(
+            reverse('message:message_detail', args=['message', obj.id])
+        )
+ 
 
 
 class MessageTypeAdmin(admin.ModelAdmin):

@@ -1,41 +1,36 @@
-from .models import Notification
+# notification/utils.py
+
+from .models import Notification, NotificationRecipient
+from school.models import Class, Student
 from django.contrib.auth import get_user_model
-from ticket.models import TicketAllowedResponder
+
 User = get_user_model()
 
-
-
-def get_ticket_staff_default(ticket):
+def send_notification(title, message, url=None, users=None, classes=None):
     """
-    Retorna um usuário staff com permissão para responder ao ticket.
-    Por padrão, retorna o último que respondeu ou qualquer um autorizado.
+    Envia uma notificação para usuários e/ou turmas específicas.
     """
-    # 1. Se o ticket já tem mensagens, pega o último respondente que não é o criador
-    last_message = ticket.ticketmessage_set.order_by('-created_at').first()
-    if last_message and last_message.sender != ticket.parent.user:
-        return last_message.sender
-
-    # 2. Se não tem mensagens, ou só o criador respondeu, pega alguém da lista de autorizados
-    allowed = TicketAllowedResponder.objects.first()
-    if allowed:
-        return allowed.user
-
-    # 3. Último recurso: pega qualquer staff
-    return User.objects.filter(is_staff=True).first()
-
-def send_notification(recipient=None, recipient_id=None, title="", message="", url=None):
-    if recipient is None and recipient_id is not None:
-        recipient = User.objects.get(id=recipient_id)
-    elif recipient is not None:
-        pass  # já é o usuário
-    else:
-        raise ValueError("É necessário informar recipient ou recipient_id")
-
-    Notification.objects.create(
-        recipient=recipient,
+    notification = Notification.objects.create(
         title=title,
         message=message,
         url=url
     )
-    print(f"Enviando notificação para")
 
+    user_set = set()
+
+    # Adiciona usuários individuais
+    if users:
+        user_set.update(users)
+
+    # Adiciona usuários das turmas
+    if classes:
+        notification.classrooms.set(classes)
+        for turma in classes:
+            alunos = Student.objects.filter(classes_assigned=turma)
+            user_set.update(aluno.user for aluno in alunos if aluno.user)
+
+    # Cria NotificationRecipient para cada usuário
+    for user in user_set:
+        NotificationRecipient.objects.create(notification=notification, user=user)
+
+    return notification

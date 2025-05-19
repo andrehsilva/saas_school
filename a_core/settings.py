@@ -119,10 +119,12 @@ TEMPLATES = [
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
-                'notification.context_processors.user_notifications',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'notification.context_processors.header_notifications',
+                'notification.context_processors.notification_count',
+               
             ],
         },
     },

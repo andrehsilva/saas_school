@@ -71,7 +71,7 @@
                             📎 Baixar Anexo
                         </a>
                         {% endif %}
-                        <a href="{% url 'message_detail' 'message' item.id %}"
+                        <a href="{% url 'message:message_detail' 'message' item.id %}"
                            class="text-blue-600 hover:text-blue-800 text-sm font-medium">
                             Ver detalhes →
                         </a>
@@ -109,7 +109,7 @@
                     {% endif %}
 
                     <div class="pt-4 text-right">
-                        <a href="{% url 'message_detail' 'notification' item.id %}"
+                        <a href="{% url 'message:message_detail' 'notification' item.id %}"
                            class="text-blue-600 hover:text-blue-800 text-sm font-medium">
                             Ver detalhes →
                         </a>

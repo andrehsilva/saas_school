@@ -57,7 +57,7 @@ def messages_timeline(request):
     })
 
 @login_required
-def mark_as_read(request, item_id, item_type):
+def mark_as_read(request, item_type, item_id):
     user = request.user
     response = {"success": False}
     

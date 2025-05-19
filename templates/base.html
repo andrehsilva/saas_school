@@ -109,6 +109,15 @@
     </style>
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' class="{% block class %}{% endblock %}">
+    <p>Notificações não lidas: {{ notification_unread_count }}</p>
+
+<ul>
+  {% for n in header_notifications %}
+    <li>{{ n.notification.title }}</li>
+  {% empty %}
+    <li>Nenhuma notificação</li>
+  {% endfor %}
+</ul>
 	
     {% include 'includes/messages.html' %}
 

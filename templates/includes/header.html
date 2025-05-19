@@ -1,48 +1,106 @@
 {% load navigator_tags %}
 {% load static %}
-<header class="flex items-center justify-between bg-gray-800 h-20 px-8 text-white sticky top-0 z-40"    
+
+<header class="flex items-center justify-between bg-gray-800 h-20 px-8 text-white sticky top-0 z-40"
     {% if color %}style="background-color: {{ color }};"{% endif %}>
-    
+
+    <!-- Logo e nome do tenant -->
     <div>
         <a class="flex items-center gap-2" href="/">
-            <img class="h-6" src="{% if logo %}{{logo.url}}{% else %}{% static 'images/logo.svg' %}{% endif %}" alt="Logo"/>
-            <span class="text-lg font-bold">{% if request.tenant %}{{ request.tenant.name}}{% else %} MySaas {% endif %}</span>
+            <img class="h-6" src="{% if logo %}{{ logo.url }}{% else %}{% static 'images/logo.svg' %}{% endif %}" alt="Logo" />
+            <span class="text-lg font-bold">
+                {% if request.tenant %}{{ request.tenant.name }}{% else %}MySaas{% endif %}
+            </span>
         </a>
     </div>
 
+    <!-- Navegação -->
     <nav class="block relative">
         <ul class="navitems flex items-center justify-center h-full">
             {% if not request.user.is_authenticated %}
                 <li><a href="/contact">Contato</a></li>
                 <li><a href="{% url 'account_login' %}">Login</a></li>
                 <li><a href="{% url 'account_signup' %}?next={% url 'profile-onboarding' %}">Inscrever-se</a></li>
-            
             {% else %}
-                <!-- Links para usuários autenticados -->
                 {% get_nav_links as navigation_links %}
-                
                 {% for link in navigation_links %}
                     <li>
                         <a href="{{ link.url }}" class="{% if request.path == link.url %}active{% endif %}">
                             {{ link.title }}
                         </a>
                     </li>
-                    
                 {% endfor %}
-                 
-                  
+                <li class="relative">
+                    <a href="{% url 'notification:unread' %}">
+                        <i class="fas fa-bell"></i>
+                        {% if notification_unread_count > 0 %}
+                            <span class="absolute top-0 right-0 bg-red-600 rounded-full text-xs px-1">
+                                {{ notification_unread_count }}
+                            </span>
+                        {% endif %}
+                    </a>
+                </li>
+
+                <!-- Dropdown de notificações -->
+                <li class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" class="p-2 hover:bg-gray-100 rounded-full relative">
+                        🔔
+                        {% if header_notifications %}
+                            <span class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full px-1.5">
+                                {{ header_notifications|length }}
+                            </span>
+                        {% endif %}
+                    </button>
+
+                    <div x-show="open" @click.outside="open = false"
+                         class="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                        <div class="p-4">
+                            <h3 class="font-semibold mb-2">Notificações</h3>
+
+                            {% for notification in header_notifications %}
+                                <div class="p-3 hover:bg-gray-50 border-b last:border-0">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <p class="font-medium text-sm">{{ notification.notification.title }}</p>
+                                            <p class="text-gray-600 text-xs mt-1">
+                                                {{ notification.notification.message|truncatechars:40 }}
+                                            </p>
+                                        </div>
+                                        <button onclick="markAsRead('notification', {{ notification.notification.id }})"
+                                                class="text-gray-400 hover:text-gray-600 text-xs">
+                                            Marcar como lida
+                                        </button>
+                                    </div>
+                                    <small class="text-gray-400 text-xs block mt-2">
+                                        {{ notification.notification.created_at|timesince }} atrás
+                                    </small>
+                                </div>
+                            {% empty %}
+                                <p class="text-gray-500 text-sm py-2">Nenhuma notificação nova</p>
+                            {% endfor %}
+
+                            <a href="{% url 'message:messages_timeline' %}"
+                               class="block text-center text-blue-600 text-sm mt-3 hover:underline">
+                                Ver todas
+                            </a>
+                        </div>
+                    </div>
+                </li>
+
                 <!-- Dropdown do perfil -->
                 <li x-data="{ dropdownOpen: false }" class="relative">
                     <a @click="dropdownOpen = !dropdownOpen" @click.away="dropdownOpen = false" class="cursor-pointer select-none">
                         <img class="h-8 w-8 rounded-full object-cover" src="{{ request.user.profile.avatar }}" alt="Avatar" />
                         {{ request.user.profile.name }}
-                        <img x-bind:class="dropdownOpen && 'rotate-180 duration-300'" class="w-4" src="https://img.icons8.com/small/32/ffffff/expand-arrow.png" alt="Dropdown" />
+                        <img x-bind:class="dropdownOpen && 'rotate-180 duration-300'" class="w-4"
+                             src="https://img.icons8.com/small/32/ffffff/expand-arrow.png" alt="Dropdown" />
                     </a>
-                    <div x-show="dropdownOpen" x-cloak class="absolute right-0 bg-white text-black shadow rounded-lg w-40 p-2 z-20"
-                    x-transition:enter="duration-300 ease-out"
-                    x-transition:enter-start="opacity-0 -translate-y-5 scale-90"
-                    x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-                    >
+
+                    <div x-show="dropdownOpen" x-cloak
+                         class="absolute right-0 bg-white text-black shadow rounded-lg w-40 p-2 z-20"
+                         x-transition:enter="duration-300 ease-out"
+                         x-transition:enter-start="opacity-0 -translate-y-5 scale-90"
+                         x-transition:enter-end="opacity-100 translate-y-0 scale-100">
                         <ul class="hoverlist [&>li>a]:justify-end">
                             <li><a href="{% url 'profile' %}">Meu Perfil</a></li>
                             <li><a href="{% url 'profile-edit' %}">Editar Perfil</a></li>
@@ -51,70 +109,24 @@
                         </ul>
                     </div>
                 </li>
-                <!-- Exemplo ideal -->
-                <!-- Notificações Dropdown -->
-<div class="relative" x-data="{ open: false }">
-    <button @click="open = !open" class="p-2 hover:bg-gray-100 rounded-full relative">
-        🔔
-        {% if header_notifications %}
-        <span class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full px-1.5">
-            {{ header_notifications|length }}
-        </span>
-        {% endif %}
-    </button>
-
-    <!-- Dropdown -->
-    <div x-show="open" @click.outside="open = false" 
-         class="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-        <div class="p-4">
-            <h3 class="font-semibold mb-2">Notificações</h3>
-            
-            {% for notification in header_notifications %}
-            <div class="p-3 hover:bg-gray-50 border-b last:border-0">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="font-medium text-sm">{{ notification.notification.title }}</p>
-                        <p class="text-gray-600 text-xs mt-1">
-                            {{ notification.notification.message|truncatechars:40 }}
-                        </p>
-                    </div>
-                    <button onclick="markAsRead('notification', {{ notification.notification.id }})"
-                            class="text-gray-400 hover:text-gray-600 text-xs">
-                        Marcar como lida
-                    </button>
-                </div>
-                <small class="text-gray-400 text-xs block mt-2">
-                    {{ notification.notification.created_at|timesince }} atrás
-                </small>
-            </div>
-            {% empty %}
-            <p class="text-gray-500 text-sm py-2">Nenhuma notificação nova</p>
-            {% endfor %}
-
-            <a href="{% url 'message:messages_timeline' %}" 
-               class="block text-center text-blue-600 text-sm mt-3 hover:underline">
-                Ver todas
-            </a>
-        </div>
-    </div>
-</div>
             {% endif %}
         </ul>
     </nav>
 
-<script>
-function markAsRead(type, id) {
-    fetch(`/mark-read/${type}/${id}/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': '{{ csrf_token }}',
-            'Content-Type': 'application/json'
-        }
-    }).then(response => {
-        if(response.ok) {
-            location.reload(); // Atualiza o contador
-        }
-    });
-}
-</script>
+    <!-- Script para marcar como lida -->
+    <script>
+    function markAsRead(type, id) {
+        fetch(`/mark-read/${type}/${id}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                location.reload(); // Atualiza o contador
+            }
+        });
+    }
+    </script>
 </header>
