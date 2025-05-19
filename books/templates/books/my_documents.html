@@ -4,64 +4,117 @@
 {% block content %}
 <div id="pdf-modal-container"></div>
 <div class="max-w-7xl mx-auto mt-10 px-4">
-    <h1 class="text-2xl font-bold mb-6">Books - Meus livros e documentos</h1>
-
-    <form method="get" class="mb-4 flex gap-2">
-        <input type="text" name="q" placeholder="Buscar..." value="{{ search_query }}" class="input input-bordered w-full" />
-        <button type="submit" class="btn btn-primary">Pesquisar</button>
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">Books - Meus livros e documentos</h1>
+        <div class="flex gap-2">
+            <div class="mb-8">
+    <form method="get" class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 flex items-center gap-4">
+        <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2"
+                 viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M3 4a1 1 0 011-1h3.28a1 1 0 01.948.684l.894 2.684A2 2 0 0011 8h7a2 2 0 012 2v7a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/>
+            </svg>
+        </div>
+        {% if categories.exists %}
+        <select name="category" id="category" onchange="this.form.submit()"
+                class="select select-bordered p-2 w-full max-w-xs">
+            <option value="">Todas as categorias</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}" {% if selected_category == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+        </select>
+        {% endif %}
     </form>
-    <!-- Modal container -->
-    
+</div>
+        </div>
+    </div>
 
-    {% if documents %}
+    <form method="get" class="mb-8">
+        <div class="flex gap-2">
+            <input type="text" name="q" placeholder="Buscar por título, descrição ou categoria..." 
+                   value="{{ search_query }}" class="input input-bordered w-full">
+            <button type="submit" class="btn btn-primary">Pesquisar</button>
+        </div>
+    </form>
+
+    {% if page_obj %}
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {% for doc in documents %}
+        {% for doc in page_obj %}
         <div class="bg-white shadow hover:shadow-lg transition-shadow rounded-2xl border border-gray-200 overflow-hidden">
-            
-            {% if doc.thumbnail %}
-            <div class="w-full h-48 overflow-hidden">
-                <img class="w-full h-full object-cover" src="{{ doc.thumbnail.url }}" alt="Capa de {{ doc.title }}">
-            </div>
-            {% else %}
-            <div class="w-full h-48 bg-gray-100 flex items-center justify-center">
-                <span class="text-gray-400">Sem capa</span>
-            </div>
-            {% endif %}
-
-            <div class="p-4 flex-grow">
-                <div class="flex justify-between items-start mb-2">
-                    <h2 class="text-lg font-semibold">{{ doc.title|truncatechars:20 }}</h2>
-                    <p class="text-gray-500 text-xs">{{ doc.uploaded_at|date:"d/m/Y" }}</p>
+            <!-- Cabeçalho com metadados -->
+            <div class="p-4 border-b">
+                <div class="flex justify-between items-start gap-2">
+                    <h2 class="text-lg font-semibold flex-1">{{ doc.title }}</h2>
+                    <span class="text-sm text-gray-500">{{ doc.uploaded_at|date:"d/m/Y" }}</span>
                 </div>
+                
+                <!-- Visibilidade -->
+                <div class="mt-3 flex flex-wrap gap-2">
+                    {% if doc.target_users.exists %}
+                    <span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
+                        📌 Direto
+                    </span>
+                    {% endif %}
+                    
+                    {% for grade in doc.target_grades.all %}
+                    <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                        🏫 {{ grade.name }}
+                    </span>
+                    {% endfor %}
+                    
+                    {% for class in doc.target_classes.all %}
+                    <span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+                        👥 {{ class.name }}
+                    </span>
+                    {% endfor %}
+                    
+                    {% if not doc.target_users.exists and not doc.target_grades.exists and not doc.target_classes.exists %}
+                    <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                        🌍 Disponível para todos
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
 
+            <!-- Thumbnail -->
+            <div class="w-full h-48 bg-gray-50 overflow-hidden">
+                {% if doc.thumbnail %}
+                <img class="w-full h-full object-cover" src="{{ doc.thumbnail.url }}" alt="Capa de {{ doc.title }}">
+                {% else %}
+                <div class="w-full h-full flex items-center justify-center text-gray-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Corpo -->
+            <div class="p-4">
                 {% if doc.categories.exists %}
                 <div class="mb-3 flex flex-wrap gap-1">
                     {% for category in doc.categories.all %}
-                    <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                        {{ category.name|truncatechars:12 }}
+                    <span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">
+                        {{ category.name }}
                     </span>
                     {% endfor %}
                 </div>
                 {% endif %}
 
                 {% if doc.description %}
-                <p class="text-gray-600 text-sm mb-4 line-clamp-2">
+                <p class="text-gray-600 text-sm line-clamp-3 mb-4">
                     {{ doc.description }}
                 </p>
                 {% endif %}
-            </div>
 
-            <div class="p-4 border-t">
                 <button 
                     hx-get="{% url 'view_pdf' doc.id %}" 
-                    hx-target="#pdf-modal-container" 
-                    hx-swap="innerHTML" 
-                    class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors duration-200 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    Visualizar
+                    hx-target="#pdf-modal-container"
+                    hx-swap="innerHTML"
+                    class="w-full btn btn-outline btn-primary p-2 btn-sm">
+                    
+                    👁️‍🗨️ Visualizar
                 </button>
             </div>
         </div>
@@ -70,24 +123,34 @@
 
     <!-- Paginação -->
     <!-- Paginação -->
-    <div class="mt-8 flex justify-center space-x-2">
-        {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Anterior</a>
-        {% endif %}
-    
-        <span class="px-3 py-1 bg-blue-500 text-white rounded">{{ page_obj.number }}</span>
-    
-        {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Próxima</a>
-        {% endif %}
-    </div>
+            <div class="flex justify-center space-x-2 mt-6">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&type={{ selected_type }}" 
+                   class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">
+                    Anterior
+                </a>
+                {% endif %}
 
+                <span class="px-3 py-1 bg-blue-500 text-white rounded">
+                    {{ page_obj.number }}
+                </span>
+
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&type={{ selected_type }}" 
+                   class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">
+                    Próxima
+                </a>
+                {% endif %}
+            </div>
     {% else %}
-    <div class="text-center py-16 bg-gray-50 rounded-lg">
+    <div class="text-center py-16 bg-gray-50 rounded-lg border-2 border-dashed">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
-        <p class="mt-4 text-gray-500">Nenhum documento disponível</p>
+        <p class="mt-4 text-gray-500">Nenhum documento encontrado</p>
+        {% if search_query or selected_category %}
+        <p class="text-sm mt-2">Tente ajustar seus filtros de busca</p>
+        {% endif %}
     </div>
     {% endif %}
 </div>

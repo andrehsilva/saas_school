@@ -46,26 +46,3 @@ def get_user_visibility_context(user):
         "is_global_director": is_global_director,
         "has_coordination_role": coordinated_grades.exists()
     }
-
-def get_visible_messages(user):
-    context = get_user_visibility_context(user)
-    query = Q()
-
-    # Mensagens CRIADAS pelo usuário (remetente)
-    query |= Q(created_by=user)  # Nova condição adicionada
-    
-    # Mensagens diretas ao usuário ou seus dependentes
-    query |= Q(users=user) | Q(users__id__in=context["student_user_ids"])
-    
-    # Mensagens para turmas do usuário
-    if context["user_classes"].exists():
-        query |= Q(classes__in=context["user_classes"])
-    
-    # Mensagens para séries do usuário (apenas as que ele tem acesso)
-    if context["user_grades"].exists():
-        query |= Q(grades__in=context["user_grades"])
-    
-    # Mensagens recebidas via ReceivedMessage
-    query |= Q(received_by__recipient=user)
-
-    return Message.objects.filter(query).distinct().order_by('-created_at')
