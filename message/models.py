@@ -52,6 +52,7 @@ class Message(models.Model):
         User,
         on_delete=models.SET_NULL,
         null=True,
+        editable=True,
         related_name='messages',
         verbose_name=_("Criada por"),
         help_text=_("Usuário responsável pela criação da mensagem.")

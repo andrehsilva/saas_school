@@ -53,11 +53,13 @@
                 {% endif %}
 
                 <!-- Mensagem Geral -->
-                {% if not item.item.grades.exists and not item.item.classes.exists %}
-                <div class="flex items-center">
-                    <span class="text-xs text-gray-400">Envio geral para todos</span>
-                </div>
-                {% endif %}
+                 <!-- Mensagem Geral -->
+                    {% if not item.item.users.exists and not item.item.grades.exists and not item.item.classes.exists %}
+                    <div class="flex items-center">
+                        <span class="text-xs text-gray-400">Envio geral para todos</span>
+                    </div>
+                    {% endif %}
+                    
             </div>
         </div>
 
@@ -68,6 +70,12 @@
                     </span>
                     {% endif %}
                 </div>
+
+                {% if item.item.created_by == request.user %}
+                <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full ml-2">
+                    Você enviou esta mensagem
+                </span>
+                {% endif %}
 
                 <!-- Conteúdo da Mensagem -->
                 <div class="px-4 py-3 space-y-2">

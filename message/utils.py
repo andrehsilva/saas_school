@@ -50,6 +50,9 @@ def get_user_visibility_context(user):
 def get_visible_messages(user):
     context = get_user_visibility_context(user)
     query = Q()
+
+    # Mensagens CRIADAS pelo usuário (remetente)
+    query |= Q(created_by=user)  # Nova condição adicionada
     
     # Mensagens diretas ao usuário ou seus dependentes
     query |= Q(users=user) | Q(users__id__in=context["student_user_ids"])
