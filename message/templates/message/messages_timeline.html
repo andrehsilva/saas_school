@@ -16,28 +16,50 @@
         <!-- COLUNA PRINCIPAL (75%) -->
         <main class="md:col-span-3 space-y-6">
             {% for item in page_obj %}
-            <div class="bg-white shadow hover:shadow-lg transition-shadow rounded-2xl border border-gray-200 overflow-hidden">
-                <!-- Cabeçalho da Mensagem -->
-                <div class="bg-gray-50 px-4 py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b">
-                    <div class="flex-1 space-y-1">
-                        <div class="flex flex-wrap gap-2 text-sm">
-                            <span class="text-gray-500">Enviado por:</span>
-                            <p class="font-bold text-gray-800">{{ item.item.created_by.get_full_name|default:item.item.created_by.username }}</p>
-                            <p class="text-gray-500">| {{ item.created_at|date:"d M Y - H:i" }}</p>
-                        </div>
+<div class="bg-white shadow hover:shadow-lg transition-shadow rounded-2xl border border-gray-200 overflow-hidden">
+    <!-- Cabeçalho da Mensagem -->
+    <div class="bg-gray-50 px-4 py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b">
+        <div class="flex-1 space-y-1">
+            <div class="flex flex-wrap gap-2 text-sm">
+                <span class="text-gray-500">Enviado por:</span>
+                <p class="font-bold text-gray-800">{{ item.item.created_by.get_full_name|default:item.item.created_by.username }}</p>
+                <p class="text-gray-500">| {{ item.item.created_at|date:"d M Y - H:i" }}</p>
+            </div>
 
-                        <!-- Turmas -->
-                        <div class="flex flex-wrap gap-2 items-center">
-                            <span class="text-sm text-gray-500">Turma(s):</span>
-                            {% for class in item.item.classes.all %}
-                                <span class="px-2 py-1 bg-gray-200 text-gray-800 text-xs rounded-full">
-                                    {{ class.grade.name }} - {{ class.name }}
-                                </span>
-                            {% empty %}
-                                <span class="text-xs text-gray-400">Geral</span>
-                            {% endfor %}
-                        </div>
-                    </div>
+            <!-- Destinatários -->
+            <div class="space-y-2">
+                <!-- Séries -->
+                {% if item.item.grades.exists %}
+                <div class="flex flex-wrap gap-2 items-center">
+                    <span class="text-sm text-gray-500">Série(s):</span>
+                    {% for grade in item.item.grades.all %}
+                        <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                            {{ grade.name }}
+                        </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Turmas -->
+                {% if item.item.classes.exists %}
+                <div class="flex flex-wrap gap-2 items-center">
+                    <span class="text-sm text-gray-500">Turma(s):</span>
+                    {% for class in item.item.classes.all %}
+                        <span class="px-2 py-1 bg-gray-200 text-gray-800 text-xs rounded-full">
+                            {{ class.grade.name }} - {{ class.name }}
+                        </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Mensagem Geral -->
+                {% if not item.item.grades.exists and not item.item.classes.exists %}
+                <div class="flex items-center">
+                    <span class="text-xs text-gray-400">Envio geral para todos</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
 
                     {% if item.item.type %}
                     <span class="px-3 py-1 text-sm font-medium rounded-full whitespace-nowrap"

@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
-from school.models import Class
+from school.models import Class, Grade
 from django.urls import reverse
 
 
@@ -55,6 +55,13 @@ class Message(models.Model):
         related_name='messages',
         verbose_name=_("Criada por"),
         help_text=_("Usuário responsável pela criação da mensagem.")
+    )
+    grades = models.ManyToManyField(
+        'school.Grade',
+        blank=True,
+        related_name='messages',
+        verbose_name=_("Séries"),
+        help_text=_("Séries para as quais a mensagem será enviada.")
     )
     classes = models.ManyToManyField(
         Class,

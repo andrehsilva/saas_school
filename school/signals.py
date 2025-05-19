@@ -10,7 +10,8 @@ def create_default_roles(sender, **kwargs):
     if sender.name == 'school':
         default_roles = {
             'Diretor': {'can_post': True, 'description': 'Acesso completo de diretor'},
-            'Coordinador': {'can_post': True, 'description': 'Coordenador de série'},
+            'Coordenador': {'can_post': True, 'description': 'Coordenador de série'},
+            'Colaborador': {'can_post': True, 'description': 'Colaborador de série e turmas'},
             'Professor': {'can_post': True, 'description': 'Professor da turma'},
             'Responsável': {'can_post': False, 'description': 'Responsável por aluno'},
             'Aluno': {'can_post': False, 'description': 'Estudante'}

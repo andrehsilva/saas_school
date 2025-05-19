@@ -8,7 +8,7 @@ from django.http import HttpResponseRedirect
 
   
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('title', 'created_at', 'created_by', 'get_classes', 'get_users', 'type')
+    list_display = ('title', 'created_at', 'created_by', 'get_grades','get_classes', 'get_users', 'type')
     list_filter = ('created_at', 'type')
     search_fields = ('title', 'context')
     list_editable = ('type',)
@@ -16,6 +16,10 @@ class MessageAdmin(admin.ModelAdmin):
     def get_classes(self, obj):
         return ", ".join([cls.name for cls in obj.classes.all()])
     get_classes.short_description = 'Turmas'
+
+    def get_grades(self, obj):
+        return ", ".join([cls.name for cls in obj.grades.all()])
+    get_grades.short_description = 'Séries'
 
     def get_users(self, obj):
         return ", ".join([user.username for user in obj.users.all()])
