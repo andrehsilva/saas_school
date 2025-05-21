@@ -34,7 +34,6 @@ ENVIRONMENT = "development"  # Ou "production"
 # Application definition
 
 SHARED_APPS = [
-    
     'django_tenants',  # obrigatório primeiro
     'a_tenant_manager',
     'allauth',
@@ -51,6 +50,9 @@ SHARED_APPS = [
     'django_htmx',
     'a_home',
     'a_users',
+    'school',
+   
+  
 ]
 
 TENANT_APPS = [
@@ -71,12 +73,12 @@ TENANT_APPS = [
     'a_home',
     'a_users',
     'blog',
+    'school',
     'contact',
     'message',
     'books',
     'collection',
     'ticket',
-    'school',
     'navigator',
     'note',
  
