@@ -1,6 +1,38 @@
 {% load navigator_tags %}
 {% load static %}
 
+<style>
+    .navitems a {
+        /* Estilo padrão dos links */
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        transition: all 0.2s ease;
+    }
+    
+    .navitems a:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .navitems a.active {
+        /* Estilo do link ativo */
+        background-color: rgba(255, 255, 255, 0.2);
+        font-weight: 600;
+        position: relative;
+    }
+    
+    .navitems a.active::after {
+        /* Barra indicadora abaixo do link ativo */
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 50%;
+        height: 2px;
+        background-color: white;
+    }
+</style>
+
 <header class="flex items-center justify-between bg-gray-800 h-20 px-8 text-white sticky top-0 z-40"
     {% if color %}style="background-color: {{ color }};"{% endif %}>
 
@@ -16,16 +48,30 @@
 
     <!-- Navegação -->
     <nav class="block relative">
-        <ul class="navitems flex items-center justify-center h-full">
+        <ul class="navitems flex items-center justify-center h-full gap-1">
             {% if not request.user.is_authenticated %}
-                <li><a href="/contact">Contato</a></li>
-                <li><a href="{% url 'account_login' %}">Login</a></li>
-                <li><a href="{% url 'account_signup' %}?next={% url 'profile-onboarding' %}">Inscrever-se</a></li>
+                <li>
+                    <a href="/contact" class="{% if request.path == '/contact/' %}active{% endif %}">
+                        Contato
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'account_login' %}" class="{% if request.path == '/accounts/login/' %}active{% endif %}">
+                        Login
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'account_signup' %}?next={% url 'profile-onboarding' %}" 
+                       class="{% if request.path == '/accounts/signup/' %}active{% endif %}">
+                        Inscrever-se
+                    </a>
+                </li>
             {% else %}
                 {% get_nav_links as navigation_links %}
                 {% for link in navigation_links %}
                     <li>
-                        <a href="{{ link.url }}" class="{% if request.path == link.url %}active{% endif %}">
+                        <a href="{{ link.url }}" 
+                           class="{% if request.path|slice:':20' == link.url|slice:':20' %}active{% endif %}">
                             {{ link.title }}
                         </a>
                     </li>
@@ -33,15 +79,15 @@
 
                 <!-- Dropdown do perfil -->
                 <li x-data="{ dropdownOpen: false }" class="relative">
-                    <a @click="dropdownOpen = !dropdownOpen" @click.away="dropdownOpen = false" class="cursor-pointer select-none">
+                    <a @click="dropdownOpen = !dropdownOpen" @click.away="dropdownOpen = false" class="cursor-pointer select-none flex items-center gap-2">
                         <img class="h-8 w-8 rounded-full object-cover" src="{{ request.user.profile.avatar }}" alt="Avatar" />
-                        {{ request.user.profile.name }}
-                        <img x-bind:class="dropdownOpen && 'rotate-180 duration-300'" class="w-4"
+                        <span class="hidden md:inline">{{ request.user.profile.name }}</span>
+                        <img x-bind:class="dropdownOpen && 'rotate-180 duration-300'" class="w-4 hidden md:inline"
                              src="https://img.icons8.com/small/32/ffffff/expand-arrow.png" alt="Dropdown" />
                     </a>
 
                     <div x-show="dropdownOpen" x-cloak
-                         class="absolute right-0 bg-white text-black shadow rounded-lg w-40 p-2 z-20"
+                         class="absolute right-0 bg-white text-black shadow rounded-lg w-40 p-2 z-20 mt-2"
                          x-transition:enter="duration-300 ease-out"
                          x-transition:enter-start="opacity-0 -translate-y-5 scale-90"
                          x-transition:enter-end="opacity-100 translate-y-0 scale-100">
