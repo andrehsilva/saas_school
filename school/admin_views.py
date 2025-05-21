@@ -16,6 +16,7 @@ def export_users_view(request):
     # Sua lógica de exportação aqui
     return HttpResponse(content_type='text/csv')
 
+
 def import_users_view(request):
     if request.method == "POST":
         csv_file = request.FILES.get("csv_file")
@@ -35,8 +36,9 @@ def import_users_view(request):
             "colaborador": "Colaborador"
         }
 
-        created = 0
-        updated = 0
+        # Variáveis para contar os resultados
+        total_created = 0 # <-- Nova variável para o contador
+        total_updated = 0 # <-- Nova variável para o contador
         errors = []
         
         def get_or_create_grade(class_name):
@@ -79,7 +81,7 @@ def import_users_view(request):
                     continue
 
                 # Criação/Atualização do usuário
-                user, created = User.objects.update_or_create(
+                user, created_bool = User.objects.update_or_create( # <-- Renomeado para evitar conflito
                     username=username,
                     defaults={
                         'email': email,
@@ -88,12 +90,12 @@ def import_users_view(request):
                     }
                 )
                 
-                if created:
+                if created_bool: # <-- Usar a variável booleana aqui
                     user.set_password(password)
                     user.save()
-                    created += 1
+                    total_created += 1 # <-- Incrementa a variável correta
                 else:
-                    updated += 1
+                    total_updated += 1 # <-- Incrementa a variável correta
 
                 # Atribuição de Papel
                 role_name = ROLE_MAP.get(papel)
@@ -163,18 +165,16 @@ def import_users_view(request):
                 errors.append(f"Linha {row_number}: Erro inesperado - {str(e)}")
 
         # Resultado da importação
-        if created or updated:
-            msg = f"Importação concluída: {created} novos, {updated} atualizados"
+        if total_created or total_updated: # <-- Usar as novas variáveis aqui
+            msg = f"Importação concluída: {total_created} novos, {total_updated} atualizados"
             messages.success(request, msg)
         if errors:
-            for error in errors[:10]:  # Mostra apenas os primeiros 10 erros
+            for error in errors[:10]:
                 messages.error(request, error)
 
         return redirect("/admin/auth/user/")
 
     return render(request, "admin/import_users.html")
-
-
 
 def export_users_view(request):
     response = HttpResponse(content_type='text/csv')
