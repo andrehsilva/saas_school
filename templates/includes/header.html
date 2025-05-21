@@ -2,8 +2,8 @@
 {% load static %}
 
 <style>
+    /* Estilos compartilhados */
     .navitems a {
-        /* Estilo padrão dos links */
         padding: 0.5rem 1rem;
         border-radius: 0.25rem;
         transition: all 0.2s ease;
@@ -14,14 +14,12 @@
     }
     
     .navitems a.active {
-        /* Estilo do link ativo */
         background-color: rgba(255, 255, 255, 0.2);
         font-weight: 600;
         position: relative;
     }
     
     .navitems a.active::after {
-        /* Barra indicadora abaixo do link ativo */
         content: '';
         position: absolute;
         bottom: -8px;
@@ -31,10 +29,74 @@
         height: 2px;
         background-color: white;
     }
+
+    /* Estilos específicos para mobile */
+    @media (max-width: 768px) {
+        .desktop-nav {
+            display: none;
+        }
+        
+        .mobile-nav-btn {
+            display: block;
+        }
+        
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 50;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-out;
+            padding-top: 5rem;
+        }
+        
+        .mobile-menu.open {
+            transform: translateX(0);
+        }
+        
+        .mobile-menu .navitems {
+            flex-direction: column;
+            gap: 1.5rem;
+            padding: 2rem;
+        }
+        
+        .mobile-menu .navitems a {
+            font-size: 1.25rem;
+            padding: 0.75rem 1rem;
+        }
+        
+        .mobile-menu .navitems a.active::after {
+            bottom: -4px;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            font-size: 1.5rem;
+            background: none;
+            border: none;
+            color: white;
+        }
+    }
+
+    @media (min-width: 769px) {
+        .mobile-nav-btn, .mobile-menu {
+            display: none;
+        }
+        
+        .desktop-nav {
+            display: block;
+        }
+    }
 </style>
 
-<header class="flex items-center justify-between bg-gray-800 h-20 px-8 text-white sticky top-0 z-40"
-    {% if color %}style="background-color: {{ color }};"{% endif %}>
+<header class="flex items-center justify-between bg-gray-800 h-20 px-4 md:px-8 text-white sticky top-0 z-40"
+    {% if color %}style="background-color: {{ color }};"{% endif %}
+    x-data="{ mobileMenuOpen: false }"> <!-- Alpine.js data no elemento pai -->
 
     <!-- Logo e nome do tenant -->
     <div>
@@ -46,8 +108,15 @@
         </a>
     </div>
 
-    <!-- Navegação -->
-    <nav class="block relative">
+    <!-- Botão do menu mobile -->
+    <button class="mobile-nav-btn md:hidden p-3" @click="mobileMenuOpen = true">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 " fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+    </button>
+
+    <!-- Navegação desktop -->
+    <nav class="desktop-nav hidden md:block relative">
         <ul class="navitems flex items-center justify-center h-full gap-1">
             {% if not request.user.is_authenticated %}
                 <li>
@@ -103,6 +172,61 @@
         </ul>
     </nav>
 
+    <!-- Menu Mobile -->
+    <div class="mobile-menu" :class="{ 'open': mobileMenuOpen }" @click.away="mobileMenuOpen = false" x-show="mobileMenuOpen" x-transition>
+        <button class="close-btn" @click="mobileMenuOpen = false">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+        
+        <ul class="navitems">
+            {% if not request.user.is_authenticated %}
+                <li>
+                    <a href="/contact" class="{% if request.path == '/contact/' %}active{% endif %}" @click="mobileMenuOpen = false">
+                        Contato
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'account_login' %}" class="{% if request.path == '/accounts/login/' %}active{% endif %}" @click="mobileMenuOpen = false">
+                        Login
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'account_signup' %}?next={% url 'profile-onboarding' %}" 
+                       class="{% if request.path == '/accounts/signup/' %}active{% endif %}" @click="mobileMenuOpen = false">
+                        Inscrever-se
+                    </a>
+                </li>
+            {% else %}
+                {% get_nav_links as navigation_links %}
+                {% for link in navigation_links %}
+                    <li>
+                        <a href="{{ link.url }}" 
+                           class="{% if request.path|slice:':20' == link.url|slice:':20' %}active{% endif %}" 
+                           @click="mobileMenuOpen = false">
+                            {{ link.title }}
+                        </a>
+                    </li>
+                {% endfor %}
+                
+                <!-- Itens do perfil no mobile -->
+                <li class="mt-8 pt-4 border-t border-gray-700">
+                    <a href="{% url 'profile' %}" @click="mobileMenuOpen = false" class="flex items-center gap-3">
+                        <img class="h-10 w-10 rounded-full object-cover" src="{{ request.user.profile.avatar }}" alt="Avatar" />
+                        <div>
+                            <div class="font-medium">{{ request.user.profile.name }}</div>
+                            <div class="text-sm text-gray-400">Ver perfil</div>
+                        </div>
+                    </a>
+                </li>
+                <li><a href="{% url 'profile-edit' %}" @click="mobileMenuOpen = false">Editar Perfil</a></li>
+                <li><a href="{% url 'profile-settings' %}" @click="mobileMenuOpen = false">Configurações</a></li>
+                <li><a href="{% url 'account_logout' %}" @click="mobileMenuOpen = false">Sair</a></li>
+            {% endif %}
+        </ul>
+    </div>
+
     <!-- Script para marcar como lida -->
     <script>
     function markAsRead(type, id) {
@@ -114,7 +238,7 @@
             }
         }).then(response => {
             if (response.ok) {
-                location.reload(); // Atualiza o contador
+                location.reload();
             }
         });
     }
