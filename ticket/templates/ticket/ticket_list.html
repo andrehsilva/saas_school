@@ -1,7 +1,7 @@
 {% extends 'layouts/blank.html' %}
 {% block content %}
 <div class="max-w-7xl mx-auto mt-10 px-4">
-    <h1 class="text-2xl font-bold mb-6">Meus Tickets</h1>
+    <h1 class="text-3xl font-bold text-gray-800">Meus Tickets</h1>
 
     <!-- Formulário de busca -->
     <form method="get" class="mb-6 flex flex-col sm:flex-row sm:items-center gap-3 w-full">
@@ -10,7 +10,9 @@
                  value="{{ search_query }}"
                  class="flex-grow px-4 py-2 border rounded-l-lg shadow-sm text-sm" />
           <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-lg text-sm">
-              Buscar
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
           </button>
       </div>
     </form>
@@ -89,7 +91,15 @@
             <p class="text-sm text-gray-500">Criado em: {{ ticket.created_at|date:"d/m/Y H:i" }}</p>
         </a>
         {% empty %}
-        <p class="text-gray-500">Nenhum ticket encontrado.</p>
+        <div class="text-center py-16 bg-gray-50 rounded-lg border-2 border-dashed">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p class="mt-4 text-gray-500">Nada encontrado</p>
+                {% if search_query or selected_category %}
+                <p class="text-sm mt-2">Tente ajustar seus filtros de busca</p>
+                {% endif %}
+            </div>
         {% endfor %}
     </div>
 

@@ -6,7 +6,7 @@
 <div class="max-w-7xl mx-auto mt-10 px-4">
     <!-- Cabeçalho e Filtros -->
     <div class="mb-8 space-y-4">
-        <h1 class="text-3xl font-bold text-gray-800">Books - Meus livros e documentos</h1>
+        <h1 class="text-3xl font-bold text-gray-800">Meus Jogos Educacionais</h1>
         
         <!-- Barra de Pesquisa e Filtros -->
         <form method="get" class="space-y-4">
@@ -118,44 +118,37 @@
     </div>
 
     <!-- Paginação -->
-    <div class="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div class="text-sm text-gray-600">
-            Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ page_obj.paginator.count }} itens
-        </div>
-        
-        <div class="join">
-            {% if page_obj.has_previous %}
-                <a href="?page=1{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}" 
-                   class="join-item btn btn-sm">«</a>
-                <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}" 
-                   class="join-item btn btn-sm">‹</a>
-            {% endif %}
-            
-            <span class="join-item btn btn-sm btn-active">{{ page_obj.number }}</span>
-            
-            {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}" 
-                   class="join-item btn btn-sm">›</a>
-                <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}" 
-                   class="join-item btn btn-sm">»</a>
-            {% endif %}
-        </div>
-    </div>
+    <!-- Paginação -->
+            <div class="flex justify-center space-x-2 mt-6 p-4">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&type={{ selected_type }}" 
+                   class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">
+                    Anterior
+                </a>
+                {% endif %}
+
+                <span class="px-3 py-1 bg-blue-500 text-white rounded">
+                    {{ page_obj.number }}
+                </span>
+
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&type={{ selected_type }}" 
+                   class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">
+                    Próxima
+                </a>
+                {% endif %}
+            </div>
 
     {% else %}
     <!-- Estado Vazio -->
-    <div class="text-center p-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 mt-8">
-        <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+    <div class="text-center py-16 bg-gray-50 rounded-lg border-2 border-dashed">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
-        <h3 class="mt-4 text-lg font-medium text-gray-900">Nenhum documento encontrado</h3>
-        <p class="mt-1 text-sm text-gray-500">
-            {% if search_query or selected_category %}
-            Tente ajustar seus filtros de busca
-            {% else %}
-            Nenhum documento disponível no momento
-            {% endif %}
-        </p>
+        <p class="mt-4 text-gray-500">Nenhum documento encontrado</p>
+        {% if search_query or selected_category %}
+        <p class="text-sm mt-2">Tente ajustar seus filtros de busca</p>
+        {% endif %}
     </div>
     {% endif %}
 </div>
