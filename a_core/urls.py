@@ -30,10 +30,11 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path('profile/', include('a_users.urls')),
     path('contact/', include('contact.urls')),
-    path('messages/', include('message.urls')),
+    path('message/', include('message.urls', namespace='message')),
     path('books/', include('books.urls')),
     path('school/', include('school.urls')), 
     path('collection/', include('collection.urls')),
+    path('notification/', include('notification.urls')),
     path('ticket/', include('ticket.urls')),
     path('notes/', include('note.urls')), # Suas notas
     path('@<username>/', profile_view, name="profile"),

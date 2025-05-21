@@ -8,7 +8,7 @@ DEFAULT_LINKS = [
     {'title': 'Home', 'url': '/', 'order': 1},
     {'title': 'Jogos/Coleções', 'url': '/collection/', 'order': 2},
     {'title': 'Meus Livros', 'url': '/books/', 'order': 3},
-    {'title': 'Mensagens', 'url': '/messages/', 'order': 4},
+    {'title': 'Mensagens', 'url': '/message/', 'order': 4},
     {'title': 'Tickets', 'url': '/ticket/', 'order': 5},
     {'title': 'Boletim', 'url': '/notes/', 'order': 6},
 ]

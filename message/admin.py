@@ -4,9 +4,10 @@ from .models import Message, MessageType, ReceivedMessage, Event
 from django.db.models import Q
 from school.models import UserRole 
 from school.models import Class, Student, Grade
-from django.urls import reverse
-from django.http import HttpResponseRedirect
+# from django.http import HttpResponseRedirect # Importação não usada, pode ser removida se não houver outra função
 from django.contrib.auth import get_user_model
+from notification.utils import send_notification, send_notification_to_class
+
 
 User = get_user_model()
   
@@ -32,14 +33,45 @@ class MessageAdmin(admin.ModelAdmin):
         obj.created_by = request.user
         super().save_model(request, obj, form, change)
 
+        # Gerar a URL da mensagem usando reverse()
+        message_url = reverse('message:message_detail', kwargs={'id': obj.id})
+
+        # Notificações para usuários individuais
+        for user in obj.users.all():
+            send_notification(
+                recipients=user, # CORRIGIDO: de 'recipient' para 'recipients'
+                title=obj.title,
+                message=obj.context,
+                url=message_url
+            )
+
+        # Notificações para turmas (esta chamada já está correta, pois send_notification_to_class
+        # por sua vez chama send_notification com a lista de usuários extraída)
+        for turma in obj.classes.all():
+            send_notification_to_class(
+                turma,
+                title=obj.title,
+                message=obj.context,
+                url=message_url
+            )
+        
+        for grade in obj.grades.all():
+            for turma in Class.objects.filter(grade=grade):
+                send_notification_to_class(
+                    turma,
+                    title=obj.title,
+                    message=obj.context,
+                    url=message_url
+                )
+
+
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "created_by":
             allowed_roles = ['Diretor', 'Coordenador', 'Colaborador', 'Professor']
             excluded_roles = ['Aluno', 'Pai']
             
-            # Correção: Use 'roles' (nome do relacionamento) e 'role__name' (campo do modelo Role)
             kwargs["queryset"] = User.objects.filter(
-                Q(roles__role__name__in=allowed_roles)  # ← Aqui está a correção
+                Q(roles__role__name__in=allowed_roles)
             ).exclude(
                 Q(roles__role__name__in=excluded_roles)
             ).distinct().order_by('username')

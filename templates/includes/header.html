@@ -108,6 +108,8 @@
         </a>
     </div>
 
+    
+
     <!-- Botão do menu mobile -->
     <button class="mobile-nav-btn md:hidden p-3" @click="mobileMenuOpen = true">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 " fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -171,6 +173,42 @@
             {% endif %}
         </ul>
     </nav>
+
+    <!-- Notificações -->
+    {% if request.user.is_authenticated %}
+        <div class="relative mr-4" id="notification-bell">
+            <button id="toggleNotifications" class="relative p-2 rounded-full hover:bg-gray-700 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <span id="notification-count" class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center {% if unread_notifications_count == 0 %}hidden{% endif %}">
+                    {{ unread_notifications_count }}
+                </span>
+            </button>
+            <div id="notification-list" class="absolute right-0 mt-2 w-80 bg-white border border-gray-200 shadow-lg rounded-lg hidden z-50 max-h-96 overflow-y-auto">
+                <div class="p-3 border-b border-gray-200 bg-gray-50">
+                    <h3 class="font-semibold text-gray-800">Notificações</h3>
+                </div>
+                <ul id="notification-items" class="divide-y divide-gray-100">
+                    {% for notification in unread_notifications|slice:":10" %}
+                        <li class="px-4 py-3 hover:bg-gray-50 transition-colors">
+                            <a href="{% url 'read_and_redirect' notification.id %}" class="block">
+                                <div class="flex justify-between items-start">
+                                    <strong class="text-sm font-medium text-gray-900">{{ notification.title }}</strong>
+                                    <span class="text-xs text-gray-500">{{ notification.created_at|date:"d/m/Y H:i" }}</span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">{{ notification.message }}</p>
+                            </a>
+                        </li>
+                    {% empty %}
+                        <li class="px-4 py-3 text-center text-sm text-gray-500">
+                            Nenhuma notificação não lida
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    {% endif %}
 
     <!-- Menu Mobile -->
     <div class="mobile-menu" :class="{ 'open': mobileMenuOpen }" @click.away="mobileMenuOpen = false" x-show="mobileMenuOpen" x-transition>
@@ -243,4 +281,91 @@
         });
     }
     </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+    const bell = document.getElementById("toggleNotifications");
+    const listContainer = document.getElementById("notification-list");
+    const countElement = document.getElementById("notification-count");
+    const notificationItemsContainer = document.getElementById("notification-items");
+
+    function fetchAndRenderNotifications() {
+        fetch("{% url 'unread_notifications' %}")
+            .then(response => response.json())
+            .then(data => {
+                // Para depuração: veja o que está sendo retornado
+                console.log("Dados recebidos:", data);
+
+                // Atualiza o contador
+                if (countElement) {
+                    if (data.count > 0) {
+                        countElement.textContent = data.count;
+                        countElement.classList.remove("hidden");
+                    } else {
+                        countElement.classList.add("hidden");
+                    }
+                }
+
+                // Atualiza a lista de notificações
+                if (notificationItemsContainer) {
+                    notificationItemsContainer.innerHTML = ''; // Limpa a lista existente
+
+                    if (data.notifications && data.notifications.length > 0) {
+                        data.notifications.forEach(n => {
+                            // Para depuração: veja o objeto de notificação individual
+                            console.log("Notificação individual:", n);
+
+                            const li = document.createElement('li');
+                            li.classList.add('px-4', 'py-3', 'hover:bg-gray-50', 'transition-colors');
+                            
+                            // AQUI É A PARTE CRÍTICA: Use template literals corretamente
+                            // E certifique-se de que as propriedades (n.title, n.message, n.created_at) existem.
+                            // A data já vem formatada do backend, então não precisa formatar aqui novamente.
+                            li.innerHTML = `
+                                <a href="${n.url || '#'}" class="block">
+                                    <div class="flex justify-between items-start">
+                                        <strong class="text-sm font-medium text-gray-900">${n.title}</strong>
+                                        <span class="text-xs text-gray-500">${n.created_at}</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">${n.message}</p>
+                                </a>
+                            `;
+                            notificationItemsContainer.appendChild(li);
+                        });
+                    } else {
+                        const li = document.createElement('li');
+                        li.classList.add('px-4', 'py-3', 'text-center', 'text-sm', 'text-gray-500');
+                        li.textContent = 'Nenhuma notificação não lida';
+                        notificationItemsContainer.appendChild(li);
+                    }
+                }
+            })
+            .catch(error => console.error('Erro ao carregar notificações:', error));
+    }
+
+    // Toggle da lista de notificações
+    if (bell && listContainer) {
+        bell.addEventListener("click", (e) => {
+            e.stopPropagation();
+            listContainer.classList.toggle("hidden");
+            if (!listContainer.classList.contains("hidden")) {
+                fetchAndRenderNotifications(); // Atualiza ao abrir
+            }
+        });
+        
+        document.addEventListener("click", (e) => {
+            if (!listContainer.contains(e.target) && !bell.contains(e.target)) {
+                listContainer.classList.add("hidden");
+            }
+        });
+    }
+    
+    // Carregar notificações na carga inicial da página
+    fetchAndRenderNotifications();
+
+    // Atualizar notificações periodicamente
+    setInterval(fetchAndRenderNotifications, 30000);
+});
+</script>
+
+    
 </header>
