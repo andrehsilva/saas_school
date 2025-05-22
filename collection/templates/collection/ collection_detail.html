@@ -1,0 +1,21 @@
+{% extends 'layouts/blank.html' %}
+{% block content %}
+<div class="max-w-4xl mx-auto mt-10 px-4 space-y-6">
+    <div class="bg-white rounded-xl shadow p-6">
+        <h1 class="text-3xl font-bold text-gray-800">{{ item.title }}</h1>
+        <p class="text-gray-600 mt-2">{{ item.description }}</p>
+
+        {% if item.thumbnail %}
+        <div class="mt-4">
+            <img src="{{ item.thumbnail.url }}" alt="Capa" class="rounded-md shadow w-full max-h-96 object-cover">
+        </div>
+        {% endif %}
+
+        <div class="mt-6">
+            <a href="{{ item.get_html_url }}" class="btn btn-primary" target="_blank">
+                👁️‍🗨️ Acessar Conteúdo Interativo
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

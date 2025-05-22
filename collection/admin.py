@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from .models import CollectionItem, Category
+from notification.utils import send_notification, send_notification_to_class, send_notification_to_class_staff
+from school.models import Class
 
 @admin.register(CollectionItem)
 class CollectionItemAdmin(admin.ModelAdmin):
@@ -25,22 +27,65 @@ class CollectionItemAdmin(admin.ModelAdmin):
         if not obj.uploaded_by:
             obj.uploaded_by = request.user
         super().save_model(request, obj, form, change)
-    
-    def get_classes(self, obj):
-        return ", ".join([cls.name for cls in obj.classes.all()])
-    get_classes.short_description = 'Classes'
 
-    def get_users(self, obj):
-        return ", ".join([user.username for user in obj.users.all()])
-    get_users.short_description = 'Usuários'
+        notified_ids = set()
 
+        # URL opcional - substitua pela rota certa se houver uma view_detail
+        item_url = f"/collection/item/{obj.id}/"
+
+        # 🔔 Usuários diretos
+        for user in obj.target_users.all():
+            if user.id not in notified_ids:
+                send_notification(
+                    recipients=user,
+                    title=f"Novo item publicado: {obj.title}",
+                    message=obj.description or "",
+                    url=item_url
+                )
+                notified_ids.add(user.id)
+
+        # 🔔 Classes
+        for turma in obj.target_classes.all():
+            send_notification_to_class(
+                turma,
+                title=f"Novo item publicado: {obj.title}",
+                message=obj.description or "",
+                url=item_url
+            )
+            send_notification_to_class_staff(
+                turma,
+                title=f"Novo item publicado: {obj.title}",
+                message=obj.description or "",
+                url=item_url
+            )
+
+        # 🔔 Séries
+        for grade in obj.target_grades.all():
+            for turma in Class.objects.filter(grade=grade):
+                send_notification_to_class(
+                    turma,
+                    title=f"Novo item publicado: {obj.title}",
+                    message=obj.description or "",
+                    url=item_url
+                )
+                send_notification_to_class_staff(
+                    turma,
+                    title=f"Novo item publicado: {obj.title}",
+                    message=obj.description or "",
+                    url=item_url
+                )
 
     def preview(self, obj):
         if obj.html_path:
-            # Concatena o caminho da URL do arquivo HTML com o URL base da mídia
-            preview_url = obj.html_path
-            return format_html('<a href="{}" target="_blank">Visualizar HTML</a>', preview_url)
+            return format_html('<a href="{}" target="_blank">Visualizar HTML</a>', obj.html_path)
         return "Sem HTML"
+    
+    def view_link(self, obj):
+        return format_html('<a href="/collection/item/{}/" target="_blank">Abrir</a>', obj.id)
+        view_link.short_description = "Acesso Direto"
+
+        list_display += ('view_link',)
+
     preview.short_description = "Pré-visualização"
 
 admin.site.register(Category)

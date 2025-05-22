@@ -36,6 +36,18 @@ def my_collections(request):
         'selected_category': int(category_id) if category_id and category_id.isdigit() else None
     })
 
+
+@login_required
+def collection_detail(request, item_id):
+    item = get_object_or_404(CollectionItem, id=item_id)
+
+    if not has_access(request.user, item):
+        raise Http404("Você não tem permissão para acessar este conteúdo.")
+
+    return render(request, 'collection/collection_detail.html', {
+        'item': item
+    })
+
 @login_required
 def view_html(request, item_id):
     item = get_object_or_404(CollectionItem, id=item_id)
