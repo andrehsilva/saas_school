@@ -58,22 +58,12 @@ def messages_timeline(request):
 
 @login_required
 def message_detail(request, id):
-    message = get_object_or_404(Message, id=id)
-
-    # Verificação de permissão
-    has_permission = (
-        message.created_by == request.user or
-        message.users.filter(id=request.user.id).exists() or
-        (
-            hasattr(request.user, 'student') and
-            request.user.student.classes_assigned.filter(id__in=message.classes.values_list('id', flat=True)).exists()
-        )
-    )
-
-    if not has_permission:
-        raise PermissionDenied("Você não tem permissão para visualizar este conteúdo")
+    queryset = get_visible_messages(request.user)
+    message = get_object_or_404(queryset, id=id)
 
     return render(request, 'message/message_detail.html', {'message': message})
+
+
 
 
 @login_required

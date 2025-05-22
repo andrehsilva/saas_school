@@ -4,5 +4,6 @@ from . import views
 
 urlpatterns = [
     path('', views.my_documents, name='my_documents'),
+    path('<int:pk>/', views.document_detail, name='document_detail'),
     path('document/<int:doc_id>/view/', views.view_pdf, name='view_pdf'),
 ]

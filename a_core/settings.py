@@ -51,6 +51,7 @@ SHARED_APPS = [
     'a_home',
     'a_users',
     'school',
+    'notification',
    
   
 ]

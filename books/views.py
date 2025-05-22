@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404
 from django.http import Http404
 from django.db.models import Q
+from django.core.exceptions import PermissionDenied
 
 from books.models import Document, Category
 from books.utils import get_accessible_documents, has_document_access  # Importe do local correto
@@ -42,6 +43,16 @@ def my_documents(request):
         'search_query': search_query,
         'selected_category': int(category_id) if category_id.isdigit() else None
     })
+
+
+@login_required
+def document_detail(request, pk):
+    document = get_object_or_404(Document, id=pk)
+
+    if not has_document_access(request.user, document):
+        raise PermissionDenied("Você não tem permissão para acessar este documento.")
+
+    return render(request, "books/document_detail.html", {"document": document})
 
 
 @login_required
