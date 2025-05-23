@@ -1,0 +1,164 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Painel da Escola{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Bem-vindo ao Painel da Escola</h1>
+    <p class="text-gray-600 dark:text-gray-400 mt-1">Visualize e gerencie informações importantes</p>
+</div>
+
+<!-- Resumo em cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    {% if is_director or is_coordinator %}
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 card-hover">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total de Turmas</p>
+                <p class="text-3xl font-bold text-gray-800 dark:text-white mt-1">{{ total_classes|default:"0" }}</p>
+            </div>
+            <div class="bg-blue-100 dark:bg-blue-900/50 p-3 rounded-full">
+                <i class="fas fa-users-class text-xl text-blue-600 dark:text-blue-400"></i>
+            </div>
+        </div>
+        <div class="mt-4">
+            <a href="#" class="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center">
+                Ver detalhes <i class="fas fa-arrow-right ml-1 text-xs"></i>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if is_director or is_coordinator %}
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 card-hover">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Professores</p>
+                <p class="text-3xl font-bold text-gray-800 dark:text-white mt-1">{{ total_teachers|default:"0" }}</p>
+            </div>
+            <div class="bg-green-100 dark:bg-green-900/50 p-3 rounded-full">
+                <i class="fas fa-chalkboard-teacher text-xl text-green-600 dark:text-green-400"></i>
+            </div>
+        </div>
+        <div class="mt-4">
+            <a href="#" class="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center">
+                Ver detalhes <i class="fas fa-arrow-right ml-1 text-xs"></i>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if is_teacher or is_collaborator %}
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 card-hover">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Minhas Postagens</p>
+                <p class="text-3xl font-bold text-gray-800 dark:text-white mt-1">{{ my_posts|default:"0" }}</p>
+            </div>
+            <div class="bg-purple-100 dark:bg-purple-900/50 p-3 rounded-full">
+                <i class="fas fa-file-alt text-xl text-purple-600 dark:text-purple-400"></i>
+            </div>
+        </div>
+        <div class="mt-4">
+            <a href="#" class="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center">
+                Ver detalhes <i class="fas fa-arrow-right ml-1 text-xs"></i>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if is_director %}
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 card-hover">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Documentos Publicados</p>
+                <p class="text-3xl font-bold text-gray-800 dark:text-white mt-1">{{ published_documents|default:"0" }}</p>
+            </div>
+            <div class="bg-amber-100 dark:bg-amber-900/50 p-3 rounded-full">
+                <i class="fas fa-file-pdf text-xl text-amber-600 dark:text-amber-400"></i>
+            </div>
+        </div>
+        <div class="mt-4">
+            <a href="#" class="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center">
+                Ver detalhes <i class="fas fa-arrow-right ml-1 text-xs"></i>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Seção de atividades recentes -->
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-8">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-gray-800 dark:text-white">Atividades Recentes</h2>
+        <a href="#" class="text-sm text-primary-600 dark:text-primary-400 hover:underline">Ver todas</a>
+    </div>
+    
+    <div class="space-y-4">
+        <div class="flex items-start">
+            <div class="flex-shrink-0 mt-1">
+                <span class="inline-block h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-500 dark:text-blue-300 flex items-center justify-center">
+                    <i class="fas fa-user-plus"></i>
+                </span>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-800 dark:text-white">Novo aluno cadastrado</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">João Silva foi adicionado à turma 3º Ano B</p>
+                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Há 2 horas</p>
+            </div>
+        </div>
+        
+        <div class="flex items-start">
+            <div class="flex-shrink-0 mt-1">
+                <span class="inline-block h-8 w-8 rounded-full bg-green-100 dark:bg-green-900 text-green-500 dark:text-green-300 flex items-center justify-center">
+                    <i class="fas fa-file-upload"></i>
+                </span>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-800 dark:text-white">Novo documento publicado</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Calendário de provas do 2º bimestre</p>
+                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Ontem às 15:30</p>
+            </div>
+        </div>
+        
+        <div class="flex items-start">
+            <div class="flex-shrink-0 mt-1">
+                <span class="inline-block h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-500 dark:text-purple-300 flex items-center justify-center">
+                    <i class="fas fa-bell"></i>
+                </span>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-800 dark:text-white">Reunião de pais agendada</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Reunião geral para o dia 15/06 às 19h</p>
+                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">2 dias atrás</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Seção de ações rápidas -->
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+    <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Ações Rápidas</h2>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <a href="#" class="flex flex-col items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-all">
+            <i class="fas fa-user-plus text-2xl text-primary-600 dark:text-primary-400 mb-2"></i>
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Adicionar Aluno</span>
+        </a>
+        
+        <a href="#" class="flex flex-col items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-all">
+            <i class="fas fa-file-upload text-2xl text-primary-600 dark:text-primary-400 mb-2"></i>
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Publicar Documento</span>
+        </a>
+        
+        <a href="#" class="flex flex-col items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-all">
+            <i class="fas fa-calendar-plus text-2xl text-primary-600 dark:text-primary-400 mb-2"></i>
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Agendar Evento</span>
+        </a>
+        
+        <a href="#" class="flex flex-col items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-all">
+            <i class="fas fa-envelope text-2xl text-primary-600 dark:text-primary-400 mb-2"></i>
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Enviar Mensagem</span>
+        </a>
+    </div>
+</div>
+{% endblock %}

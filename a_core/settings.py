@@ -83,6 +83,7 @@ TENANT_APPS = [
     'navigator',
     'note',
     'notification',
+    'dashboard',
  
     
 ]
@@ -127,6 +128,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'notification.context_processors.notifications',
+                'dashboard.context_processors.user_roles',
                
                
             ],

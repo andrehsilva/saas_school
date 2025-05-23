@@ -39,6 +39,9 @@ urlpatterns = [
     path('notes/', include('note.urls')), # Suas notas
     path('@<username>/', profile_view, name="profile"),
 
+    #dashboard
+    path('dashboard/', include('dashboard.urls', namespace='dashboard')),
+
 ]
 
 # Only used when DEBUG=True, whitenoise can serve files when DEBUG=False
