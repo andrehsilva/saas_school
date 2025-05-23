@@ -1,7 +1,9 @@
 from django.contrib import admin
 from .models import Note
-
 from django.urls import reverse
+from notification.utils import send_notification
+from school.models import Parent
+
 
 @admin.register(Note)
 class NoteAdmin(admin.ModelAdmin):
@@ -36,4 +38,28 @@ class NoteAdmin(admin.ModelAdmin):
         }),
     )
 
-    
+    def save_model(self, request, obj, form, change):
+        is_new = obj.pk is None
+        super().save_model(request, obj, form, change)
+
+        if is_new:
+            try:
+                note_url = reverse('notes:note_detail', kwargs={'note_id': obj.id})
+            except:
+                note_url = f'/notes/{obj.id}/'
+
+            # Aluno
+            recipients = []
+            if obj.student.user:
+                recipients.append(obj.student.user)
+
+            # Pais/Responsáveis
+            parents = Parent.objects.filter(children=obj.student)
+            recipients += [p.user for p in parents if p.user]
+
+            send_notification(
+                recipients=recipients,
+                title=f"Nova nota em {obj.subject.name}",
+                message=obj.title,
+                url=note_url
+            )
