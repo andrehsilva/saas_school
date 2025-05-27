@@ -1,54 +1,133 @@
-<aside 
+<aside
     class="transition-all duration-300 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-full flex flex-col z-20"
     :class="sidebarOpen ? 'w-64' : 'w-20'"
 >
+    <!-- Topo: Logo e Toggle -->
     <div class="h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700">
-        <div class="flex items-center">
-            <img src="" alt="Logo" class="h-8 w-8" onerror="this.src='https://ui-avatars.com/api/?name=E&background=0284c7&color=fff&bold=true'">
-            <span class="ml-3 text-lg font-bold text-gray-800 dark:text-white transition-opacity duration-300"
+        <div class="flex items-center overflow-hidden">
+            <img src="" alt="Logo da Escola" title="Logo da Escola"
+                 class="h-8 w-8 flex-shrink-0"
+                 onerror="this.src='https://ui-avatars.com/api/?name=E&background=0284c7&color=fff&bold=true'">
+            <span class="ml-3 text-lg font-bold text-gray-800 dark:text-white transition-opacity duration-300 whitespace-nowrap"
                   :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'">Escola</span>
         </div>
-        <button @click="sidebarOpen = !sidebarOpen" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">
-            <svg :class="sidebarOpen ? 'rotate-0' : 'rotate-180'" class="w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+        <button @click="sidebarOpen = !sidebarOpen"
+                class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 flex-shrink-0">
+            <svg :class="sidebarOpen ? 'rotate-0' : 'rotate-180'"
+                 class="w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform duration-300"
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
             </svg>
         </button>
     </div>
-    
+
+    <!-- Navegação -->
     <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        <a href="{% url 'dashboard:home' %}" 
-           class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 group transition-all">
-            <i class="fas fa-tachometer-alt w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-primary-600 dark:group-hover:text-primary-400"></i>
-            <span class="ml-3 font-medium transition-all duration-300"
+        <!-- Dashboard -->
+        <a href="{% url 'dashboard:home' %}"
+           class="flex items-center px-3 py-2.5 rounded-lg transition-colors duration-200 group
+                  {% if request.resolver_match.url_name == 'home' %}
+                      bg-primary-100 text-primary-800 dark:bg-primary-700 dark:text-primary-100 font-semibold
+                  {% else %}
+                      text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white
+                  {% endif %}">
+            <i class="fas fa-tachometer-alt w-5 h-5 mr-3 flex-shrink-0
+                      {% if request.resolver_match.url_name == 'home' %}
+                          text-primary-600 dark:text-primary-300
+                      {% else %}
+                          text-gray-500 dark:text-gray-400 group-hover:text-primary-600 dark:group-hover:text-primary-300
+                      {% endif %}"></i>
+            <span class="font-medium transition-opacity duration-300 whitespace-nowrap"
                   :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'">Dashboard</span>
         </a>
-        
-        <a href="#" 
-           class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 group transition-all">
-            <i class="fas fa-users-class w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-primary-600 dark:group-hover:text-primary-400"></i>
-            <span class="ml-3 font-medium transition-all duration-300"
-                  :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'">Turmas</span>
+
+        <!-- Estrutura Escolar -->
+        {% with active_school_urls="grade_list grade_create grade_edit class_list class_create class_edit" %}
+        <div x-data="{ open: {% if request.resolver_match.url_name in active_school_urls.split %}true{% else %}false{% endif %} }">
+            <button @click="open = !open"
+                    class="flex items-center justify-between w-full px-3 py-2.5 rounded-lg font-medium transition-colors duration-200
+                           {% if request.resolver_match.url_name in active_school_urls.split %}
+                               bg-primary-100 text-primary-800 dark:bg-primary-700 dark:text-primary-100
+                           {% else %}
+                               text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white
+                           {% endif %}">
+                <div class="flex items-center overflow-hidden">
+                    <i class="fas fa-school w-5 h-5 mr-3 flex-shrink-0
+                              {% if request.resolver_match.url_name in active_school_urls.split %}
+                                  text-primary-600 dark:text-primary-300
+                              {% else %}
+                                  text-gray-500 dark:text-gray-400 group-hover:text-primary-600 dark:group-hover:text-primary-300
+                              {% endif %}"></i>
+                    <span :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'">Estrutura escolar</span>
+                </div>
+                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-200 ml-auto flex-shrink-0"
+                     :class="{ 'rotate-90': open, 'opacity-100': sidebarOpen, 'opacity-0 hidden': !sidebarOpen }"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
+
+            <div x-show="open" x-cloak class="ml-8 mt-1 space-y-1">
+                <a href="{% url 'school:grade_list' %}"
+                   class="flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-200
+                          {% if request.resolver_match.url_name in 'grade_list grade_create grade_edit' %}
+                              bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 font-semibold
+                          {% else %}
+                              text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-100
+                          {% endif %}">
+                    <i class="fas fa-layer-group w-4 h-4 mr-2"></i>
+                    Séries
+                </a>
+                <a href="{% url 'school:class_list' %}"
+                   class="flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-200
+                          {% if request.resolver_match.url_name in 'class_list class_create class_edit' %}
+                              bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 font-semibold
+                          {% else %}
+                              text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-100
+                          {% endif %}">
+                    <i class="fas fa-chalkboard w-4 h-4 mr-2"></i>
+                    Turmas
+                </a>
+            </div>
+        </div>
+        {% endwith %}
+
+        {% comment %} <!-- Outros Links -->
+        {% for link_name, icon_class, url_hash in [
+            ('Alunos', 'fas fa-user-graduate', '#'),
+            ('Professores', 'fas fa-chalkboard-teacher', '#'),
+            ('Disciplinas', 'fas fa-book', '#')
+        ] %}
+        <a href="{{ url_hash }}"
+           class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white group transition-colors duration-200">
+            <i class="{{ icon_class }} w-5 h-5 mr-3 flex-shrink-0 text-gray-500 dark:text-gray-400 group-hover:text-primary-600 dark:group-hover:text-primary-300"></i>
+            <span class="font-medium transition-opacity duration-300 whitespace-nowrap"
+                  :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'">{{ link_name }}</span>
         </a>
-        
-        <a href="#" 
-           class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 group transition-all">
-            <i class="fas fa-user-graduate w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-primary-600 dark:group-hover:text-primary-400"></i>
-            <span class="ml-3 font-medium transition-all duration-300"
-                  :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'">Alunos</span>
-        </a>
-        
-        <a href="#" 
-           class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 group transition-all">
-            <i class="fas fa-chalkboard-teacher w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-primary-600 dark:group-hover:text-primary-400"></i>
-            <span class="ml-3 font-medium transition-all duration-300"
-                  :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'">Professores</span>
-        </a>
-        
-        <a href="#" 
-           class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 group transition-all">
-            <i class="fas fa-book w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-primary-600 dark:group-hover:text-primary-400"></i>
-            <span class="ml-3 font-medium transition-all duration-300"
-                  :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'">Disciplinas</span>
-        </a>
+        {% endfor %} {% endcomment %}
+
+        <!-- Modo Claro/Escuro -->
+        <div class="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-center"
+             :class="sidebarOpen ? 'px-3' : 'px-0'">
+            <button @click="darkMode = !darkMode"
+                    class="p-2 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500
+                           text-gray-500 hover:bg-gray-100 hover:text-gray-700
+                           dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                    :class="sidebarOpen ? 'w-full flex items-center justify-center' : ''">
+                <template x-if="darkMode">
+                    <div class="flex items-center">
+                        <i class="fas fa-sun w-5 h-5" :class="sidebarOpen ? 'mr-2' : ''"></i>
+                        <span x-show="sidebarOpen" class="font-medium">Modo Claro</span>
+                    </div>
+                </template>
+                <template x-if="!darkMode">
+                    <div class="flex items-center">
+                        <i class="fas fa-moon w-5 h-5" :class="sidebarOpen ? 'mr-2' : ''"></i>
+                        <span x-show="sidebarOpen" class="font-medium">Modo Escuro</span>
+                    </div>
+                </template>
+            </button>
+        </div>
     </nav>
 </aside>

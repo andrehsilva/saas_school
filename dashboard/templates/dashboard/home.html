@@ -1,5 +1,9 @@
 {% extends 'dashboard/base.html' %}
 {% block title %}Painel da Escola{% endblock %}
+{% load widget_tweaks %}
+<form method="post">
+    {{ form.name }}
+</form>
 
 {% block content %}
 <div class="mb-8">

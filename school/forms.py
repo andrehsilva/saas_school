@@ -1,6 +1,7 @@
 # school/forms.py
 from django import forms
-from school.models import GradeCoordinator
+from school.models import Grade
+
 
 class ImportCSVForm(forms.Form):
     csv_file = forms.FileField(label="Arquivo CSV")
@@ -8,10 +9,13 @@ class ImportCSVForm(forms.Form):
 
 
 
-class GradeCoordinatorForm(forms.ModelForm):
+class GradeForm(forms.ModelForm):
     class Meta:
-        model = GradeCoordinator
-        fields = '__all__'
+        model = Grade
+        fields = ['name', 'coordinators', 'directors', 'colaborator']
         widgets = {
-            'grade': forms.Select(attrs={'class': 'grade-select'})  # Força seleção
+            'name': forms.TextInput(attrs={'class': 'input input-bordered w-full bg-gray-50'}),
+            'coordinators': forms.SelectMultiple(attrs={'class': 'select select-bordered w-full bg-gray-50'}),
+            'directors': forms.SelectMultiple(attrs={'class': 'select select-bordered w-full bg-gray-50'}),
+            'colaborator': forms.SelectMultiple(attrs={'class': 'select select-bordered w-full bg-gray-50'}),
         }

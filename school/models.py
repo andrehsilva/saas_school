@@ -94,7 +94,6 @@ class Grade(models.Model):
         verbose_name = _("Série")
         verbose_name_plural = _("Séries")
 
-    
 
 class Class(models.Model):
     name = models.CharField(

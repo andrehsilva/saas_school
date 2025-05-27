@@ -84,6 +84,7 @@ TENANT_APPS = [
     'note',
     'notification',
     'dashboard',
+    'widget_tweaks',
  
     
 ]

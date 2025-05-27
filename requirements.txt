@@ -9,3 +9,4 @@ django-admin-interface
 django-storages
 boto3
 django-cleanup
+django-widget-tweaks
