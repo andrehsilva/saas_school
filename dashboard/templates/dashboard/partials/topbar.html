@@ -1,4 +1,6 @@
+{% load static %}
 <header class="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6 z-10">
+    <!-- Lado esquerdo: Título e botão do menu -->
     <div class="flex items-center">
         <button @click="sidebarOpen = !sidebarOpen" class="md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -8,7 +10,21 @@
         <h1 class="text-xl font-semibold text-gray-800 dark:text-white ml-2 md:ml-0">Dashboard</h1>
     </div>
     
+    <!-- Lado direito: Botões e menu do usuário -->
     <div class="flex items-center space-x-4">
+        <!-- Link para o site principal -->
+        <div>
+            <a class="flex items-center gap-2 px-4 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" href="/">
+                <img class="h-4 w-auto flex-shrink-0" 
+                     src="{% if logo %}{{ logo.url }}{% else %}{% static 'images/logo.svg' %}{% endif %}" 
+                     alt="Logo da Empresa" 
+                     onerror="this.src='https://ui-avatars.com/api/?name=E&background=0284c7&color=fff&bold=true'">
+                <span class="text-sm whitespace-nowrap">
+                    {% if request.tenant %}{{ request.tenant.name }}{% else %}MySaas{% endif %}
+                </span>
+            </a>
+        </div>
+        
         <!-- Botão de tema claro/escuro -->
         <button @click="darkMode = !darkMode" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400">
             <svg x-show="!darkMode" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -19,40 +35,28 @@
             </svg>
         </button>
         
-        <!-- Notificações -->
-        <div x-data="{ open: false }" class="relative">
-            <button @click="open = !open" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400 relative">
+        <!-- Sistema de Notificações -->
+        {% if request.user.is_authenticated %}
+        <div class="relative" id="notification-bell">
+            <button id="toggleNotifications" class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                 </svg>
-                <span class="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500"></span>
+                <span id="notification-count" class="absolute top-0 right-0 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center {% if unread_notifications_count == 0 %}hidden{% endif %}">
+                    {{ unread_notifications_count }}
+                </span>
             </button>
             
-            <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 z-50" x-cloak>
-                <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                    <h3 class="text-sm font-semibold text-gray-800 dark:text-white">Notificações</h3>
+            <div id="notification-list" class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg hidden z-50 max-h-96 overflow-y-auto">
+                <div class="p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                    <h3 class="font-semibold text-gray-800 dark:text-gray-200">Notificações</h3>
                 </div>
-                <div class="max-h-64 overflow-y-auto">
-                    <a href="#" class="block px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <div class="flex items-start">
-                            <div class="flex-shrink-0">
-                                <span class="inline-block h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-500 dark:text-blue-300 flex items-center justify-center">
-                                    <i class="fas fa-bell"></i>
-                                </span>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm font-medium text-gray-800 dark:text-white">Nova mensagem</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">Você recebeu uma nova mensagem</p>
-                                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">5 minutos atrás</p>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <a href="#" class="block text-center text-sm font-medium text-primary-600 dark:text-primary-400 hover:underline px-4 py-2 border-t border-gray-200 dark:border-gray-700">
-                    Ver todas
-                </a>
+                <ul id="notification-items" class="divide-y divide-gray-100 dark:divide-gray-700">
+                    <li class="px-4 py-3 text-center text-sm text-gray-500 dark:text-gray-400">Carregando...</li>
+                </ul>
             </div>
         </div>
+        {% endif %}
         
         <!-- Perfil do usuário -->
         <div x-data="{ open: false }" class="relative">
@@ -62,17 +66,104 @@
             </button>
             
             <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 z-50" x-cloak>
-                <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <a href="{% url 'profile' %}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                     <i class="fas fa-user mr-2"></i> Meu Perfil
                 </a>
-                <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <a href="{% url 'profile-edit' %}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                     <i class="fas fa-cog mr-2"></i> Configurações
                 </a>
                 <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
-                <a href="" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <a href="{% url 'account_logout' %}" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700">
                     <i class="fas fa-sign-out-alt mr-2"></i> Sair
                 </a>
             </div>
         </div>
     </div>
 </header>
+
+<!-- Script para notificações -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const bell = document.getElementById("toggleNotifications");
+    const listContainer = document.getElementById("notification-list");
+    const countElement = document.getElementById("notification-count");
+    const notificationItemsContainer = document.getElementById("notification-items");
+
+    // Função para buscar e renderizar notificações
+    function fetchAndRenderNotifications() {
+        fetch("{% url 'unread_notifications' %}")
+            .then(response => response.json())
+            .then(data => {
+                // Atualiza contador
+                if (countElement) {
+                    countElement.textContent = data.count;
+                    countElement.classList.toggle("hidden", data.count === 0);
+                }
+
+                // Renderiza lista
+                notificationItemsContainer.innerHTML = "";
+
+                if (data.notifications && data.notifications.length > 0) {
+                    data.notifications.forEach(n => {
+                        const li = document.createElement("li");
+                        li.className = "px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors";
+                        li.innerHTML = `
+                            <a href="/notification/read/${n.id}/" class="block">
+                                <div class="flex justify-between items-start">
+                                    <strong class="text-sm font-medium text-gray-900 dark:text-gray-100">${n.title}</strong>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">${n.created_at}</span>
+                                </div>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">${n.message}</p>
+                            </a>`;
+                        notificationItemsContainer.appendChild(li);
+                    });
+                } else {
+                    const li = document.createElement("li");
+                    li.className = "px-4 py-3 text-center text-sm text-gray-500 dark:text-gray-400";
+                    li.textContent = "Nenhuma notificação não lida";
+                    notificationItemsContainer.appendChild(li);
+                }
+            })
+            .catch(error => {
+                console.error("Erro ao buscar notificações:", error);
+                notificationItemsContainer.innerHTML = "<li class='px-4 py-3 text-center text-sm text-red-500'>Erro ao carregar notificações</li>";
+            });
+    }
+
+    // Configurar eventos de clique
+    if (bell && listContainer) {
+        bell.addEventListener("click", e => {
+            e.stopPropagation();
+            listContainer.classList.toggle("hidden");
+            if (!listContainer.classList.contains("hidden")) {
+                fetchAndRenderNotifications();
+            }
+        });
+        
+        document.addEventListener("click", e => {
+            if (!listContainer.contains(e.target) && !bell.contains(e.target)) {
+                listContainer.classList.add("hidden");
+            }
+        });
+    }
+
+    // Função para marcar notificação como lida
+    window.markAsRead = function(type, id) {
+        fetch(`/mark-read/${type}/${id}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                fetchAndRenderNotifications();
+            }
+        });
+    };
+
+    // Carregar notificações inicialmente e configurar atualização periódica
+    fetchAndRenderNotifications();
+    setInterval(fetchAndRenderNotifications, 30000); // Atualiza a cada 30 segundos
+});
+</script>

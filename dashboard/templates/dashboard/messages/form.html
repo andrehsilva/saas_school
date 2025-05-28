@@ -1,0 +1,87 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}{{ form_title|default:"Nova Mensagem" }}{% endblock %}
+
+{% block content %}
+<a href="{% url 'message:dashboard_message_list' %}" class="text-primary-600 dark:text-primary-400 flex items-center mb-6 hover:underline">
+    <i class="fas fa-arrow-left mr-2"></i> Voltar
+</a>
+<div class="max-w-9xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow p-8 dark:text-white">
+    <h2 class="text-2xl font-bold mb-2">{{ form_title|default:"Nova Mensagem" }}</h2>
+    <p class="text-gray-500 dark:text-gray-300 mb-6">{{ form_subtitle|default:"Preencha os campos para enviar uma mensagem." }}</p>
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="mb-4">
+            <label class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Título</label>
+            <input type="text" name="title" value="{{ current_title|default_if_none:'' }}{{ message.title|default_if_none:'' }}"
+                   class="w-full border border-gray-200 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                   required>
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Conteúdo</label>
+            <textarea name="content" rows="4"
+                      class="w-full border border-gray-200 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      required>{{ current_content|default_if_none:'' }}{{ message.context|default_if_none:'' }}</textarea>
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Tipo de Mensagem</label>
+            <select name="type"
+                    class="w-full border border-gray-200 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <option value="">Selecionar...</option>
+                {% for t in message_types %}
+                <option value="{{ t.id }}" {% if t.id|stringformat:"s" == current_type|stringformat:"s" %}selected{% endif %}>
+                    {{ t.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Destinatários</label>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <span class="block text-xs font-semibold mb-1">Usuários</span>
+                    <select name="users" multiple size="5"
+                            class="w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-gray-50 dark:bg-gray-700 dark:text-white">
+                        {% for user in users %}
+                        <option value="{{ user.id }}" {% if user.id|stringformat:"s" in current_users %}selected{% endif %}>
+                            {{ user.get_full_name|default:user.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <span class="block text-xs font-semibold mb-1">Turmas</span>
+                    <select name="classes" multiple size="5"
+                            class="w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-gray-50 dark:bg-gray-700 dark:text-white">
+                        {% for turma in classes %}
+                        <option value="{{ turma.id }}" {% if turma.id|stringformat:"s" in current_classes %}selected{% endif %}>
+                            {{ turma.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <span class="block text-xs font-semibold mb-1">Séries</span>
+                    <select name="grades" multiple size="5"
+                            class="w-full border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-gray-50 dark:bg-gray-700 dark:text-white">
+                        {% for grade in grades %}
+                        <option value="{{ grade.id }}" {% if grade.id|stringformat:"s" in current_grades %}selected{% endif %}>
+                            {{ grade.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end">
+            <button type="submit" class="btn btn-primary flex items-center">
+                <i class="fas fa-paper-plane mr-2"></i> Enviar
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

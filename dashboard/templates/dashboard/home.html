@@ -17,6 +17,25 @@
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 card-hover">
         <div class="flex items-center justify-between">
             <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total de Séries</p>
+                <p class="text-3xl font-bold text-gray-800 dark:text-white mt-1">{{ total_grades|default:"0" }}</p>
+            </div>
+            <div class="bg-blue-100 dark:bg-blue-900/50 p-3 rounded-full">
+                <i class="fas fa-users-class text-xl text-blue-600 dark:text-blue-400"></i>
+            </div>
+        </div>
+        <div class="mt-4">
+            <a href="{% url 'school:grade_list' %}" class="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center">
+                Ver detalhes <i class="fas fa-arrow-right ml-1 text-xs"></i>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if is_director or is_coordinator %}
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 card-hover">
+        <div class="flex items-center justify-between">
+            <div>
                 <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total de Turmas</p>
                 <p class="text-3xl font-bold text-gray-800 dark:text-white mt-1">{{ total_classes|default:"0" }}</p>
             </div>
@@ -25,7 +44,7 @@
             </div>
         </div>
         <div class="mt-4">
-            <a href="#" class="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center">
+            <a href="{% url 'school:class_list' %}" class="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center">
                 Ver detalhes <i class="fas fa-arrow-right ml-1 text-xs"></i>
             </a>
         </div>

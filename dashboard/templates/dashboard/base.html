@@ -162,6 +162,36 @@
                     </a>
                     {% block breadcrumbs_items %}{% endblock %}
                 </div>
+                {% if messages %}
+                    <div id="messages" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 space-y-2 min-w-[250px]">
+                      {% for message in messages %}
+                        <div class="flex items-center justify-between px-4 py-3 rounded shadow-lg
+                                    text-white
+                                    {% if message.tags == 'success' %}bg-green-500{% elif message.tags == 'error' %}bg-red-500{% elif message.tags == 'warning' %}bg-yellow-500 text-black{% else %}bg-blue-500{% endif %}
+                                    transition-opacity duration-500"
+                             role="alert">
+                          <span>{{ message }}</span>
+                          <button type="button" class="ml-4 focus:outline-none" onclick="this.parentElement.style.display='none'">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                          </button>
+                        </div>
+                      {% endfor %}
+                    </div>
+                    <script>
+                      // Fade out e remove após 4 segundos
+                      setTimeout(function() {
+                        var messages = document.getElementById('messages');
+                        if (messages) {
+                          messages.style.opacity = 0;
+                          setTimeout(function() {
+                            messages.remove();
+                          }, 500);
+                        }
+                      }, 4000);
+                    </script>
+                {% endif %}
                 {% endblock %}
 
                 {% block content %}{% endblock %}

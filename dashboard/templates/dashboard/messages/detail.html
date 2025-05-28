@@ -1,0 +1,78 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Detalhe da Mensagem{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto mt-10 px-4">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Detalhe da Mensagem</h1>
+        <a href="{% url 'message:dashboard_message_list' %}" class="btn btn-secondary flex items-center gap-2">
+            <i class="fas fa-arrow-left"></i> Voltar para a Lista
+        </a>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-8 dark:text-white">
+        <h2 class="text-xl font-semibold mb-4">{{ message.title }}</h2>
+        <p class="text-gray-600 dark:text-gray-400 mb-6">{{ message.context }}</p>
+
+        <div class="mb-4">
+            <strong class="block font-medium text-gray-700 dark:text-gray-200">Tipo:</strong>
+            <span class="text-gray-500 dark:text-gray-300">{{ message.type.name|default:"Nenhum" }}</span>
+        </div>
+
+        <div class="mb-4">
+            <strong class="block font-medium text-gray-700 dark:text-gray-200">Criado em:</strong>
+            <span class="text-gray-500 dark:text-gray-300">{{ message.created_at|date:"d/m/Y H:i:s" }}</span>
+        </div>
+
+        <div class="mb-4">
+            <strong class="block font-medium text-gray-700 dark:text-gray-200">Criado por:</strong>
+            <span class="text-gray-500 dark:text-gray-300">{{ message.created_by.get_full_name|default:message.created_by.username }}</span>
+        </div>
+
+        <div>
+            <strong class="block font-medium text-gray-700 dark:text-gray-200">Destinatários:</strong>
+            <div class="mt-2">
+                {% if message.users.all %}
+                <h3 class="text-lg font-semibold mb-2">Usuários:</h3>
+                <ul>
+                    {% for user in message.users.all %}
+                    <li class="text-gray-500 dark:text-gray-300">{{ user.get_full_name|default:user.username }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                {% if message.classes.all %}
+                <h3 class="text-lg font-semibold mt-4 mb-2">Turmas:</h3>
+                <ul>
+                    {% for class_obj in message.classes.all %}
+                    <li class="text-gray-500 dark:text-gray-300">{{ class_obj.name }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                {% if message.grades.all %}
+                <h3 class="text-lg font-semibold mt-4 mb-2">Séries:</h3>
+                <ul>
+                    {% for grade in message.grades.all %}
+                    <li class="text-gray-500 dark:text-gray-300">{{ grade.name }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                {% if not message.users.all and not message.classes.all and not message.grades.all %}
+                <p class="text-gray-500 dark:text-gray-300">Nenhum destinatário específico.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="mt-8 flex justify-end">
+            <a href="{% url 'message:dashboard_message_edit' message.id %}" class="btn btn-primary flex items-center gap-2 mr-4">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="{% url 'message:dashboard_message_delete' message.id %}" class="btn btn-danger flex items-center gap-2">
+                <i class="fas fa-trash"></i> Excluir
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

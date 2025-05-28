@@ -5,7 +5,7 @@
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-800">Mensagens</h1>
         <div class="flex gap-4">
-            <a href="{% url 'message:calendar' %}"
+            <a href="{% url 'message:parent_calendar_view' %}"
                class="inline-flex items-center px-8 py-4 bg-green-600 text-white text-sm font-semibold rounded-lg shadow hover:bg-green-700 transition">
                 📅  Calendário - Meus eventos!
             </a>
@@ -94,7 +94,7 @@
                         </a>
                         {% endif %}
                         {% if item.item.id %}
-                            <a href="{% url 'message:message_detail' item.item.id %}"
+                            <a href="{% url 'message:parent_message_detail' item.item.id %}"
                             class="text-blue-600 hover:text-blue-800 text-sm font-medium">
                                 Ver detalhes →
                             </a>
