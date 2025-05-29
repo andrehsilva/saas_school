@@ -1,0 +1,210 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Ticket #{{ ticket.ticket_number }}{% endblock %}
+
+{% block content %}
+<div 
+    class="max-w-9xl mx-auto"
+    x-data="{
+        showDeleteModal: false,
+        ticketToClose: null,
+        ticketToCloseSubject: '',
+        openDeleteModal(id, subject) {
+            this.ticketToClose = id;
+            this.ticketToCloseSubject = subject;
+            this.showDeleteModal = true;
+        },
+        closeDeleteModal() {
+            this.showDeleteModal = false;
+            this.ticketToClose = null;
+            this.ticketToCloseSubject = '';
+        },
+        confirmCloseTicket() {
+            fetch(`/ticket/dashboard/tickets/${this.ticketToClose}/close/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert(data.error || 'Erro ao fechar ticket.');
+                }
+            })
+            .catch(() => alert('Erro ao fechar ticket.'));
+            this.closeDeleteModal();
+        }
+    }"
+>
+    <a href="{% url 'ticket:dashboard_ticket_list' %}" class="text-primary-600 dark:text-primary-400 flex items-center mb-6 hover:underline">
+        <i class="fas fa-arrow-left mr-2"></i> Voltar para Tickets
+    </a>
+
+    <!-- Cabeçalho do Ticket -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6 mb-6">
+        <div class="flex justify-between items-start mb-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ ticket.subject }}</h1>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Ticket #{{ ticket.ticket_number }} • Aberto por {{ ticket.parent.user.get_full_name|default:ticket.parent.user.username }}
+                </p>
+            </div>
+            <div class="text-right">
+                {% if ticket.status == 'open' %}
+                    <span class="px-3 py-1 text-sm font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">Aberto</span>
+                {% elif ticket.status == 'in_progress' %}
+                    <span class="px-3 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Em andamento</span>
+                {% elif ticket.status == 'closed' %}
+                    <span class="px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Fechado</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div>
+                <span class="font-medium text-gray-700 dark:text-gray-300">Categoria:</span>
+                <span class="text-gray-900 dark:text-white">{{ ticket.category.name|default:"Sem categoria" }}</span>
+            </div>
+            <div>
+                <span class="font-medium text-gray-700 dark:text-gray-300">Data de abertura:</span>
+                <span class="text-gray-900 dark:text-white">{{ ticket.created_at|date:"d/m/Y H:i" }}</span>
+            </div>
+            <div>
+                <span class="font-medium text-gray-700 dark:text-gray-300">Responsável:</span>
+                <span class="text-gray-900 dark:text-white">{{ ticket.parent.user.get_full_name|default:ticket.parent.user.username }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Histórico de Mensagens -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6 mb-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Histórico de Conversas</h3>
+        <div class="space-y-4">
+            {% for message in ticket_messages %}
+                {% if message.sender == ticket.parent.user %}
+                    <!-- Mensagem do Responsável (esquerda) -->
+                    <div class="flex justify-start">
+                        <div class="max-w-lg bg-blue-50 dark:bg-blue-900 rounded-2xl p-4 shadow border border-blue-200 dark:border-blue-700">
+                            <div class="flex items-center mb-1">
+                                <span class="font-medium text-blue-700 dark:text-blue-200">
+                                    {{ message.sender.get_full_name|default:message.sender.username }}
+                                </span>
+                                <span class="text-xs text-blue-600 dark:text-blue-400 ml-2">(Responsável)</span>
+                            </div>
+                            <p class="text-gray-800 dark:text-blue-100 whitespace-pre-wrap">{{ message.message }}</p>
+                            {% if message.attachment %}
+                                <div class="mt-2">
+                                    <a href="{{ message.attachment.url }}" target="_blank" 
+                                       class="text-blue-600 dark:text-blue-300 hover:underline text-sm">
+                                        <i class="fas fa-paperclip mr-1"></i>{{ message.attachment.name }}
+                                    </a>
+                                </div>
+                            {% endif %}
+                            <div class="text-xs text-gray-400 dark:text-gray-300 mt-2 text-right">
+                                {{ message.created_at|date:"d/m/Y H:i" }}
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- Mensagem da Escola (direita) -->
+                    <div class="flex justify-end">
+                        <div class="max-w-lg bg-green-50 dark:bg-green-900 rounded-2xl p-4 shadow border border-green-200 dark:border-green-700">
+                            <div class="flex items-center mb-1 justify-end">
+                                <span class="text-xs text-green-600 dark:text-green-400 mr-2">(Escola)</span>
+                                <span class="font-medium text-green-700 dark:text-green-200">
+                                    {{ message.sender.get_full_name|default:message.sender.username }}
+                                </span>
+                            </div>
+                            <p class="text-gray-800 dark:text-green-100 whitespace-pre-wrap">{{ message.message }}</p>
+                            {% if message.attachment %}
+                                <div class="mt-2 text-right">
+                                    <a href="{{ message.attachment.url }}" target="_blank" 
+                                       class="text-green-600 dark:text-green-300 hover:underline text-sm">
+                                        <i class="fas fa-paperclip mr-1"></i>{{ message.attachment.name }}
+                                    </a>
+                                </div>
+                            {% endif %}
+                            <div class="text-xs text-gray-400 dark:text-gray-300 mt-2 text-left">
+                                {{ message.created_at|date:"d/m/Y H:i" }}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Formulário de Resposta -->
+    {% if ticket.status != 'closed' %}
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Responder Ticket</h3>
+        
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mensagem</label>
+                <textarea name="message" rows="4" required
+                          class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          placeholder="Digite sua resposta..."></textarea>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Anexo (opcional)</label>
+                <input type="file" name="attachment"
+                       class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+            </div>
+            
+            <div class="flex justify-between">
+                <button type="submit" name="reply_ticket" 
+                        class="btn btn-primary">
+                    <i class="fas fa-reply mr-2"></i>Enviar Resposta
+                </button>
+                <button
+                    type="button"
+                    class="btn btn-danger"
+                    @click="openDeleteModal({{ ticket.id }}, '{{ ticket.subject|escapejs }}')"
+                >
+                    <i class="fas fa-times mr-2"></i>Fechar Ticket
+                </button>
+            </div>
+        </form>
+    </div>
+    {% else %}
+    <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 text-center">
+        <i class="fas fa-lock text-gray-400 text-2xl mb-2"></i>
+        <p class="text-gray-600 dark:text-gray-400">Este ticket está fechado e não pode receber novas respostas.</p>
+    </div>
+    {% endif %}
+
+    <!-- Modal de confirmação para fechar ticket -->
+    <div
+        x-show="showDeleteModal"
+        x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+    >
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Fechar Ticket
+            </h3>
+            <p class="text-gray-700 dark:text-gray-300 mb-6">
+                Tem certeza que deseja fechar o ticket <span class="font-bold" x-text="ticketToCloseSubject"></span>?
+            </p>
+            <div class="flex justify-end space-x-2">
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    @click="closeDeleteModal"
+                >Cancelar</button>
+                <button
+                    type="button"
+                    class="btn btn-danger"
+                    @click="confirmCloseTicket"
+                >Fechar Ticket</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

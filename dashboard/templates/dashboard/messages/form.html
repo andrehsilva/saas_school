@@ -61,7 +61,7 @@
 <div class="max-w-9xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow p-8 dark:text-white">
     <h2 class="text-2xl font-bold mb-2">{{ form_title|default:"Nova Mensagem" }}</h2>
     <p class="text-gray-500 dark:text-gray-300 mb-6">{{ form_subtitle|default:"Preencha os campos para enviar uma mensagem." }}</p>
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
         <div class="mb-4">
@@ -88,6 +88,30 @@
                 </option>
                 {% endfor %}
             </select>
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Imagem de Capa</label>
+            <input type="file" name="image" accept="image/*"
+                   class="w-full border border-gray-200 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+            {% if message and message.image %}
+                <div class="mt-2">
+                    <img src="{{ message.image.url }}" alt="Imagem atual" class="h-24 rounded shadow">
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Anexo</label>
+            <input type="file" name="attachments"
+                   class="w-full border border-gray-200 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+            {% if message and message.attachments %}
+                <div class="mt-2">
+                    <a href="{{ message.attachments.url }}" class="text-primary-600 dark:text-primary-400 underline" download>
+                        📎 Baixar Anexo Atual
+                    </a>
+                </div>
+            {% endif %}
         </div>
 
         <div class="mb-4">

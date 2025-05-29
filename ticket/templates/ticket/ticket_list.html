@@ -21,13 +21,13 @@
     <div class="space-y-4">
     {% if request.user.roles.all.0.role.name == "Responsável" %}
     <div class="mt-6">
-        <a href="{% url 'create_ticket' %}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg">
+        <a href="{% url 'ticket:create_ticket' %}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg">
             Abrir novo ticket
         </a>
     </div>
     {% endif %}
         {% for ticket in tickets %}
-        <a href="{% url 'ticket_detail' ticket.id %}" class="block bg-white rounded-2xl border hover:shadow-lg transition p-4 space-y-1">
+        <a href="{% url 'ticket:ticket_detail' ticket.id %}" class="block bg-white rounded-2xl border hover:shadow-lg transition p-4 space-y-1">
             <div class="flex justify-between items-center">
                 <div>
                     <div class="text-sm font-semibold">

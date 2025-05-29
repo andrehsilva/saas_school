@@ -176,18 +176,8 @@ class ParentAdmin(admin.ModelAdmin):
     children_list.short_description = "Filhos"
 
 
+
 @admin.register(Subject)
 class SubjectAdmin(admin.ModelAdmin):
-    list_display        = ('name', 'code', 'grade', 'teachers_count')
-    list_filter         = ('grade',)
-    filter_horizontal   = ('teachers',)
-    autocomplete_fields = ['grade']
-    search_fields       = ('name', 'code', 'grade__name')
-    list_select_related = ('grade',)
-
-    def get_queryset(self, request):
-        return super().get_queryset(request).annotate(_teachers=Count('teachers'))
-    def teachers_count(self, obj): return obj._teachers
-
-    teachers_count.admin_order_field = '_teachers'
-    teachers_count.short_description    = "Professores"
+    list_display = ('name',)
+    search_fields = ('name',)

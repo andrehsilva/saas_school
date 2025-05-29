@@ -1,0 +1,87 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Detalhe do Documento{% endblock %}
+
+{% block content %}
+<a href="{% url 'books:dashboard_document_list' %}" class="text-primary-600 dark:text-primary-400 flex items-center mb-6 hover:underline">
+    <i class="fas fa-arrow-left mr-2"></i> Voltar
+</a>
+<div class="max-w-9xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow p-8 dark:text-white">
+    <h2 class="text-2xl font-bold mb-2">{{ document.title }}</h2>
+    <div class="text-gray-500 dark:text-gray-300 mb-4">
+        {% if document.uploaded_by %}
+            Enviado por: <span class="font-semibold text-gray-800 dark:text-white">
+                {{ document.uploaded_by.get_full_name|default:document.uploaded_by.username }}
+            </span>
+        {% endif %}
+        | {{ document.uploaded_at|date:"d M Y - H:i" }}
+    </div>
+
+    {% if document.thumbnail %}
+        <div class="flex justify-center my-4">
+            <img src="{{ document.thumbnail.url }}" alt="Capa do Documento" class="rounded-lg shadow max-h-72 object-contain" />
+        </div>
+    {% endif %}
+
+    <div class="mb-4">
+        <strong>Categorias:</strong>
+        {% for category in document.categories.all %}
+            <span class="inline-block bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200 rounded px-2 py-1 text-xs mr-1">{{ category }}</span>
+        {% empty %}
+            <span class="text-gray-500">Nenhuma</span>
+        {% endfor %}
+    </div>
+
+    {% if document.description %}
+        <div class="prose dark:prose-invert max-w-none mb-4">
+            <strong>Descrição:</strong><br>
+            {{ document.description|linebreaksbr }}
+        </div>
+    {% endif %}
+
+    <div class="mb-4">
+        <strong>Séries Alvo:</strong>
+        {% for grade in document.target_grades.all %}
+            <span class="inline-block bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded px-2 py-1 text-xs mr-1">{{ grade }}</span>
+        {% empty %}
+            <span class="text-gray-500">Nenhuma</span>
+        {% endfor %}
+    </div>
+    <div class="mb-4">
+        <strong>Classes Alvo:</strong>
+        {% for class in document.target_classes.all %}
+            <span class="inline-block bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded px-2 py-1 text-xs mr-1">{{ class }}</span>
+        {% empty %}
+            <span class="text-gray-500">Nenhuma</span>
+        {% endfor %}
+    </div>
+    <div class="mb-4">
+        <strong>Usuários Alvo:</strong>
+        {% for user in document.target_users.all %}
+            <span class="inline-block bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 rounded px-2 py-1 text-xs mr-1">{{ user.get_full_name|default:user.username }}</span>
+        {% empty %}
+            <span class="text-gray-500">Nenhum</span>
+        {% endfor %}
+    </div>
+
+    <div class="flex gap-2 mt-6">
+        <a href="{% url 'books:dashboard_document_edit' document.id %}" class="btn btn-primary flex items-center gap-2">
+            <i class="fas fa-edit"></i> Editar
+        </a>
+        <!-- Botão de exclusão pode ser adicionado aqui se desejar -->
+    </div>
+</div>
+
+{% if document.file %}
+    <div class="max-w-4xl mx-auto mt-8 bg-white dark:bg-gray-800 rounded-xl shadow p-4 border border-gray-200 dark:border-gray-700">
+        <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Visualização do PDF</h3>
+        <div class="w-full" style="height: 70vh;">
+            <embed src="{{ document.file.url }}" type="application/pdf" width="100%" height="100%" class="rounded-lg border" />
+        </div>
+        <div class="mt-2">
+            <a href="{{ document.file.url }}" target="_blank" class="text-blue-600 dark:text-blue-300 hover:underline">
+                Abrir PDF em nova aba
+            </a>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

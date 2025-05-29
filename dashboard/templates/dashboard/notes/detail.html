@@ -1,0 +1,81 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Detalhe da Nota{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto mt-10 px-4">
+    <div class="bg-white dark:bg-gray-800 shadow rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+
+        <!-- Cabeçalho -->
+        <div class="bg-gray-50 dark:bg-gray-900 px-4 py-3 flex justify-between items-center border-b dark:border-gray-700">
+            <div class="text-sm text-gray-500 dark:text-gray-300">
+                Aluno: <span class="font-bold text-gray-800 dark:text-white">
+                    {{ note.student }}
+                </span>
+                {% if note.subject %}
+                | Disciplina: <span class="font-bold text-gray-800 dark:text-white">
+                    {{ note.subject }}
+                </span>
+                {% endif %}
+                | {{ note.date|date:"d M Y" }}
+            </div>
+            <span class="px-3 py-1 text-sm font-medium rounded-full bg-primary-600 text-white">
+                {{ note.get_evaluation_period_display }}
+            </span>
+        </div>
+
+        <!-- Conteúdo -->
+        <div class="px-4 py-5 space-y-4">
+            <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ note.title }}</h1>
+            
+            {% if note.description %}
+            <div class="prose dark:prose-invert max-w-none">
+                <strong>Descrição:</strong><br>
+                {{ note.description|linebreaksbr }}
+            </div>
+            {% endif %}
+
+            {% if note.performance %}
+            <div class="prose dark:prose-invert max-w-none">
+                <strong>Desempenho:</strong><br>
+                {{ note.performance|linebreaksbr }}
+            </div>
+            {% endif %}
+
+            <div class="flex flex-wrap gap-4 mt-4">
+                <div class="bg-gray-100 dark:bg-gray-900 px-4 py-2 rounded-lg text-lg font-semibold text-gray-800 dark:text-white">
+                    Nota: {{ note.score|default:"–" }}
+                </div>
+                <div class="bg-gray-100 dark:bg-gray-900 px-4 py-2 rounded-lg text-lg font-semibold text-gray-800 dark:text-white">
+                    Peso: {{ note.weight }}
+                </div>
+            </div>
+
+            {% if note.attachment %}
+            <div>
+                <a href="{{ note.attachment.url }}" download
+                   class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
+                    📎 Baixar Anexo
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Rodapé -->
+        <div class="bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 border-t dark:border-gray-700 space-y-1">
+            <p><strong>Data de Cadastro:</strong> {{ note.created_at|date:"d M Y - H:i" }}</p>
+        </div>
+
+        <!-- Ações -->
+        <div class="flex justify-between items-center px-4 py-4 bg-gray-100 dark:bg-gray-900 border-t dark:border-gray-700">
+            <a href="{% url 'notes:dashboard_note_list' %}" class="btn btn-secondary flex items-center gap-2">
+                <i class="fas fa-arrow-left"></i> Voltar para a Lista
+            </a>
+            <div class="flex gap-2">
+                <a href="{% url 'notes:dashboard_note_edit' note.id %}" class="btn btn-primary flex items-center gap-2">
+                    <i class="fas fa-edit"></i> Editar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

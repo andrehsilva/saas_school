@@ -106,7 +106,7 @@
                 </p>
                 {% endif %}
 
-                <button hx-get="{% url 'view_pdf' doc.id %}" 
+                <button hx-get="{% url 'books:view_pdf' doc.id %}" 
                         hx-target="#pdf-modal-container"
                         hx-swap="innerHTML"
                         class="btn btn-outline btn-primary btn-sm w-full p-2 mt-auto">

@@ -1,0 +1,176 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% block title %}Notas Cadastradas{% endblock %}
+
+{% block content %}
+<div class="max-w-9xl mx-auto mt-10 px-4" x-data="noteCrud()">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Notas Cadastradas</h1>
+        <!-- Botão de criar -->
+        <a href="{% url 'notes:dashboard_note_create' %}" class="btn btn-primary flex items-center gap-2">
+            <i class="fas fa-plus"></i> Nova Nota
+        </a>
+    </div>
+
+    <!-- Filtros -->
+    <form method="get" class="mb-6 bg-gray-50 dark:bg-gray-900 p-4 rounded-lg shadow-sm">
+      <div class="flex flex-col md:flex-row md:items-end gap-2 md:gap-4">
+        <div class="flex-1">
+          <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300">Título</label>
+          <input type="text" name="title" value="{{ request.GET.title }}" placeholder="Buscar por título"
+                 class="w-full text-lg rounded border-gray-300 dark:border-gray-600 px-2 py-2 bg-white dark:bg-gray-700 dark:text-white focus:ring-primary-500 focus:border-primary-500 transition" />
+        </div>
+        <div class="flex-1">
+          <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300">Aluno</label>
+          <select name="student" id="student-select" class="w-full select2 w-full rounded border-gray-300 dark:border-gray-600 px-2 py-3 bg-white dark:bg-gray-700 dark:text-white focus:ring-primary-500 focus:border-primary-500 transition">
+            <option value="">Todos</option>
+            {% for student in students %}
+            <option value="{{ student.id }}" {% if student.id|stringformat:"s" == request.GET.student|stringformat:"s" %}selected{% endif %}>{{ student }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="flex-1">
+          <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300">Disciplina</label>
+          <select name="subject" id="subject-select" class="w-full select2 w-full rounded border-gray-300 dark:border-gray-600 px-2 py-3 bg-white dark:bg-gray-700 dark:text-white focus:ring-primary-500 focus:border-primary-500 transition">
+            <option value="">Todas</option>
+            {% for subject in subjects %}
+            <option value="{{ subject.id }}" {% if subject.id|stringformat:"s" == request.GET.subject|stringformat:"s" %}selected{% endif %}>{{ subject }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="flex gap-2 mt-2 md:mt-0">
+          <button type="submit" class="btn btn-primary flex items-center gap-2 px-4 py-2">
+            <i class="fas fa-filter"></i> Filtrar
+          </button>
+          <a href="{% url 'notes:dashboard_note_list' %}" class="btn btn-outline flex items-center gap-2 px-4 py-2">
+            <i class="fas fa-times"></i> Limpar
+          </a>
+        </div>
+      </div>
+    </form>
+
+    {% if notes %}
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-100 dark:bg-gray-900">
+                <tr>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Título</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Aluno</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Disciplina</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Nota</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Data</th>
+                    <th class="px-6 py-3"></th>
+                </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {% for note in notes %}
+                <tr>
+                    <td class="px-6 py-4 truncate max-w-xs">{{ note.title }}</td>
+                    <td class="px-6 py-4 truncate max-w-xs">{{ note.student }}</td>
+                    <td class="px-6 py-4 truncate max-w-xs">{{ note.subject|default:"–" }}</td>
+                    <td class="px-6 py-4">{{ note.score|default:"–" }}</td>
+                    <td class="px-6 py-4">{{ note.date|date:"d/m/Y" }}</td>
+                    <td class="px-6 py-4 text-right space-x-2">
+                        <a href="{% url 'notes:dashboard_note_detail' note.id %}" class="btn btn-sm btn-outline" title="Ver">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{% url 'notes:dashboard_note_edit' note.id %}" class="btn btn-sm btn-outline" title="Editar">
+                            <i class="fas fa-pen"></i>
+                        </a>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline text-red-600"
+                            @click="openDeleteModal({{ note.id }}, '{{ note.title|escapejs }}')"
+                            title="Excluir"
+                        >
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Paginação -->
+    <div class="flex justify-center mt-6">
+        <nav class="inline-flex rounded-md shadow-sm" aria-label="Pagination">
+            {% if notes.has_previous %}
+                <a href="?{% if request.GET.title %}title={{ request.GET.title }}&{% endif %}{% if request.GET.student %}student={{ request.GET.student }}&{% endif %}{% if request.GET.subject %}subject={{ request.GET.subject }}&{% endif %}page={{ notes.previous_page_number }}" class="px-3 py-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-l-md">Anterior</a>
+            {% else %}
+                <span class="px-3 py-1 border border-gray-300 dark:border-gray-600 text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-l-md">Anterior</span>
+            {% endif %}
+            <span class="px-3 py-1 border-t border-b border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700">{{ notes.number }} / {{ notes.paginator.num_pages }}</span>
+            {% if notes.has_next %}
+                <a href="?{% if request.GET.title %}title={{ request.GET.title }}&{% endif %}{% if request.GET.student %}student={{ request.GET.student }}&{% endif %}{% if request.GET.subject %}subject={{ request.GET.subject }}&{% endif %}page={{ notes.next_page_number }}" class="px-3 py-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-r-md">Próxima</a>
+            {% else %}
+                <span class="px-3 py-1 border border-gray-300 dark:border-gray-600 text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-r-md">Próxima</span>
+            {% endif %}
+        </nav>
+    </div>
+    {% else %}
+    <div class="bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-400 dark:border-yellow-600 text-yellow-800 dark:text-yellow-200 p-4 rounded-md">
+        Nenhuma nota cadastrada até o momento.
+    </div>
+    {% endif %}
+
+    {% include "dashboard/components/delete_modal.html" %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Select2 JS e CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+  $(document).ready(function() {
+    $('#student-select').select2({
+      width: '100%',
+      placeholder: "Selecione o aluno",
+      allowClear: true
+    });
+    $('#subject-select').select2({
+      width: '100%',
+      placeholder: "Selecione a disciplina",
+      allowClear: true
+    });
+  });
+</script>
+<script>
+function noteCrud() {
+    return {
+        showDeleteModal: false,
+        deleteItemId: null,
+        deleteItemName: '',
+        openDeleteModal(id, name) {
+            this.deleteItemId = id;
+            this.deleteItemName = name;
+            this.showDeleteModal = true;
+        },
+        closeDeleteModal() {
+            this.showDeleteModal = false;
+            this.deleteItemId = null;
+            this.deleteItemName = '';
+        },
+        confirmDelete() {
+            fetch(`/notes/dashboard/notes/${this.deleteItemId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Erro ao excluir.');
+                }
+            });
+            this.closeDeleteModal();
+        }
+    }
+}
+</script>
+{% endblock %}

@@ -173,13 +173,21 @@ def dashboard_message_create(request):
                 'message': None
             })
 
-        # Cria a mensagem
+        # Cria a mensagem (sem arquivos ainda)
         new_message = Message.objects.create(
             title=title,
             context=content,
             created_by=request.user,
             type_id=type_id if type_id else None
         )
+
+        # Salva imagem de capa, se enviada
+        if 'image' in request.FILES:
+            new_message.image = request.FILES['image']
+        # Salva anexo, se enviado
+        if 'attachments' in request.FILES:
+            new_message.attachments = request.FILES['attachments']
+        new_message.save()
 
         # Adiciona os destinatários
         if user_ids:
@@ -217,7 +225,7 @@ def dashboard_message_create(request):
         # 3. Notificar turmas
         for turma in new_message.classes.all():
             # Cria ReceivedMessage para cada aluno da turma
-            for student in Student.objects.filter(classes_assigned=turma):  # CORRIGIDO: current_class → classes_assigned
+            for student in Student.objects.filter(classes_assigned=turma):
                 if student.user and student.user.id not in notified_users:
                     ReceivedMessage.objects.create(
                         message=new_message,
@@ -261,7 +269,7 @@ def dashboard_message_create(request):
             # Notifica todas as turmas da série
             for turma in Class.objects.filter(grade=grade):
                 # Alunos
-                for student in Student.objects.filter(classes_assigned=turma):  # CORRIGIDO: current_class → classes_assigned
+                for student in Student.objects.filter(classes_assigned=turma):
                     if student.user and student.user.id not in notified_users:
                         ReceivedMessage.objects.create(
                             message=new_message,
@@ -362,6 +370,13 @@ def dashboard_message_edit(request, message_id):
         message_obj.title = title
         message_obj.context = content
         message_obj.type_id = type_id if type_id else None
+
+        # Atualiza imagem de capa, se enviada
+        if 'image' in request.FILES:
+            message_obj.image = request.FILES['image']
+        # Atualiza anexo, se enviado
+        if 'attachments' in request.FILES:
+            message_obj.attachments = request.FILES['attachments']
         message_obj.save()
 
         # Atualiza os destinatários
@@ -456,7 +471,7 @@ def dashboard_message_edit(request, message_id):
             # Todas as turmas atuais
             for turma in message_obj.classes.all():
                 # Alunos
-                for student in Student.objects.filter(classes_assigned=turma):  # CORRIGIDO: current_class → classes_assigned
+                for student in Student.objects.filter(classes_assigned=turma):
                     if student.user and student.user.id not in notified_users:
                         send_notification(
                             recipients=student.user,

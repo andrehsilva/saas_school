@@ -31,11 +31,11 @@ urlpatterns = [
     path('profile/', include('a_users.urls')),
     path('contact/', include('contact.urls')),
     path('message/', include('message.urls', namespace='message')),
-    path('books/', include('books.urls')),
+    path('books/', include('books.urls', namespace='books')),
     path('school/', include('school.urls')), 
     path('collection/', include('collection.urls')),
     path('notification/', include('notification.urls')),
-    path('ticket/', include('ticket.urls')),
+    path('ticket/', include('ticket.urls', namespace='ticket')),
     path('notes/', include('note.urls')), # Suas notas
     path('@<username>/', profile_view, name="profile"),
 
