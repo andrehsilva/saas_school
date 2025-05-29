@@ -1,6 +1,5 @@
 {% load static %}
 <header class="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6 z-10">
-    <!-- Lado esquerdo: Título e botão do menu -->
     <div class="flex items-center">
         <button @click="sidebarOpen = !sidebarOpen" class="md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -10,9 +9,7 @@
         <h1 class="text-xl font-semibold text-gray-800 dark:text-white ml-2 md:ml-0">Dashboard</h1>
     </div>
     
-    <!-- Lado direito: Botões e menu do usuário -->
     <div class="flex items-center space-x-4">
-        <!-- Link para o site principal -->
         <div>
             <a class="flex items-center gap-2 px-4 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" href="/">
                 <img class="h-4 w-auto flex-shrink-0" 
@@ -25,7 +22,6 @@
             </a>
         </div>
         
-        <!-- Botão de tema claro/escuro -->
         <button @click="darkMode = !darkMode" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400">
             <svg x-show="!darkMode" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
@@ -35,7 +31,6 @@
             </svg>
         </button>
         
-        <!-- Sistema de Notificações -->
         {% if request.user.is_authenticated %}
         <div class="relative" id="notification-bell">
             <button id="toggleNotifications" class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400">
@@ -58,7 +53,6 @@
         </div>
         {% endif %}
         
-        <!-- Perfil do usuário -->
         <div x-data="{ open: false }" class="relative">
             <button @click="open = !open" class="flex items-center space-x-2 focus:outline-none">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300 hidden md:block">{{ request.user.first_name }}</span>
@@ -81,7 +75,6 @@
     </div>
 </header>
 
-<!-- Script para notificações -->
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     const bell = document.getElementById("toggleNotifications");
