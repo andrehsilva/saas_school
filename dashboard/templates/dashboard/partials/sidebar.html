@@ -143,6 +143,55 @@
             </div>
         </div>
         {% endwith %}
+        {% with active_event_urls="dashboard_event_list dashboard_event_create dashboard_event_edit" %}
+<div x-data="{ open: {% if request.resolver_match.url_name in active_event_urls.split %}true{% else %}false{% endif %} }">
+    <button @click="open = !open"
+            class="flex items-center justify-between w-full px-3 py-2.5 rounded-lg font-medium transition-colors duration-200
+                   {% if request.resolver_match.url_name in active_event_urls.split %}
+                       bg-primary-100 text-primary-800 dark:bg-primary-700 dark:text-primary-100
+                   {% else %}
+                       text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white
+                   {% endif %}">
+        <div class="flex items-center overflow-hidden">
+            <i class="fas fa-calendar-alt w-5 h-5 mr-3 flex-shrink-0
+                      {% if request.resolver_match.url_name in active_event_urls.split %}
+                          text-primary-600 dark:text-primary-300
+                      {% else %}
+                          text-gray-500 dark:text-gray-400 group-hover:text-primary-600 dark:group-hover:text-primary-300
+                      {% endif %}"></i>
+            <span :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'">Eventos</span>
+        </div>
+        <svg class="w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-200 ml-auto flex-shrink-0"
+             :class="{ 'rotate-90': open, 'opacity-100': sidebarOpen, 'opacity-0 hidden': !sidebarOpen }"
+             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+    </button>
+
+    <div x-show="open" x-cloak class="ml-8 mt-1 space-y-1">
+        <a href="{% url 'message:dashboard_event_list' %}"
+           class="flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-200
+                  {% if request.resolver_match.url_name == 'dashboard_event_list' %}
+                      bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 font-semibold
+                  {% else %}
+                      text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-100
+                  {% endif %}">
+            <i class="fas fa-list w-4 h-4 mr-2"></i>
+            Listar
+        </a>
+        <a href="{% url 'message:dashboard_event_create' %}"
+           class="flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-200
+                  {% if request.resolver_match.url_name == 'dashboard_event_create' %}
+                      bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 font-semibold
+                  {% else %}
+                      text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-100
+                  {% endif %}">
+            <i class="fas fa-plus w-4 h-4 mr-2"></i>
+            Criar
+        </a>
+    </div>
+</div>
+{% endwith %}
 
         {% comment %} <!-- Outros Links -->
         {% for link_name, icon_class, url_hash in [

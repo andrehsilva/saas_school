@@ -17,6 +17,7 @@ from django.utils import timezone
 from django.db.models import Q
 from django.core.paginator import Paginator
 from django.core.exceptions import PermissionDenied
+from .forms import EventForm  # Importe o formulário
 
 from school.models import Grade, Class, Student, Parent, Role, UserRole
 from dashboard.permissions import role_required
@@ -69,16 +70,22 @@ def get_eligible_recipients():
 @role_required(["Diretor", "Coordenador", "Professor", "Colaborador"])
 def dashboard_message_list(request):
     """
-    Lista todas as mensagens que o usuário tem permissão para ver
+    Lista todas as mensagens que o usuário tem permissão para ver,
+    com filtros e paginação.
     """
+    # Filtros vindos da query string
+    title = request.GET.get('title', '').strip()
+    type_id = request.GET.get('type', '')
+    created_by = request.GET.get('created_by', '')
+
     # Usuários com papéis administrativos podem ver todas as mensagens
     is_admin = request.user.roles.filter(role__name__in=["Diretor", "Coordenador", "Colaborador"]).exists()
 
     if is_admin:
-        all_messages = Message.objects.all().order_by('-created_at')
+        messages_qs = Message.objects.all()
     else:
         # Professores veem apenas mensagens que criaram ou que foram enviadas para eles
-        all_messages = Message.objects.filter(
+        messages_qs = Message.objects.filter(
             Q(created_by=request.user) |
             Q(users=request.user) |
             Q(classes__teachers=request.user) |
@@ -87,23 +94,45 @@ def dashboard_message_list(request):
                 Q(directors=request.user) |
                 Q(colaborator=request.user)
             ))
-        ).distinct().order_by('-created_at')
+        ).distinct()
+
+    # Aplicar filtros
+    if title:
+        messages_qs = messages_qs.filter(title__icontains=title)
+    if type_id:
+        messages_qs = messages_qs.filter(type_id=type_id)
+    if created_by:
+        messages_qs = messages_qs.filter(created_by_id=created_by)
+
+    messages_qs = messages_qs.select_related('type', 'created_by').order_by('-created_at')
+
+    # Paginação
+    paginator = Paginator(messages_qs, 10)  # 10 mensagens por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     # Preparar mensagens com permissões para o template
     messages_with_permissions = []
-    for msg in all_messages:
-        # Usuário pode editar se for admin ou criador da mensagem
+    for msg in page_obj.object_list:
         can_edit = is_admin or msg.created_by == request.user
         messages_with_permissions.append({
             'message': msg,
             'can_edit': can_edit
         })
 
+    # Para os filtros
+    message_types = MessageType.objects.all()
+    users = User.objects.all()
+
     return render(request, 'dashboard/messages/list.html', {
         'messages_with_permissions': messages_with_permissions,
-        'current_title': '',
+        'page_obj': page_obj,
+        'message_types': message_types,
+        'users': users,
+        'current_title': title,
+        'current_type': type_id,
+        'current_created_by': created_by,
         'current_content': '',
-        'current_type': '',
         'current_users': [],
         'current_classes': [],
         'current_grades': []
@@ -188,12 +217,12 @@ def dashboard_message_create(request):
         # 3. Notificar turmas
         for turma in new_message.classes.all():
             # Cria ReceivedMessage para cada aluno da turma
-            for student in Student.objects.filter(current_class=turma):
+            for student in Student.objects.filter(classes_assigned=turma):  # CORRIGIDO: current_class → classes_assigned
                 if student.user and student.user.id not in notified_users:
                     ReceivedMessage.objects.create(
                         message=new_message,
-                        user=student.user,
-                        is_read=False
+                        recipient=student.user,
+                        read=False
                     )
                     send_notification(
                         recipients=student.user,
@@ -232,12 +261,12 @@ def dashboard_message_create(request):
             # Notifica todas as turmas da série
             for turma in Class.objects.filter(grade=grade):
                 # Alunos
-                for student in Student.objects.filter(current_class=turma):
+                for student in Student.objects.filter(classes_assigned=turma):  # CORRIGIDO: current_class → classes_assigned
                     if student.user and student.user.id not in notified_users:
                         ReceivedMessage.objects.create(
                             message=new_message,
-                            user=student.user,
-                            is_read=False
+                            recipient=student.user,
+                            read=False
                         )
                         send_notification(
                             recipients=student.user,
@@ -386,8 +415,8 @@ def dashboard_message_edit(request, message_id):
                     # Cria ReceivedMessage para o novo usuário
                     ReceivedMessage.objects.create(
                         message=message_obj,
-                        user=user,
-                        is_read=False
+                        recipient=user,
+                        read=False
                     )
             except User.DoesNotExist:
                 continue
@@ -407,7 +436,7 @@ def dashboard_message_edit(request, message_id):
                     notified_users.add(user.id)
 
                     # Remove ReceivedMessage para o usuário removido
-                    ReceivedMessage.objects.filter(message=message_obj, user=user).delete()
+                    ReceivedMessage.objects.filter(message=message_obj, recipient=user).delete()
             except User.DoesNotExist:
                 continue
 
@@ -427,7 +456,7 @@ def dashboard_message_edit(request, message_id):
             # Todas as turmas atuais
             for turma in message_obj.classes.all():
                 # Alunos
-                for student in Student.objects.filter(current_class=turma):
+                for student in Student.objects.filter(classes_assigned=turma):  # CORRIGIDO: current_class → classes_assigned
                     if student.user and student.user.id not in notified_users:
                         send_notification(
                             recipients=student.user,
@@ -508,7 +537,7 @@ def dashboard_message_delete(request, message_id):
 
     # Alunos das turmas
     for turma in message_obj.classes.all():
-        for student in Student.objects.filter(current_class=turma):
+        for student in Student.objects.filter(classes_assigned=turma):  # CORRIGIDO: current_class → classes_assigned
             if student.user:
                 notified_users.add(student.user.id)
         for teacher in turma.teachers.all():
@@ -523,7 +552,7 @@ def dashboard_message_delete(request, message_id):
 
         # Alunos e professores das turmas da série
         for turma in Class.objects.filter(grade=grade):
-            for student in Student.objects.filter(current_class=turma):
+            for student in Student.objects.filter(classes_assigned=turma):  # CORRIGIDO: current_class → classes_assigned
                 if student.user:
                     notified_users.add(student.user.id)
             for teacher in turma.teachers.all():
@@ -557,10 +586,23 @@ def dashboard_message_delete(request, message_id):
             except User.DoesNotExist:
                 continue
 
+        # Responde com JSON para requisições AJAX
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'success': True, 'message': f"Mensagem '{message_title}' excluída com sucesso."})
+            return JsonResponse({
+                'success': True,
+                'message': f"Mensagem '{message_title}' excluída com sucesso."
+            })
 
+        # Responde com redirecionamento para requisições normais
         messages.success(request, f"Mensagem '{message_title}' excluída com sucesso.")
+        return redirect('message:dashboard_message_list')
+
+    # Se não for POST, retorna erro para AJAX ou redireciona para requisições normais
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'success': False,
+            'error': 'Método não permitido. Use POST para excluir.'
+        }, status=405)
 
     return redirect('message:dashboard_message_list')
 
@@ -589,7 +631,7 @@ def dashboard_message_detail(request, message_id):
         has_permission = True
 
     # Aluno de uma turma destinatária
-    elif Student.objects.filter(user=request.user, current_class__in=message_obj.classes.all()).exists():
+    elif Student.objects.filter(user=request.user, classes_assigned__in=message_obj.classes.all()).exists():  # CORRIGIDO: current_class → classes_assigned
         has_permission = True
 
     # Coordenador/Diretor/Colaborador de uma série destinatária
@@ -603,7 +645,7 @@ def dashboard_message_detail(request, message_id):
     # Aluno de uma turma de uma série destinatária
     elif Student.objects.filter(
         user=request.user,
-        current_class__grade__in=message_obj.grades.all()
+        classes_assigned__grade__in=message_obj.grades.all()  # CORRIGIDO: current_class → classes_assigned
     ).exists():
         has_permission = True
 
@@ -618,12 +660,12 @@ def dashboard_message_detail(request, message_id):
     # Marca como lida para o usuário atual
     received, created = ReceivedMessage.objects.get_or_create(
         message=message_obj,
-        user=request.user,
-        defaults={'is_read': True}
+        recipient=request.user,
+        defaults={'read': True}
     )
 
-    if not created and not received.is_read:
-        received.is_read = True
+    if not created and not received.read:
+        received.read = True
         received.read_at = timezone.now()
         received.save()
 
@@ -641,12 +683,12 @@ def dashboard_mark_message_read(request, message_id):
 
         received, created = ReceivedMessage.objects.get_or_create(
             message=message_obj,
-            user=request.user,
-            defaults={'is_read': True}
+            recipient=request.user,
+            defaults={'read': True}
         )
 
-        if not created and not received.is_read:
-            received.is_read = True
+        if not created and not received.read:
+            received.read = True
             received.read_at = timezone.now()
             received.save()
 
@@ -724,19 +766,107 @@ def parent_event_json(request):
     Retorna eventos em formato JSON para o calendário
     """
     user = request.user
-    context = get_user_visibility_context(user)  # Usando o contexto centralizado
+    context = get_user_visibility_context(user)  # Centraliza as permissões/visibilidade
 
-    # Obter eventos baseados nas turmas do contexto
-    eventos = Event.objects.filter(classes__in=context["user_classes"])
+    # Filtra eventos pelas turmas do usuário
+    eventos = Event.objects.filter(classes__in=context["user_classes"]).distinct()
 
-    # Formatar dados
-    data = [{
-        "title": evento.titulo,
-        "start": evento.inicio.isoformat(),
-        "end": evento.fim.isoformat() if evento.fim else None,
-    } for evento in eventos.distinct()]
+    # Monta a lista de eventos para o calendário
+    data = []
+    for evento in eventos:
+        data.append({
+            "id": evento.id,
+            "title": evento.titulo,
+            "start": evento.inicio.isoformat(),
+            "end": evento.fim.isoformat() if evento.fim else None,
+            # "description": evento.descricao,  # REMOVIDO: não existe
+            # "allDay": getattr(evento, "dia_todo", False),  # REMOVIDO: não existe
+            # "className": f"event-type-{getattr(evento, 'tipo', '')}",  # REMOVIDO: não existe
+            # "url": reverse('message:parent_event_detail', kwargs={'id': evento.id})  # Só inclua se existir essa view/URL
+        })
 
     return JsonResponse(data, safe=False)
+
+
+@login_required
+@role_required(["Diretor", "Coordenador"])
+def dashboard_event_create(request):
+    """
+    ✅ Criação de Evento via Dashboard
+    """
+    if request.method == "POST":
+        form = EventForm(request.POST)
+        if form.is_valid():
+            event = form.save(commit=False)
+            event.created_by = request.user
+            event.save()
+            form.save_m2m()  # Salva as relações ManyToMany (como classes)
+
+            messages.success(request, f"Evento '{event.titulo}' criado com sucesso.")
+            return redirect('message:dashboard_event_list')  # Redireciona para a lista de eventos
+        else:
+            messages.error(request, "Erro ao criar o evento. Verifique os campos.")
+    else:
+        form = EventForm()  # Cria um formulário vazio
+
+    return render(request, 'dashboard/events/form.html', {
+        'form': form,
+        'form_title': "Novo Evento",
+        'form_subtitle': "Preencha os campos para criar um novo evento."
+    })
+
+@login_required
+@role_required(["Diretor", "Coordenador"])
+def dashboard_event_list(request):
+    """
+    Lista todos os eventos cadastrados
+    """
+    events = Event.objects.all().order_by('-inicio')
+    return render(request, 'dashboard/events/list.html', {
+        'events': events,
+        'form_title': "Lista de Eventos",
+        'form_subtitle': "Gerencie os eventos cadastrados."
+    })
+
+
+@login_required
+@role_required(["Diretor", "Coordenador"])
+def dashboard_event_edit(request, event_id):
+    """
+    ✏️ Edição de Evento via Dashboard
+    """
+    event = get_object_or_404(Event, id=event_id)
+    if request.method == "POST":
+        form = EventForm(request.POST, instance=event)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Evento '{event.titulo}' atualizado com sucesso.")
+            return redirect('message:dashboard_event_list')
+        else:
+            messages.error(request, "Erro ao atualizar o evento. Verifique os campos.")
+    else:
+        form = EventForm(instance=event)
+    return render(request, 'dashboard/events/form.html', {
+        'form': form,
+        'form_title': "Editar Evento",
+        'form_subtitle': f"Edite as informações do evento \"{event.titulo}\"."
+    })
+
+@login_required
+@role_required(["Diretor", "Coordenador"])
+def dashboard_event_delete(request, event_id):
+    """
+    🗑️ Exclusão de Evento via Dashboard
+    """
+    event = get_object_or_404(Event, id=event_id)
+    if request.method == "POST":
+        titulo = event.titulo
+        event.delete()
+        messages.success(request, f"Evento '{titulo}' excluído com sucesso.")
+        return redirect('message:dashboard_event_list')
+    else:
+        messages.error(request, "A exclusão deve ser feita via POST.")
+        return redirect('message:dashboard_event_list')
 
 @login_required
 def parent_calendar_view(request):

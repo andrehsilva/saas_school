@@ -80,7 +80,7 @@
                 <!-- Conteúdo da Mensagem -->
                 <div class="px-4 py-3 space-y-2">
                     <h2 class="text-xl font-semibold text-gray-900">{{ item.item.title }}</h2>
-                    <p class="text-gray-700 leading-relaxed">{{ item.item.context }}</p>
+                    <p class="text-gray-700 leading-relaxed">{{ item.item.context|safe }}</p>
 
                     {% if item.item.image %}
                     <img src="{{ item.item.image.url }}" alt="Imagem da mensagem" class="rounded-lg w-full max-h-60 object-cover mt-2">

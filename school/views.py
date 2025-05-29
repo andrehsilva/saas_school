@@ -427,7 +427,8 @@ def class_edit(request, class_id):
     return render(request, 'dashboard/classes/form.html', {
         'turma': turma, 'grades': grades, 'teachers': teachers,
         'current_name': turma.name, 'current_grade': turma.grade_id,
-        'current_teachers': [str(t.id) for t in turma.teachers.all()],
+        'current_teachers': list(turma.teachers.values_list('id', flat=True)),
+        #'current_teachers': [str(t.id) for t in turma.teachers.all()],
         'current_academic_year': turma.academic_year, 'current_is_regular': turma.is_regular,
         'form_title': f"Editar Turma: {turma.name}"
     })
