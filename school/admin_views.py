@@ -1,5 +1,4 @@
 from django.contrib import admin, messages
-from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.http import HttpResponse
@@ -7,15 +6,6 @@ from django.shortcuts import render, redirect
 from django.utils import timezone
 import csv
 from .models import Role, UserRole, Student, Parent, Class, Grade, Subject
-
-def import_users_view(request):
-    # Sua lógica de importação aqui
-    return render(request, 'admin/import_users.html')
-
-def export_users_view(request):
-    # Sua lógica de exportação aqui
-    return HttpResponse(content_type='text/csv')
-
 
 def import_users_view(request):
     if request.method == "POST":
@@ -36,13 +26,11 @@ def import_users_view(request):
             "colaborador": "Colaborador"
         }
 
-        # Variáveis para contar os resultados
-        total_created = 0 # <-- Nova variável para o contador
-        total_updated = 0 # <-- Nova variável para o contador
+        total_created = 0
+        total_updated = 0
         errors = []
-        
+
         def get_or_create_grade(class_name):
-            """Cria série baseada no número da turma"""
             grade_number = ''.join(filter(str.isdigit, class_name.split()[0]))
             if not grade_number:
                 raise ValueError(f"Formato inválido para turma: {class_name}")
@@ -51,7 +39,6 @@ def import_users_view(request):
             return grade
 
         def get_or_create_class(class_name):
-            """Cria turma com série associada"""
             try:
                 grade = get_or_create_grade(class_name)
                 class_obj, _ = Class.objects.get_or_create(
@@ -65,7 +52,6 @@ def import_users_view(request):
 
         for row_number, row in enumerate(reader, start=2):
             try:
-                # Extração e normalização dos dados
                 username = row.get("usuario", "").strip()
                 email = row.get("email", "").strip().lower()
                 first_name = row.get("nome", "").strip()
@@ -73,15 +59,14 @@ def import_users_view(request):
                 password = row.get("senha", "").strip()
                 papel = row.get("papel", "").strip().lower()
                 classe_nome = row.get("classe", "").strip()
+                serie_nome = row.get("serie", "").strip()
                 filhos_str = row.get("filhos", "").strip()
 
-                # Validação básica
                 if not all([username, email, password]):
                     errors.append(f"Linha {row_number}: Campos obrigatórios faltando")
                     continue
 
-                # Criação/Atualização do usuário
-                user, created_bool = User.objects.update_or_create( # <-- Renomeado para evitar conflito
+                user, created_bool = User.objects.update_or_create(
                     username=username,
                     defaults={
                         'email': email,
@@ -89,24 +74,22 @@ def import_users_view(request):
                         'last_name': last_name,
                     }
                 )
-                
-                if created_bool: # <-- Usar a variável booleana aqui
+
+                if created_bool:
                     user.set_password(password)
                     user.save()
-                    total_created += 1 # <-- Incrementa a variável correta
+                    total_created += 1
                 else:
-                    total_updated += 1 # <-- Incrementa a variável correta
+                    total_updated += 1
 
-                # Atribuição de Papel
                 role_name = ROLE_MAP.get(papel)
                 if not role_name:
                     errors.append(f"Linha {row_number}: Papel inválido '{papel}'")
                     continue
-                
+
                 role, _ = Role.objects.get_or_create(name=role_name)
                 UserRole.objects.get_or_create(user=user, role=role)
 
-                # Processamento específico por papel
                 if papel == "aluno":
                     student, _ = Student.objects.get_or_create(user=user)
                     if classe_nome:
@@ -130,44 +113,39 @@ def import_users_view(request):
                                 errors.append(f"Linha {row_number}: {str(e)}")
 
                 elif papel in ["coordenador", "diretor", "colaborador"]:
-                    if classe_nome:
-                        for class_name in classe_nome.split(';'):
-                            class_name = class_name.strip()
+                    if serie_nome:
+                        for grade_name in serie_nome.split(';'):
+                            grade_name = grade_name.strip()
                             try:
-                                grade = get_or_create_grade(class_name)
+                                grade = Grade.objects.get(name__iexact=grade_name)
                                 if papel == "coordenador":
                                     grade.coordinators.add(user)
                                 elif papel == "diretor":
                                     grade.directors.add(user)
                                 elif papel == "colaborador":
-                                    grade.colaborador.add(user)
-                            except ValueError as e:
-                                errors.append(f"Linha {row_number}: {str(e)}")
+                                    grade.colaboradores.add(user)
+                            except Grade.DoesNotExist:
+                                errors.append(f"Linha {row_number}: Série '{grade_name}' não encontrada.")
 
                 elif papel == "responsavel":
                     parent, _ = Parent.objects.get_or_create(user=user)
                     if filhos_str:
                         for filho_email in filhos_str.split(';'):
-                            filho_email = filho_email.strip().lower()
-                            if filho_email:
-                                try:
-                                    filho_user = User.objects.get(email__iexact=filho_email)
-                                    if hasattr(filho_user, 'student'):
-                                        parent.children.add(filho_user.student)
-                                    else:
-                                        errors.append(f"Linha {row_number}: Usuário {filho_email} não é aluno")
-                                except User.DoesNotExist:
-                                    errors.append(f"Linha {row_number}: Aluno não encontrado: {filho_email}")
+                            filho_email = filho_email.strip()
+                            try:
+                                filho_user = User.objects.get(email=filho_email)
+                                filho_student = Student.objects.get(user=filho_user)
+                                parent.children.add(filho_student)
+                            except (User.DoesNotExist, Student.DoesNotExist):
+                                errors.append(f"Linha {row_number}: Filho com email '{filho_email}' não encontrado.")
 
             except IntegrityError as e:
                 errors.append(f"Linha {row_number}: Usuário duplicado - {str(e)}")
             except Exception as e:
                 errors.append(f"Linha {row_number}: Erro inesperado - {str(e)}")
 
-        # Resultado da importação
-        if total_created or total_updated: # <-- Usar as novas variáveis aqui
-            msg = f"Importação concluída: {total_created} novos, {total_updated} atualizados"
-            messages.success(request, msg)
+        if total_created or total_updated:
+            messages.success(request, f"Importação concluída: {total_created} novos, {total_updated} atualizados")
         if errors:
             for error in errors[:10]:
                 messages.error(request, error)
@@ -175,6 +153,7 @@ def import_users_view(request):
         return redirect("/admin/auth/user/")
 
     return render(request, "admin/import_users.html")
+
 
 def export_users_view(request):
     response = HttpResponse(content_type='text/csv')
@@ -186,7 +165,6 @@ def export_users_view(request):
         'vinculos', 'filhos', 'ultimo_login'
     ])
 
-    # Otimização de queries
     users = User.objects.prefetch_related(
         'roles__role',
         'student__classes_assigned',
@@ -198,10 +176,8 @@ def export_users_view(request):
     ).select_related('student', 'parent_profile')
 
     for user in users:
-        # Determinar papel principal
         main_role = user.roles.first().role.name if user.roles.exists() else ''
 
-        # Determinar vínculos
         vinculos = []
         if main_role == 'Aluno':
             vinculos = [c.name for c in user.student.classes_assigned.all()]
@@ -214,7 +190,6 @@ def export_users_view(request):
         elif main_role == 'Colaborador':
             vinculos = [g.name for g in user.colaborated_grades.all()]
 
-        # Determinar filhos para responsáveis
         filhos = []
         if hasattr(user, 'parent_profile'):
             filhos = [child.user.email for child in user.parent_profile.children.all()]

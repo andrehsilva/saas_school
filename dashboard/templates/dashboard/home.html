@@ -112,15 +112,15 @@
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 card-hover">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Documentos Publicados</p>
-                <p class="text-3xl font-bold text-gray-800 dark:text-white mt-1">{{ published_documents|default:"0" }}</p>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Eventos da escola</p>
+                <p class="text-3xl font-bold text-gray-800 dark:text-white mt-1">{{ total_events|default:"0" }}</p>
             </div>
             <div class="bg-amber-100 dark:bg-amber-900/50 p-3 rounded-full">
                 <i class="fas fa-file-pdf text-xl text-amber-600 dark:text-amber-400"></i>
             </div>
         </div>
         <div class="mt-4">
-            <a href="#" class="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center">
+            <a href="{% url 'message:dashboard_event_list' %}" class="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center">
                 Ver detalhes <i class="fas fa-arrow-right ml-1 text-xs"></i>
             </a>
         </div>
