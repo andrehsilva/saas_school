@@ -62,6 +62,16 @@ def get_eligible_recipients():
         'classes': classes
     }
 
+def get_user_children(user):
+    """Retorna os filhos do usuário (assumindo que existe um relacionamento Parent -> Student)"""
+    try:
+        # Busca a instância de Parent correspondente ao usuário
+        parent = Parent.objects.get(user=user)
+        # Filtra os Student usando a instância de Parent
+        return Student.objects.filter(parents=parent)
+    except Parent.DoesNotExist:
+        return Student.objects.none()
+
 # =============================================================================
 # VIEWS DO DASHBOARD (ADMIN/GESTÃO)
 # =============================================================================
@@ -718,13 +728,41 @@ def dashboard_mark_message_read(request, message_id):
 @login_required
 def parent_messages_timeline(request):
     """
-    Timeline de mensagens para pais/responsáveis
+    Timeline de mensagens para pais/responsáveis com filtro de filhos
     """
     user = request.user
-    context = get_user_visibility_context(user)
-    visible_messages = get_visible_messages(user)
 
-    # Aplicar filtros
+    # Buscar filhos do usuário
+    filhos = get_user_children(user)
+
+    # Filtro por filho específico
+    filho_id = request.GET.get('filho')
+    filho_selecionado = None  # Inicializa como None
+    visible_messages = Message.objects.none()  # Inicializa como um queryset vazio
+
+    if filho_id and filho_id.isdigit():
+        try:
+            filho_selecionado = Student.objects.get(id=int(filho_id), parents__user=user)  # Garante que o filho pertence ao pai
+
+            # Buscar as turmas e séries do filho
+            turmas = filho_selecionado.classes_assigned.all()
+            series = [turma.grade for turma in turmas]
+
+            # Filtrar as mensagens com base nas turmas e séries do filho
+            visible_messages = Message.objects.filter(
+                Q(users=filho_selecionado.user) |  # Mensagens enviadas diretamente para o usuário do filho
+                Q(classes__in=turmas) |  # Mensagens enviadas para as turmas do filho
+                Q(grades__in=series)  # Mensagens enviadas para as séries do filho
+            ).distinct()
+
+        except Student.DoesNotExist:
+            # Se o filho não existe ou não pertence ao usuário, exibir mensagens para todos os filhos
+            visible_messages = get_visible_messages(user)
+    else:
+        # Sem filtro específico, exibir mensagens para todos os filhos
+        visible_messages = get_visible_messages(user)
+
+    # Aplicar filtros adicionais (tipo e busca)
     selected_type = request.GET.get('type','').strip()
     search_query = request.GET.get('q', '')
 
@@ -756,7 +794,11 @@ def parent_messages_timeline(request):
         'message_types': MessageType.objects.all(),
         'selected_type': selected_type,
         'search_query': search_query,
+        'filhos': filhos,
+        'filho_selecionado': filho_selecionado,  # Passa o objeto filho_selecionado para o template
     })
+
+
 
 @login_required
 def parent_message_detail(request, id):

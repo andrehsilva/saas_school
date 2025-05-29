@@ -12,70 +12,114 @@
         </div>
     </div>
 
+    {% if filhos|length > 1 %}
+    <div class="flex items-center gap-4 mb-6">
+        <!-- Avatar "Todos" -->
+        <form method="get" class="inline">
+            <input type="hidden" name="filho" value="">
+            {% if request.GET.type %}
+                <input type="hidden" name="type" value="{{ request.GET.type }}">
+            {% endif %}
+            {% if request.GET.q %}
+                <input type="hidden" name="q" value="{{ request.GET.q }}">
+            {% endif %}
+            <button type="submit" class="focus:outline-none group">
+                <div class="text-center">
+                    <img src="https://placehold.co/48x48/6B7280/FFFFFF?text=All" alt="Todos"
+                         class="rounded-full border-2 {% if not filho_selecionado %}border-blue-500{% else %}border-gray-300{% endif %} w-12 h-12 object-cover
+                         hover:border-blue-400 transition mx-auto">
+                    <span class="text-xs text-gray-600 mt-1 block">Todos</span>
+                </div>
+            </button>
+        </form>
+        
+        <!-- Avatares dos filhos -->
+        {% for filho in filhos %}
+            <form method="get" class="inline">
+                <input type="hidden" name="filho" value="{{ filho.id }}">
+                {% if request.GET.type %}
+                    <input type="hidden" name="type" value="{{ request.GET.type }}">
+                {% endif %}
+                {% if request.GET.q %}
+                    <input type="hidden" name="q" value="{{ request.GET.q }}">
+                {% endif %}
+                <button type="submit" class="focus:outline-none group">
+                    <div class="text-center">
+                        <img src="{% if filho.user.profile.image %}{{ filho.user.profile.image.url }}{% else %}https://placehold.co/48x48/4F46E5/FFFFFF?text={{ filho.user.first_name|first|default:'F' }}{% endif %}" 
+                             alt="{{ filho.user.get_full_name|default:filho.user.username }}"
+                             class="rounded-full border-2 {% if filho_selecionado and filho_selecionado.id == filho.id %}border-blue-500{% else %}border-gray-300{% endif %} w-12 h-12 object-cover
+                             hover:border-blue-400 transition mx-auto">
+                        <span class="text-xs text-gray-600 mt-1 block truncate w-16">{{ filho.user.first_name|default:filho.user.username }}</span>
+                    </div>
+                </button>
+            </form>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <!-- COLUNA PRINCIPAL (75%) -->
         <main class="md:col-span-3 space-y-6">
             {% for item in page_obj %}
-<div class="bg-white shadow hover:shadow-lg transition-shadow rounded-2xl border border-gray-200 overflow-hidden">
-    <!-- Cabeçalho da Mensagem -->
-    <div class="bg-gray-50 px-4 py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b">
-        <div class="flex-1 space-y-1">
-            <div class="flex flex-wrap gap-2 text-sm">
-                <span class="text-gray-500">Enviado por:</span>
-                <p class="font-bold text-gray-800">{{ item.item.created_by.get_full_name|default:item.item.created_by.username }}</p>
-                <p class="text-gray-500">| {{ item.item.created_at|date:"d M Y - H:i" }}</p>
-            </div>
+            <div class="bg-white shadow hover:shadow-lg transition-shadow rounded-2xl border border-gray-200 overflow-hidden">
+                <!-- Cabeçalho da Mensagem -->
+                <div class="bg-gray-50 px-4 py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b">
+                    <div class="flex-1 space-y-1">
+                        <div class="flex flex-wrap gap-2 text-sm">
+                            <span class="text-gray-500">Enviado por:</span>
+                            <p class="font-bold text-gray-800">{{ item.item.created_by.get_full_name|default:item.item.created_by.username }}</p>
+                            <p class="text-gray-500">| {{ item.item.created_at|date:"d M Y - H:i" }}</p>
+                        </div>
 
-            <!-- Destinatários -->
-            <div class="space-y-2">
-                <!-- Séries -->
-                {% if item.item.grades.exists %}
-                <div class="flex flex-wrap gap-2 items-center">
-                    <span class="text-sm text-gray-500">Série(s):</span>
-                    {% for grade in item.item.grades.all %}
-                        <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                            {{ grade.name }}
-                        </span>
-                    {% endfor %}
-                </div>
-                {% endif %}
+                        <!-- Destinatários -->
+                        <div class="space-y-2">
+                            <!-- Séries -->
+                            {% if item.item.grades.exists %}
+                            <div class="flex flex-wrap gap-2 items-center">
+                                <span class="text-sm text-gray-500">Série(s):</span>
+                                {% for grade in item.item.grades.all %}
+                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                    {{ grade.name }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
 
-                <!-- Turmas -->
-                {% if item.item.classes.exists %}
-                <div class="flex flex-wrap gap-2 items-center">
-                    <span class="text-sm text-gray-500">Turma(s):</span>
-                    {% for class in item.item.classes.all %}
-                        <span class="px-2 py-1 bg-gray-200 text-gray-800 text-xs rounded-full">
-                            {{ class.grade.name }} - {{ class.name }}
-                        </span>
-                    {% endfor %}
-                </div>
-                {% endif %}
+                            <!-- Turmas -->
+                            {% if item.item.classes.exists %}
+                            <div class="flex flex-wrap gap-2 items-center">
+                                <span class="text-sm text-gray-500">Turma(s):</span>
+                                {% for class in item.item.classes.all %}
+                                <span class="px-2 py-1 bg-gray-200 text-gray-800 text-xs rounded-full">
+                                    {{ class.grade.name }} - {{ class.name }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
 
-                <!-- Mensagem Geral -->
-                 <!-- Mensagem Geral -->
-                    {% if not item.item.users.exists and not item.item.grades.exists and not item.item.classes.exists %}
-                    <div class="flex items-center">
-                        <span class="text-xs text-gray-400">Envio geral para todos</span>
+                            <!-- Mensagem Geral -->
+                            {% if not item.item.users.exists and not item.item.grades.exists and not item.item.classes.exists %}
+                            <div class="flex items-center">
+                                <span class="text-xs text-gray-400">Envio geral para todos</span>
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
-                    {% endif %}
-                    
-            </div>
-        </div>
 
-                    {% if item.item.type %}
-                    <span class="px-3 py-1 text-sm font-medium rounded-full whitespace-nowrap"
-                          style="background-color: {{ item.item.type.color }}; color: white;">
-                        {{ item.item.type.name }}
-                    </span>
-                    {% endif %}
+                    <div class="flex items-center gap-2">
+                        {% if item.item.created_by == request.user %}
+                        <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                            Você enviou
+                        </span>
+                        {% endif %}
+                        
+                        {% if item.item.type %}
+                        <span class="px-3 py-1 text-sm font-medium rounded-full whitespace-nowrap" style="background-color: {{ item.item.type.color }}; color: white;">
+                            {{ item.item.type.name }}
+                        </span>
+                        {% endif %}
+                    </div>
                 </div>
-
-                {% if item.item.created_by == request.user %}
-                <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full ml-2">
-                    Você enviou esta mensagem
-                </span>
-                {% endif %}
 
                 <!-- Conteúdo da Mensagem -->
                 <div class="px-4 py-3 space-y-2">
@@ -88,16 +132,14 @@
 
                     <div class="flex justify-between items-center pt-4">
                         {% if item.item.attachments %}
-                        <a href="{{ item.item.attachments.url }}" download
-                           class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
+                        <a href="{{ item.item.attachments.url }}" download class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
                             📎 Baixar Anexo
                         </a>
                         {% endif %}
                         {% if item.item.id %}
-                            <a href="{% url 'message:parent_message_detail' item.item.id %}"
-                            class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                                Ver detalhes →
-                            </a>
+                        <a href="{% url 'message:parent_message_detail' item.item.id %}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                            Ver detalhes →
+                        </a>
                         {% endif %}
                     </div>
                 </div>
@@ -107,33 +149,35 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <p class="mt-4 text-gray-500">Nada encontrado</p>
-                {% if search_query or selected_category %}
+                <p class="mt-4 text-gray-500">Nenhuma mensagem encontrada</p>
+                {% if search_query or selected_type or filho_selecionado %}
                 <p class="text-sm mt-2">Tente ajustar seus filtros de busca</p>
                 {% endif %}
             </div>
             {% endfor %}
 
             <!-- Paginação -->
+            {% if page_obj.has_other_pages %}
             <div class="flex justify-center space-x-2 mt-6 p-4">
                 {% if page_obj.has_previous %}
-                <a href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&type={{ selected_type }}" 
-                   class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">
+                <a href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&type={{ selected_type }}{% if request.GET.filho %}&filho={{ request.GET.filho }}{% endif %}" 
+                   class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition">
                     Anterior
                 </a>
                 {% endif %}
 
                 <span class="px-3 py-1 bg-blue-500 text-white rounded">
-                    {{ page_obj.number }}
+                    {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
                 </span>
 
                 {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&type={{ selected_type }}" 
-                   class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">
+                <a href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&type={{ selected_type }}{% if request.GET.filho %}&filho={{ request.GET.filho }}{% endif %}" 
+                   class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition">
                     Próxima
                 </a>
                 {% endif %}
             </div>
+            {% endif %}
         </main>
 
         <!-- COLUNA LATERAL (25%) -->
@@ -145,13 +189,10 @@
                     <label for="type" class="block text-sm font-medium text-gray-700 mb-1">
                         Tipo de mensagem:
                     </label>
-                    <select name="type" id="type"
-                            class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                            onchange="this.form.submit()">
+                    <select name="type" id="type" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" onchange="this.form.submit()">
                         <option value="">Todos</option>
                         {% for type in message_types %}
-                        <option value="{{ type.id }}" 
-                                {% if request.GET.type == type.id|stringformat:"s" %}selected{% endif %}>
+                        <option value="{{ type.id }}" {% if request.GET.type == type.id|stringformat:"s" %}selected{% endif %}>
                             {{ type.name }}
                         </option>
                         {% endfor %}
@@ -164,19 +205,30 @@
                         Buscar por texto:
                     </label>
                     <div class="flex rounded-md shadow-sm">
-                        <input type="text" 
-                               name="q" 
-                               id="q" 
-                               value="{{ search_query }}"
-                               class="w-full text-sm border border-gray-300 rounded-l-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                        <input type="text" name="q" id="q" value="{{ search_query }}" 
+                               class="w-full text-sm border border-gray-300 rounded-l-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500" 
                                placeholder="Digite termos de busca...">
-                        <button type="submit"
-                                class="text-sm bg-blue-600 text-white px-4 py-2 rounded-r-md">
+                        <button type="submit" class="text-sm bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 transition">
                             Buscar
                         </button>
                     </div>
                 </div>
+                
+                <!-- Preserva o filtro de filho -->
+                {% if request.GET.filho %}
+                    <input type="hidden" name="filho" value="{{ request.GET.filho }}">
+                {% endif %}
             </form>
+
+            <!-- Indicador do filtro ativo -->
+            {% if filho_selecionado %}
+            <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p class="text-sm text-blue-800">
+                    <strong>Filtrando por:</strong><br>
+                    {{ filho_selecionado.user.get_full_name|default:filho_selecionado.user.username }}
+                </p>
+            </div>
+            {% endif %}
         </aside>
     </div>
 </div>
