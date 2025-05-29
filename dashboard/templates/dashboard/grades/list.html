@@ -3,13 +3,31 @@
 {% block title %}Séries Cadastradas{% endblock %}
 
 {% block content %}
-<div class="max-w-9xl mx-auto mt-10 px-4 " x-data="gradeCrud()">
+<div class="max-w-9xl mx-auto mt-10 px-4" x-data="gradeCrud()">
     <div class="flex items-center justify-between mb-8">
         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Séries Cadastradas</h1>
         <a href="{% url 'school:grade_create' %}" class="btn btn-primary flex items-center gap-2">
             <i class="fas fa-plus"></i> Nova Série
         </a>
     </div>
+
+    <form method="get" class="mb-6 bg-gray-50 dark:bg-gray-900 p-4 rounded-lg shadow-sm">
+  <div class="flex flex-col md:flex-row md:items-end gap-2 md:gap-4">
+    <div class="flex-1">
+      <label class="block text-lg font-semibold mb-1 text-gray-700 dark:text-gray-300">Nome da série</label>
+      <input type="text" name="name" value="{{ current_name }}" placeholder="Buscar por nome"
+             class="w-full rounded border-gray-300 dark:border-gray-600 px-2 py-2 bg-white dark:bg-gray-700 dark:text-white focus:ring-primary-500 focus:border-primary-500 transition" />
+    </div>
+    <div class="flex gap-2 mt-2 md:mt-0">
+      <button type="submit" class="btn btn-primary flex items-center gap-2 px-4 py-2">
+        <i class="fas fa-filter"></i> Filtrar
+      </button>
+      <a href="{% url 'school:grade_list' %}" class="btn btn-outline flex items-center gap-2 px-4 py-2">
+        <i class="fas fa-times"></i> Limpar
+      </a>
+    </div>
+  </div>
+</form>
 
     {% if grades %}
     <div class="dark:text-white bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden">
@@ -66,6 +84,23 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Paginação -->
+    <div class="flex justify-center mt-6">
+        <nav class="inline-flex rounded-md shadow-sm" aria-label="Pagination">
+            {% if page_obj.has_previous %}
+                <a href="?name={{ current_name }}&page={{ page_obj.previous_page_number }}" class="px-3 py-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-l-md">Anterior</a>
+            {% else %}
+                <span class="px-3 py-1 border border-gray-300 dark:border-gray-600 text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-l-md">Anterior</span>
+            {% endif %}
+            <span class="px-3 py-1 border-t border-b border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?name={{ current_name }}&page={{ page_obj.next_page_number }}" class="px-3 py-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-r-md">Próxima</a>
+            {% else %}
+                <span class="px-3 py-1 border border-gray-300 dark:border-gray-600 text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-r-md">Próxima</span>
+            {% endif %}
+        </nav>
+    </div>
     {% else %}
     <div class="bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-400 dark:border-yellow-600 text-yellow-800 dark:text-yellow-200 p-4 rounded-md">
         Nenhuma série cadastrada até o momento.
@@ -75,7 +110,6 @@
     {% include "dashboard/components/delete_modal.html" %}
 </div>
 {% endblock %}
-
 
 {% block extra_js %}
 <script>

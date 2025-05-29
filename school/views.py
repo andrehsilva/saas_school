@@ -11,6 +11,7 @@ from django.contrib.auth.models import User
 from school.models import Grade, Class, Subject, Student, Parent
 from school.models import Role, UserRole
 from django.utils import timezone
+from django.core.paginator import Paginator
 
 # Importe a função de notificação (caminho já deve estar correto)
 from notification.utils import send_notification
@@ -50,8 +51,18 @@ def import_users_view(request):
 @login_required
 @role_required(["Diretor", "Coordenador"])
 def grade_list(request):
-    grades = Grade.objects.prefetch_related('colaborator', 'coordinators', 'directors')
-    return render(request, 'dashboard/grades/list.html', {'grades': grades})
+    name = request.GET.get('name', '').strip()
+    grades_qs = Grade.objects.prefetch_related('colaborator', 'coordinators', 'directors').order_by('name')
+    if name:
+        grades_qs = grades_qs.filter(name__icontains=name)
+    paginator = Paginator(grades_qs, 10)  # 10 por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return render(request, 'dashboard/grades/list.html', {
+        'grades': page_obj.object_list,
+        'page_obj': page_obj,
+        'current_name': name,
+    })
 
 @login_required
 @role_required(["Diretor", "Coordenador"])
@@ -247,8 +258,34 @@ def grade_delete(request, grade_id):
 @login_required
 @role_required(["Diretor", "Coordenador"])
 def class_list(request):
-    classes = Class.objects.select_related('grade').prefetch_related('teachers')
-    return render(request, 'dashboard/classes/list.html', {'classes': classes})
+    name = request.GET.get('name', '').strip()
+    grade_id = request.GET.get('grade', '')
+    academic_year = request.GET.get('academic_year', '').strip()
+
+    classes_qs = Class.objects.select_related('grade').prefetch_related('teachers').order_by('name')
+
+    if name:
+        classes_qs = classes_qs.filter(name__icontains=name)
+    if grade_id:
+        classes_qs = classes_qs.filter(grade_id=grade_id)
+    if academic_year:
+        classes_qs = classes_qs.filter(academic_year=academic_year)
+
+    grades = Grade.objects.all().order_by('name')
+    years = Class.objects.values_list('academic_year', flat=True).distinct().order_by('-academic_year')
+
+    paginator = Paginator(classes_qs, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return render(request, 'dashboard/classes/list.html', {
+        'classes': page_obj.object_list,
+        'page_obj': page_obj,
+        'grades': grades,
+        'years': years,
+        'current_name': name,
+        'current_grade': grade_id,
+        'current_year': academic_year,
+    })
 
 @login_required
 @role_required(["Diretor", "Coordenador"])

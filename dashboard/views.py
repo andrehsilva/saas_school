@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from .permissions import dashboard_access_required, role_required  # ajuste o nome se for diferente
 from school.models import Grade, Class, Student, Parent, Subject, UserRole
+from message.models import Message
 
 
 @role_required(["Diretor", "Coordenador"])
@@ -21,6 +22,7 @@ def dashboard_home(request):
         'total_parents': Parent.objects.count(),
         'total_grades': Grade.objects.count(),
         'total_subjects': Subject.objects.count(),
+        'total_messages': Message.objects.count(),
         'my_posts': 0,  # Substitua conforme seu modelo de post
         'published_documents': 0,  # Substitua conforme seu modelo de documento
     }

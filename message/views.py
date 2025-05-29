@@ -815,17 +815,36 @@ def dashboard_event_create(request):
         'form_subtitle': "Preencha os campos para criar um novo evento."
     })
 
-@login_required
+
 @role_required(["Diretor", "Coordenador"])
 def dashboard_event_list(request):
-    """
-    Lista todos os eventos cadastrados
-    """
-    events = Event.objects.all().order_by('-inicio')
+    titulo = request.GET.get('titulo', '').strip()
+    class_id = request.GET.get('class_id', '')
+    inicio = request.GET.get('inicio', '')
+
+    events_qs = Event.objects.prefetch_related('classes').order_by('-inicio')
+
+    if titulo:
+        events_qs = events_qs.filter(titulo__icontains=titulo)
+    if class_id:
+        events_qs = events_qs.filter(classes__id=class_id)
+    if inicio:
+        events_qs = events_qs.filter(inicio__date=inicio)
+
+    paginator = Paginator(events_qs.distinct(), 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    classes = Class.objects.all().order_by('name')
+
     return render(request, 'dashboard/events/list.html', {
-        'events': events,
-        'form_title': "Lista de Eventos",
-        'form_subtitle': "Gerencie os eventos cadastrados."
+        'events': page_obj.object_list,
+        'page_obj': page_obj,
+        'classes': classes,
+        'current_titulo': titulo,
+        'current_class_id': class_id,
+        'current_inicio': inicio,
+        'form_title': 'Eventos Cadastrados',
     })
 
 
