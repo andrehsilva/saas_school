@@ -76,6 +76,24 @@
                 <span class="font-medium text-gray-700 dark:text-gray-300">Responsável:</span>
                 <span class="text-gray-900 dark:text-white">{{ ticket.parent.user.get_full_name|default:ticket.parent.user.username }}</span>
             </div>
+            
+        
+        <span class="inline-flex items-center px-2 py-1 text-sm font-medium text-indigo-400 bg-indigo-100 ">Aluno(s): 
+            {% for child in ticket.parent.children.all %}
+                {{ child.user.first_name }} {{ child.user.last_name|default:child.user.username }}{% if not forloop.last %}, {% endif %}
+            {% empty %}
+                Nenhum aluno vinculado
+            {% endfor %}
+            </span>
+            {% for child in ticket.parent.children.all %}
+                            <span class="inline-flex items-center px-2 py-1 text-sm font-medium text-indigo-500 bg-indigo-100 ">
+                              {% for turma in child.classes_assigned.all %}
+                                {{ turma.grade.name }} | {{ turma.name }} {% if not forloop.last %}, {% endif %}
+                              {% empty %}
+                                Sem turma
+                              {% endfor %}
+                            </span>
+                        {% endfor %}
         </div>
     </div>
 

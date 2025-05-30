@@ -153,7 +153,7 @@ def dashboard_message_list(request):
 def dashboard_message_create(request):
     """
     ✅ Criação de Mensagem
-      - notifica todos os destinatários (usuários, turmas, séries)
+      - notifica todos os destinatários (usuários, turmas, séries) de forma genérica
     """
     recipients = get_eligible_recipients()
     message_types = get_message_types()
@@ -183,7 +183,6 @@ def dashboard_message_create(request):
                 'message': None
             })
 
-        # Cria a mensagem (sem arquivos ainda)
         new_message = Message.objects.create(
             title=title,
             context=content,
@@ -191,15 +190,13 @@ def dashboard_message_create(request):
             type_id=type_id if type_id else None
         )
 
-        # Salva imagem de capa, se enviada
         if 'image' in request.FILES:
             new_message.image = request.FILES['image']
-        # Salva anexo, se enviado
         if 'attachments' in request.FILES:
             new_message.attachments = request.FILES['attachments']
         new_message.save()
 
-        # Adiciona os destinatários
+        # Adiciona destinatários
         if user_ids:
             new_message.users.set(User.objects.filter(id__in=user_ids))
         if class_ids:
@@ -207,21 +204,11 @@ def dashboard_message_create(request):
         if grade_ids:
             new_message.grades.set(Grade.objects.filter(id__in=grade_ids))
 
-        # --- NOTIFICAÇÕES ---
-        message_url = request.build_absolute_uri(_get_message_url(new_message))
+        # --- NOTIFICAÇÕES SIMPLIFICADAS ---
+        message_url = request.build_absolute_uri(reverse('message:parent_message_detail', args=[new_message.id]))
         notified_users = set()
 
-        # 1. Notificar o criador da mensagem
-        if request.user.id not in notified_users:
-            send_notification(
-                recipients=request.user,
-                title="Mensagem Enviada",
-                message=f"Sua mensagem '{new_message.title}' foi enviada com sucesso.",
-                url=message_url
-            )
-            notified_users.add(request.user.id)
-
-        # 2. Notificar usuários diretamente selecionados
+        # Notificar todos os usuários selecionados diretamente
         for user in new_message.users.all():
             if user.id not in notified_users:
                 send_notification(
@@ -232,9 +219,8 @@ def dashboard_message_create(request):
                 )
                 notified_users.add(user.id)
 
-        # 3. Notificar turmas
+        # Notificar alunos das turmas
         for turma in new_message.classes.all():
-            # Cria ReceivedMessage para cada aluno da turma
             for student in Student.objects.filter(classes_assigned=turma):
                 if student.user and student.user.id not in notified_users:
                     ReceivedMessage.objects.create(
@@ -250,35 +236,9 @@ def dashboard_message_create(request):
                     )
                     notified_users.add(student.user.id)
 
-            # Notifica professores da turma
-            for teacher in turma.teachers.all():
-                if teacher.id not in notified_users:
-                    send_notification(
-                        recipients=teacher,
-                        title=f"Nova mensagem para turma {turma.name}",
-                        message=f"'{new_message.title}' - {new_message.context[:50]}...",
-                        url=message_url
-                    )
-                    notified_users.add(teacher.id)
-
-        # 4. Notificar séries (todas as turmas da série)
+        # Notificar alunos das séries
         for grade in new_message.grades.all():
-            # Notifica coordenadores e diretores da série
-            for role_type in ['coordinators', 'directors', 'colaborator']:
-                if hasattr(grade, role_type):
-                    for user in getattr(grade, role_type).all():
-                        if user.id not in notified_users:
-                            send_notification(
-                                recipients=user,
-                                title=f"Nova mensagem para série {grade.name}",
-                                message=f"'{new_message.title}' - {new_message.context[:50]}...",
-                                url=message_url
-                            )
-                            notified_users.add(user.id)
-
-            # Notifica todas as turmas da série
             for turma in Class.objects.filter(grade=grade):
-                # Alunos
                 for student in Student.objects.filter(classes_assigned=turma):
                     if student.user and student.user.id not in notified_users:
                         ReceivedMessage.objects.create(
@@ -294,21 +254,9 @@ def dashboard_message_create(request):
                         )
                         notified_users.add(student.user.id)
 
-                # Professores
-                for teacher in turma.teachers.all():
-                    if teacher.id not in notified_users:
-                        send_notification(
-                            recipients=teacher,
-                            title=f"Nova mensagem para série {grade.name}",
-                            message=f"'{new_message.title}' - {new_message.context[:50]}...",
-                            url=message_url
-                        )
-                        notified_users.add(teacher.id)
-
         messages.success(request, f"Mensagem '{new_message.title}' enviada com sucesso.")
         return redirect('message:dashboard_message_list')
 
-    # GET
     return render(request, 'dashboard/messages/form.html', {
         'users': recipients['users'],
         'grades': recipients['grades'],
@@ -320,49 +268,36 @@ def dashboard_message_create(request):
         'current_type': '',
         'current_users': [],
         'current_classes': [],
-        'current_grades': [],
-        'message': None
+        'current_grades': []
     })
+
 
 @login_required
 @role_required(["Diretor", "Coordenador", "Professor", "Colaborador"])
 def dashboard_message_edit(request, message_id):
     """
-    🔄 Edição de Mensagem
-      - notifica todos os destinatários atuais
-      - notifica destinatários adicionados ➕
-      - notifica destinatários removidos ➖
+    ✏️ Edição de Mensagem
+      - atualiza mensagem e envia notificação genérica aos destinatários
     """
     message_obj = get_object_or_404(Message, id=message_id)
 
-    # Verifica permissão (apenas o criador ou administradores podem editar)
-    if message_obj.created_by != request.user and not request.user.roles.filter(
-            role__name__in=["Diretor", "Coordenador"]).exists():
-        messages.error(request, "Você não tem permissão para editar esta mensagem.")
-        return redirect('message:dashboard_message_list')
+    if not (request.user == message_obj.created_by or request.user.roles.filter(role__name__in=["Diretor", "Coordenador", "Colaborador"]).exists()):
+        raise PermissionDenied()
 
     recipients = get_eligible_recipients()
     message_types = get_message_types()
-
-    # Captura os destinatários atuais antes da edição
-    old_users = set(message_obj.users.all().values_list('id', flat=True))
-    old_classes = set(message_obj.classes.all().values_list('id', flat=True))
-    old_grades = set(message_obj.grades.all().values_list('id', flat=True))
-    old_title = message_obj.title
-    old_content = message_obj.context
 
     if request.method == "POST":
         title = request.POST.get('title', '').strip()
         content = request.POST.get('content', '').strip()
         type_id = request.POST.get('type')
-        user_ids = [int(i) for i in request.POST.getlist('users') if i.isdigit()]
-        class_ids = [int(i) for i in request.POST.getlist('classes') if i.isdigit()]
-        grade_ids = [int(i) for i in request.POST.getlist('grades') if i.isdigit()]
+        user_ids = request.POST.getlist('users')
+        class_ids = request.POST.getlist('classes')
+        grade_ids = request.POST.getlist('grades')
 
         if not title or not content:
             messages.error(request, "Título e conteúdo são obrigatórios.")
             return render(request, 'dashboard/messages/form.html', {
-                'message': message_obj,
                 'users': recipients['users'],
                 'grades': recipients['grades'],
                 'classes': recipients['classes'],
@@ -370,171 +305,90 @@ def dashboard_message_edit(request, message_id):
                 'current_title': title,
                 'current_content': content,
                 'current_type': type_id,
-                'current_users': [str(u) for u in user_ids],
-                'current_classes': [str(c) for c in class_ids],
-                'current_grades': [str(g) for g in grade_ids],
-                'form_title': f"Editar Mensagem: {message_obj.title}"
+                'current_users': user_ids,
+                'current_classes': class_ids,
+                'current_grades': grade_ids,
+                'form_title': "Editar Mensagem",
+                'message': message_obj
             })
 
-        # Atualiza a mensagem
+        # Atualiza os campos
         message_obj.title = title
         message_obj.context = content
         message_obj.type_id = type_id if type_id else None
 
-        # Atualiza imagem de capa, se enviada
+        # Atualiza imagem e anexo, se enviados
         if 'image' in request.FILES:
             message_obj.image = request.FILES['image']
-        # Atualiza anexo, se enviado
         if 'attachments' in request.FILES:
             message_obj.attachments = request.FILES['attachments']
+
         message_obj.save()
 
-        # Atualiza os destinatários
+        # Atualiza destinatários
         message_obj.users.set(User.objects.filter(id__in=user_ids))
         message_obj.classes.set(Class.objects.filter(id__in=class_ids))
         message_obj.grades.set(Grade.objects.filter(id__in=grade_ids))
 
-        # --- NOTIFICAÇÕES ---
-        message_url = request.build_absolute_uri(_get_message_url(message_obj))
+        # --- NOTIFICAÇÃO SIMPLIFICADA ---
+        message_url = request.build_absolute_uri(reverse('message:parent_message_detail', args=[message_obj.id]))
         notified_users = set()
 
-        # 1. Notificar o editor da mensagem
-        if request.user.id not in notified_users:
-            send_notification(
-                recipients=request.user,
-                title="Mensagem Atualizada",
-                message=f"A mensagem '{message_obj.title}' foi atualizada com sucesso.",
-                url=message_url
-            )
-            notified_users.add(request.user.id)
+        # Notificar usuários diretos
+        for user in message_obj.users.all():
+            if user.id not in notified_users:
+                send_notification(
+                    recipients=user,
+                    title="Mensagem Atualizada",
+                    message=message_obj.title,
+                    url=message_url
+                )
+                notified_users.add(user.id)
 
-        # 2. Notificar o criador original (se for diferente do editor)
-        if message_obj.created_by and message_obj.created_by.id != request.user.id and message_obj.created_by.id not in notified_users:
-            send_notification(
-                recipients=message_obj.created_by,
-                title="Sua mensagem foi editada",
-                message=f"A mensagem '{old_title}' foi editada por {request.user.get_full_name() or request.user.username}.",
-                url=message_url
-            )
-            notified_users.add(message_obj.created_by.id)
-
-        # 3. Verificar mudanças nos destinatários
-        current_users = set(user_ids)
-        current_classes = set(class_ids)
-        current_grades = set(grade_ids)
-
-        # Usuários adicionados
-        added_users = current_users - old_users
-        for user_id in added_users:
-            try:
-                user = User.objects.get(id=user_id)
-                if user.id not in notified_users:
+        # Notificar alunos das turmas
+        for turma in message_obj.classes.all():
+            for student in Student.objects.filter(classes_assigned=turma):
+                if student.user and student.user.id not in notified_users:
                     send_notification(
-                        recipients=user,
-                        title=message_obj.title,
-                        message=message_obj.context[:100] + "..." if len(message_obj.context) > 100 else message_obj.context,
+                        recipients=student.user,
+                        title="Mensagem Atualizada",
+                        message=message_obj.title,
                         url=message_url
                     )
-                    notified_users.add(user.id)
+                    notified_users.add(student.user.id)
 
-                    # Cria ReceivedMessage para o novo usuário
-                    ReceivedMessage.objects.create(
-                        message=message_obj,
-                        recipient=user,
-                        read=False
-                    )
-            except User.DoesNotExist:
-                continue
-
-        # Usuários removidos
-        removed_users = old_users - current_users
-        for user_id in removed_users:
-            try:
-                user = User.objects.get(id=user_id)
-                if user.id not in notified_users:
-                    send_notification(
-                        recipients=user,
-                        title="Removido de mensagem",
-                        message=f"Você foi removido como destinatário da mensagem '{message_obj.title}'.",
-                        url="#"
-                    )
-                    notified_users.add(user.id)
-
-                    # Remove ReceivedMessage para o usuário removido
-                    ReceivedMessage.objects.filter(message=message_obj, recipient=user).delete()
-            except User.DoesNotExist:
-                continue
-
-        # 4. Notificar sobre alterações no conteúdo para destinatários atuais
-        if old_title != title or old_content != content:
-            # Todos os usuários diretamente selecionados
-            for user in message_obj.users.all():
-                if user.id not in notified_users:
-                    send_notification(
-                        recipients=user,
-                        title="Mensagem atualizada",
-                        message=f"A mensagem '{message_obj.title}' foi atualizada.",
-                        url=message_url
-                    )
-                    notified_users.add(user.id)
-
-            # Todas as turmas atuais
-            for turma in message_obj.classes.all():
-                # Alunos
+        # Notificar alunos das séries
+        for grade in message_obj.grades.all():
+            for turma in Class.objects.filter(grade=grade):
                 for student in Student.objects.filter(classes_assigned=turma):
                     if student.user and student.user.id not in notified_users:
                         send_notification(
                             recipients=student.user,
-                            title="Mensagem atualizada",
-                            message=f"A mensagem '{message_obj.title}' foi atualizada.",
+                            title="Mensagem Atualizada",
+                            message=message_obj.title,
                             url=message_url
                         )
                         notified_users.add(student.user.id)
-
-                # Professores
-                for teacher in turma.teachers.all():
-                    if teacher.id not in notified_users:
-                        send_notification(
-                            recipients=teacher,
-                            title="Mensagem atualizada",
-                            message=f"A mensagem '{message_obj.title}' para a turma {turma.name} foi atualizada.",
-                            url=message_url
-                        )
-                        notified_users.add(teacher.id)
-
-            # Todas as séries atuais
-            for grade in message_obj.grades.all():
-                # Coordenadores e diretores
-                for role_type in ['coordinators', 'directors', 'colaborator']:
-                    if hasattr(grade, role_type):
-                        for user in getattr(grade, role_type).all():
-                            if user.id not in notified_users:
-                                send_notification(
-                                    recipients=user,
-                                    title="Mensagem atualizada",
-                                    message=f"A mensagem '{message_obj.title}' para a série {grade.name} foi atualizada.",
-                                    url=message_url
-                                )
-                                notified_users.add(user.id)
 
         messages.success(request, f"Mensagem '{message_obj.title}' atualizada com sucesso.")
         return redirect('message:dashboard_message_list')
 
     # GET
     return render(request, 'dashboard/messages/form.html', {
-        'message': message_obj,
         'users': recipients['users'],
         'grades': recipients['grades'],
         'classes': recipients['classes'],
         'message_types': message_types,
+        'form_title': "Editar Mensagem",
         'current_title': message_obj.title,
         'current_content': message_obj.context,
-        'current_type': message_obj.type_id if message_obj.type else None,
-        'current_users': [str(u.id) for u in message_obj.users.all()],
-        'current_classes': [str(c.id) for c in message_obj.classes.all()],
-        'current_grades': [str(g.id) for g in message_obj.grades.all()],
-        'form_title': f"Editar Mensagem: {message_obj.title}"
+        'current_type': message_obj.type_id,
+        'current_users': message_obj.users.values_list('id', flat=True),
+        'current_classes': message_obj.classes.values_list('id', flat=True),
+        'current_grades': message_obj.grades.values_list('id', flat=True),
+        'message': message_obj
     })
+
 
 @login_required
 @role_required(["Diretor", "Coordenador", "Professor", "Colaborador"])
@@ -590,26 +444,6 @@ def dashboard_message_delete(request, message_id):
         # Notifica o usuário que excluiu
         if request.user.id in notified_users:
             notified_users.remove(request.user.id)
-
-        send_notification(
-            recipients=request.user,
-            title="Mensagem Excluída",
-            message=f"A mensagem '{message_title}' foi excluída com sucesso.",
-            url=_get_message_list_url()
-        )
-
-        # Notifica todos os destinatários
-        for user_id in notified_users:
-            try:
-                user = User.objects.get(id=user_id)
-                send_notification(
-                    recipients=user,
-                    title="Mensagem Removida",
-                    message=f"A mensagem '{message_title}' foi removida pelo administrador.",
-                    url=_get_message_list_url()
-                )
-            except User.DoesNotExist:
-                continue
 
         # Responde com JSON para requisições AJAX
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':

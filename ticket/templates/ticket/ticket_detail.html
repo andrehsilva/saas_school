@@ -9,7 +9,7 @@
 
         <!-- Status Update (para respondentes) -->
         {% if is_responder %}
-        <form method="post" action="{% url 'ticket_detail' ticket_id=ticket.id %}" class="flex items-center gap-2">
+        <form method="post" action="{% url 'ticket:ticket_detail' ticket_id=ticket.id %}" class="flex items-center gap-2">
             {% csrf_token %}
             <select name="status" onchange="this.form.submit()" 
                     class="px-3 py-1 border rounded-md text-sm font-medium focus:ring-blue-500 focus:border-blue-500
@@ -161,7 +161,7 @@
                     </button>
                 
                     {% if ticket.assigned_to == request.user %}
-                        <form method="post" action="{% url 'close_ticket' ticket.id %}" class="sm:ml-4">
+                        <form method="post" action="{% url 'ticket:close_ticket' ticket.id %}" class="sm:ml-4">
                             {% csrf_token %}
                             <button type="submit"
                                 class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-lg

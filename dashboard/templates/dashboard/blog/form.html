@@ -1,0 +1,184 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}{{ form_title|default:"Nova Postagem" }}{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/quill-emoji@0.1.7/dist/quill-emoji.css" rel="stylesheet">
+<style>
+    .select2-container--default .select2-selection--multiple {
+        background-color: #fff;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        min-height: 38px;
+    }
+    .dark .select2-container--default .select2-selection--multiple {
+        background-color: #374151;
+        border-color: #4b5563;
+        color: white;
+    }
+    .dark .select2-container--default .select2-selection__rendered {
+        color: white;
+    }
+    .dark .select2-selection__choice {
+        background-color: #4f46e5 !important;
+        color: white !important;
+        border: none;
+    }
+    .dark .select2-dropdown {
+        background-color: #1f2937 !important;
+        color: white;
+        border-color: #4b5563;
+    }
+    .dark .select2-results__option {
+        background-color: transparent;
+        color: white;
+    }
+    .dark .select2-results__option--highlighted[aria-selected] {
+        background-color: #4f46e5;
+        color: white;
+    }
+    .dark .select2-search--dropdown .select2-search__field {
+        background-color: #374151;
+        color: white;
+        border-color: #4b5563;
+    }
+    .select2-container--default .select2-results__option--selected {
+        background-color: #e0e7ff !important;
+        color: #3730a3 !important;
+        font-weight: bold;
+    }
+    .dark .select2-container--default .select2-results__option--selected {
+        background-color: #4f46e5 !important;
+        color: #fff !important;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="{% url 'blog:dashboard_blog_list' %}" class="text-primary-600 dark:text-primary-400 flex items-center mb-6 hover:underline">
+    <i class="fas fa-arrow-left mr-2"></i> Voltar
+</a>
+<div class="max-w-3xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow p-8 dark:text-white">
+    <h2 class="text-2xl font-bold mb-2">{{ form_title|default:"Nova Postagem" }}</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="mb-4">
+            <label class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Título</label>
+            <input type="text" name="name" value="{{ form.name.value|default_if_none:'' }}" 
+                   class="w-full border border-gray-200 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                   required>
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Resumo</label>
+            <textarea name="short_description" rows="3"
+                      class="w-full border border-gray-200 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500">{{ form.short_description.value|default_if_none:'' }}</textarea>
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Conteúdo</label>
+            <div id="quill-editor" style="height: 250px;">{{ form.description.value|safe }}</div>
+            <input type="hidden" name="description" id="description-input">
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Imagem de Capa</label>
+            <input type="file" name="image" class="w-full" />
+            {% if form.instance and form.instance.image %}
+                <img src="{{ form.instance.image.url }}" alt="Capa" class="mt-2 h-24 rounded shadow" />
+            {% endif %}
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Categorias</label>
+            <select name="categories" id="categories-select" multiple class="select2-multiple w-full">
+                {% for category in form.fields.categories.queryset %}
+                    <option value="{{ category.id }}"
+                    {% if category.id|stringformat:"s" in selected_categories %}selected{% endif %}>
+                    {{ category.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="flex items-center gap-6 mb-4">
+            <label class="inline-flex items-center">
+                <input type="checkbox" name="star" value="on" class="form-checkbox" {% if form.star.value %}checked{% endif %}>
+                <span class="ml-2 text-gray-700 dark:text-gray-200">Especial</span>
+            </label>
+            <label class="inline-flex items-center">
+                <input type="checkbox" name="active" value="on" class="form-checkbox" {% if form.active.value %}checked{% endif %}>
+                <span class="ml-2 text-gray-700 dark:text-gray-200">Ativo</span>
+            </label>
+        </div>
+
+        <div class="flex justify-end">
+            <button type="submit" class="btn btn-primary flex items-center">
+                <i class="fas fa-save mr-2"></i> Salvar
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill-emoji@0.1.7/dist/quill-emoji.js"></script>
+<script>
+  // Select2
+  $(document).ready(function() {
+      $('#categories-select').select2({
+          placeholder: "Selecione...",
+          allowClear: true,
+          width: '100%',
+          dropdownAutoWidth: true,
+          language: {
+              noResults: function() { return "Nenhum resultado encontrado"; },
+              searching: function() { return "Buscando..."; }
+          }
+      });
+      if (document.documentElement.classList.contains('dark')) {
+          $('.select2-container').addClass('dark');
+      }
+  });
+
+  // Quill
+  var quill = new Quill('#quill-editor', {
+    theme: 'snow',
+    placeholder: 'Digite o conteúdo da postagem...',
+    modules: {
+      toolbar: [
+        [{ header: [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'script': 'sub'}, { 'script': 'super' }],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'indent': '-1'}, { 'indent': '+1' }],
+        [{ 'align': [] }],
+        ['blockquote', 'code-block'],
+        ['link', 'image', 'video'],
+        ['clean'],
+        ['emoji']
+      ],
+      "emoji-toolbar": true,
+      "emoji-textarea": false,
+      "emoji-shortname": true,
+    }
+  });
+
+  // Preenche o editor com o conteúdo existente (se houver)
+  {% if form.description.value %}
+    quill.root.innerHTML = `{{ form.description.value|escapejs }}`;
+  {% endif %}
+
+  // Ao enviar o formulário, coloca o HTML do Quill no input oculto
+  document.querySelector('form').onsubmit = function() {
+    document.getElementById('description-input').value = quill.root.innerHTML;
+  };
+</script>
+{% endblock %}

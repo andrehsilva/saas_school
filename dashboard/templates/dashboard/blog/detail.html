@@ -1,0 +1,16 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<div class="max-w-2xl mx-auto mt-10 bg-white p-6 rounded shadow">
+    <h1 class="text-2xl font-bold mb-2">{{ post.name }}</h1>
+    <p class="text-gray-500 mb-4">Criado em {{ post.created|date:"d/m/Y H:i" }}</p>
+    {% if post.image %}
+        <img src="{{ post.image.url }}" class="mb-4 rounded" alt="Imagem da postagem">
+    {% endif %}
+    <div class="prose max-w-none">{{ post.description|safe }}</div>
+    <div class="mt-6">
+        <a href="{% url 'blog:dashboard_blog_edit' post.pk %}" class="text-yellow-600 mr-4">Editar</a>
+        <a href="{% url 'blog:dashboard_blog_delete' post.pk %}" class="text-red-600">Excluir</a>
+        <a href="{% url 'blog:dashboard_blog_list' %}" class="ml-4 text-gray-600">Voltar</a>
+    </div>
+</div>
+{% endblock %}

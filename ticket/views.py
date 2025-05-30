@@ -246,14 +246,21 @@ def close_ticket(request, ticket_id):
 @role_required(["Diretor", "Coordenador", "Colaborador", "Professor"])
 def dashboard_ticket_list(request):
     """
-    Lista todos os tickets para o dashboard da escola
+    Lista os tickets do dashboard, mas respeita a regra de permissão para resposta.
+    Apenas usuários autorizados a responder podem visualizar os tickets.
     """
-    # Filtros vindos da query string
+    user = request.user
+
+    # Verifica se o usuário tem permissão para visualizar/responder tickets
+    if not TicketAllowedResponder.objects.filter(user=user).exists():
+        msg.error(request, "Você não tem permissão para visualizar os tickets.")
+        return redirect('dashboard:home')  # ou para qualquer outra view segura
+
+    # Filtros da query string
     search_query = request.GET.get('q', '').strip()
     status_filter = request.GET.get('status', '')
     category_filter = request.GET.get('category', '')
 
-    # Mapeamento de status em português
     status_map = {
         'aberto': 'open',
         'fechado': 'closed',
@@ -261,10 +268,11 @@ def dashboard_ticket_list(request):
         'andamento': 'in_progress',
     }
 
-    # Busca todos os tickets (escola vê tudo)
-    tickets = Ticket.objects.all().select_related('parent__user', 'category')
+    # Apenas tickets das categorias em que o usuário pode responder
+    allowed_categories = TicketAllowedResponder.objects.filter(user=user).values_list('categories', flat=True)
+    tickets = Ticket.objects.filter(category_id__in=allowed_categories).select_related('parent__user', 'category')
 
-    # Aplicar filtros
+    # Filtros
     if search_query:
         status_value = status_map.get(search_query.lower())
         if status_value:
@@ -285,14 +293,11 @@ def dashboard_ticket_list(request):
         tickets = tickets.filter(category_id=category_filter)
 
     tickets = tickets.order_by('-created_at')
-
-    # Paginação
-    paginator = Paginator(tickets, 15)  # 15 tickets por página
+    paginator = Paginator(tickets, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # Para os filtros
-    categories = TicketCategory.objects.all()
+    categories = TicketCategory.objects.filter(id__in=allowed_categories)
     status_choices = Ticket.STATUS_CHOICES
 
     return render(request, 'dashboard/tickets/list.html', {
@@ -304,6 +309,7 @@ def dashboard_ticket_list(request):
         'current_status': status_filter,
         'current_category': category_filter,
     })
+
 
 
 @login_required
