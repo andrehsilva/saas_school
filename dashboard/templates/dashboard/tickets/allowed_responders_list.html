@@ -1,0 +1,118 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% block title %}Permissões de Resposta{% endblock %}
+
+{% block content %}
+<div class="max-w-9xl mx-auto mt-10 px-4" x-data="responderCrud()">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Permissões de Resposta</h1>
+        <a href="{% url 'ticket:allowed_responder_create' %}" class="btn btn-primary flex items-center gap-2">
+            <i class="fas fa-plus"></i> Nova Permissão
+        </a>
+    </div>
+
+    {% if responders %}
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-100 dark:bg-gray-900">
+                <tr>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Usuário</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Categorias</th>
+                    <th class="px-6 py-3"></th>
+                </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {% for responder in responders %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div>
+                                <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ responder.user.get_full_name|default:responder.user.username }}</div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400">{{ responder.user.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% for cat in responder.categories.all %}
+                            <span class="inline-block bg-primary-100 text-primary-800 dark:bg-primary-700 dark:text-primary-100 rounded px-2 py-1 text-xs font-semibold mr-1 mb-1">{{ cat.name }}</span>
+                        {% empty %}
+                            <span class="text-gray-400">Nenhuma</span>
+                        {% endfor %}
+                    </td>
+                    <td class="px-6 py-4 text-right space-x-2">
+                        <a href="{% url 'ticket:allowed_responder_edit' responder.pk %}" class="btn btn-sm btn-outline" title="Editar">
+                            <i class="fas fa-pen"></i>
+                        </a>
+                        <button
+                        
+
+                            type="button"
+                            class="btn btn-sm btn-outline text-red-600"
+                            @click="openDeleteModal({{ responder.pk }}, '{{ responder.user.get_full_name|default:responder.user.username|escapejs }}')"
+                            
+                        >
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% else %}
+    <div class="bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-400 dark:border-yellow-600 text-yellow-800 dark:text-yellow-200 p-4 rounded-md">
+        Nenhuma permissão cadastrada até o momento.
+    </div>
+    {% endif %}
+
+    {% include "dashboard/components/delete_modal.html" %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function responderCrud() {
+    return {
+        showDeleteModal: false,
+        deleteItemId: null,
+        deleteItemName: '',
+        openDeleteModal(id, name) {
+            this.deleteItemId = id;
+            this.deleteItemName = name;
+            this.showDeleteModal = true;
+        },
+        closeDeleteModal() {
+            this.showDeleteModal = false;
+            this.deleteItemId = null;
+            this.deleteItemName = '';
+        },
+        confirmDelete() {
+            fetch(`/ticket/dashboard/tickets/allowed-responders/${this.deleteItemId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'  // não obrigatório, mas seguro
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.closeDeleteModal();  // mover aqui
+                    window.location.reload();
+                } else {
+                    alert(data.error || 'Erro ao excluir a permissão.');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Ocorreu um erro ao processar a requisição.');
+            });
+        }
+    }
+}
+</script>
+
+       
+{% endblock %}

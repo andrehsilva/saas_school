@@ -81,7 +81,7 @@ class Blog(models.Model):
     image = models.ImageField(
         null=True, 
         blank=True, 
-        default="default.jpg", 
+        #default="default.jpg", 
         upload_to='images/',  
         verbose_name='Imagem',
         help_text='Imagem de capa da postagem.'

@@ -13,3 +13,12 @@ class BlogForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'rows': 8}),
             'short_description': forms.Textarea(attrs={'rows': 3}),
         }
+
+
+class CategoryForm(forms.ModelForm):
+    class Meta:
+        model = Category
+        fields = ['name', 'description']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }

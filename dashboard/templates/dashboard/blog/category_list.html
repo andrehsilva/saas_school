@@ -1,0 +1,137 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Categorias do Blog{% endblock %}
+
+{% block content %}
+<div class="max-w-9xl mx-auto mt-10 px-4" x-data="categoryCrud()">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Categorias do Blog</h1>
+        <a href="{% url 'blog:dashboard_category_create' %}" class="btn btn-primary flex items-center gap-2">
+            <i class="fas fa-plus"></i> Nova Categoria
+        </a>
+    </div>
+
+    <form method="get" class="mb-6 bg-gray-50 dark:bg-gray-900 p-4 rounded-lg shadow-sm">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300">Nome</label>
+                <input type="text" name="q" value="{{ search }}" placeholder="Buscar por nome"
+                       class="w-full text-lg rounded border-gray-300 dark:border-gray-600 px-2 py-2 bg-white dark:bg-gray-700 dark:text-white focus:ring-primary-500 focus:border-primary-500 transition">
+            </div>
+            <div class="flex gap-2 items-end">
+                <button type="submit" class="btn btn-primary w-full flex items-center gap-2">
+                    <i class="fas fa-filter"></i> Filtrar
+                </button>
+                <a href="{% url 'blog:dashboard_category_list' %}" class="btn btn-outline w-full flex items-center gap-2">
+                    <i class="fas fa-times"></i> Limpar
+                </a>
+            </div>
+        </div>
+    </form>
+
+    {% if page_obj %}
+    <div class="dark:text-white bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-100 dark:bg-gray-900">
+                <tr>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Nome</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Descrição</th>
+                    <th class="px-6 py-3"></th>
+                </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {% for cat in page_obj %}
+                <tr>
+                    <td class="px-6 py-4 text-gray-900 dark:text-white">{{ cat.name }}</td>
+                    <td class="px-6 py-4 text-gray-900 dark:text-white">{{ cat.description|default:"—" }}</td>
+                    <td class="px-6 py-4 text-right space-x-2">
+                        <a href="{% url 'blog:dashboard_category_edit' cat.pk %}" class="btn btn-sm btn-outline" title="Editar">
+                            <i class="fas fa-pen"></i>
+                        </a>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline text-red-600"
+                            @click="openDeleteModal({{ cat.pk }}, '{{ cat.name }}', '{% url 'blog:dashboard_category_delete' cat.pk %}')"
+                            title="Excluir"
+                        >
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="p-4 text-center text-gray-500">Nenhuma categoria encontrada.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginação -->
+    <div class="flex justify-center mt-6">
+        <nav class="inline-flex rounded-md shadow-sm" aria-label="Pagination">
+            {% if page_obj.has_previous %}
+                <a href="?{% if search %}q={{ search }}&{% endif %}page={{ page_obj.previous_page_number }}" class="px-3 py-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-l-md">Anterior</a>
+            {% else %}
+                <span class="px-3 py-1 border border-gray-300 dark:border-gray-600 text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-l-md">Anterior</span>
+            {% endif %}
+            <span class="px-3 py-1 border-t border-b border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?{% if search %}q={{ search }}&{% endif %}page={{ page_obj.next_page_number }}" class="px-3 py-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-r-md">Próxima</a>
+            {% else %}
+                <span class="px-3 py-1 border border-gray-300 dark:border-gray-600 text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-r-md">Próxima</span>
+            {% endif %}
+        </nav>
+    </div>
+    {% else %}
+    <div class="bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-400 dark:border-yellow-600 text-yellow-800 dark:text-yellow-200 p-4 rounded-md">
+        Nenhuma categoria cadastrada até o momento.
+    </div>
+    {% endif %}
+
+    {% include "dashboard/components/delete_modal.html" %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+function categoryCrud() {
+    return {
+        showDeleteModal: false,
+        deleteItemId: null,
+        deleteItemName: '',
+        deleteUrl: '', // Adicione esta propriedade
+        openDeleteModal(id, name, url) { // Modifique para receber a URL
+            this.deleteItemId = id;
+            this.deleteItemName = name;
+            this.deleteUrl = url; // Atribua a URL
+            this.showDeleteModal = true;
+        },
+        closeDeleteModal() {
+            this.showDeleteModal = false;
+            this.deleteItemId = null;
+            this.deleteItemName = '';
+            this.deleteUrl = ''; // Limpe a URL também
+        },
+        confirmDelete() {
+            fetch(this.deleteUrl, { // Use this.deleteUrl
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Erro ao excluir.');
+                }
+            });
+            this.closeDeleteModal();
+        }
+    }
+}
+</script>
+{% endblock %}

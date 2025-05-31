@@ -10,7 +10,7 @@
 
 <!-- Pesquisa e Categorias -->
 <div class="max-w-7xl mx-auto px-4 mt-6">
-    <form method="get" action="{% url 'blog' %}" class="bg-white p-6 rounded-lg shadow-md flex flex-wrap justify-between items-center gap-4">
+    <form method="get" action="{% url 'blog:blog' %}" class="bg-white p-6 rounded-lg shadow-md flex flex-wrap justify-between items-center gap-4">
         <input 
             type="text" 
             placeholder="Pesquisar..." 
@@ -63,7 +63,7 @@
                 <p class="text-gray-600 text-sm">{{ item.created|date:"d M Y" }} às {{ item.created|time:"H:i" }}, por {{ item.owner }}</p>
                 <p class="mt-2 text-gray-700">{{ item.short_description }}</p>
                 <div class="flex justify-center mt-4">
-                   <a href= "{% url 'article' item.id %}"
+                   <a href= "{% url 'blog:article' item.id %}"
                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105">
                         Saiba mais →
                     </a> 
@@ -104,7 +104,7 @@
     <h2 class="text-2xl font-bold text-center mb-4">Artigos em destaques!</h2>
     <div class="bg-gray-200 p-6 rounded-lg flex flex-wrap gap-3 justify-center">
         {% for item in blog_latest|slice:":3" %}
-            <a href="{% url 'article' item.id %}" 
+            <a href="{% url 'blog:article' item.id %}" 
                class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition-all">
                ⭐ {{ item.name|truncatechars:30 }} - {{ item.created|date:"d/m/Y" }}
                 

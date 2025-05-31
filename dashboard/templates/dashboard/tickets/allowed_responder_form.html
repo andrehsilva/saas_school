@@ -1,0 +1,201 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}
+    {% if responder %}Editar{% else %}Nova{% endif %} Permissão de Resposta
+{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<style>
+    /* Estilos Select2 do layout "correto" */
+    .select2-container--default .select2-selection--multiple,
+    .select2-container--default .select2-selection--single { /* Adicionado .select2-selection--single para Select2 de item único */
+        background-color: #fff;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        min-height: 38px; /* Ajuste para o height padrão do input */
+    }
+    /* Alinhamento do texto para single select */
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 38px; /* Alinha o texto verticalmente */
+        padding-left: 0.75rem; /* px-3 */
+        padding-right: 2.25rem; /* Para a seta */
+        color: #1f2937; /* Default text color */
+    }
+    .dark .select2-container--default .select2-selection--multiple,
+    .dark .select2-container--default .select2-selection--single {
+        background-color: #374151;
+        border-color: #4b5563;
+        color: white;
+    }
+    .dark .select2-container--default .select2-selection__rendered {
+        color: white;
+    }
+    .dark .select2-selection__choice {
+        background-color: #4f46e5 !important;
+        color: white !important;
+        border: none;
+    }
+    .dark .select2-dropdown {
+        background-color: #1f2937 !important;
+        color: white;
+        border-color: #4b5563;
+    }
+    .dark .select2-results__option {
+        background-color: transparent;
+        color: white;
+    }
+    .dark .select2-results__option--highlighted[aria-selected] {
+        background-color: #4f46e5;
+        color: white;
+    }
+    .dark .select2-search--dropdown .select2-search__field {
+        background-color: #374151;
+        color: white;
+        border-color: #4b5563;
+    }
+    .select2-container--default .select2-results__option--selected {
+        background-color: #e0e7ff !important;
+        color: #3730a3 !important;
+        font-weight: bold;
+    }
+    .dark .select2-container--default .select2-results__option--selected {
+        background-color: #4f46e5 !important;
+        color: #fff !important;
+        font-weight: bold;
+    }
+    /* Ajuste para ícone da seta no Select2 single */
+    .select2-container--default .select2-selection--single .select2-selection__arrow b {
+        border-color: #6b7280 transparent transparent transparent; /* default gray */
+    }
+    .dark .select2-container--default .select2-selection--single .select2-selection__arrow b {
+        border-color: #d1d5db transparent transparent transparent; /* light gray for dark mode */
+    }
+
+    /* Override Select2 classic theme default border */
+    .select2-container--classic .select2-selection--single,
+    .select2-container--classic .select2-selection--multiple {
+        border: 1px solid #d1d5db; /* Tailwind gray-300 */
+        border-radius: 0.375rem; /* Tailwind rounded */
+        background-color: #fff; /* Tailwind bg-white */
+    }
+    .dark .select2-container--classic .select2-selection--single,
+    .dark .select2-container--classic .select2-selection--multiple {
+        border-color: #4b5563; /* Tailwind gray-600 */
+        background-color: #374151; /* Tailwind gray-700 */
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="{% url 'ticket:allowed_responders_list' %}" class="text-primary-600 dark:text-primary-400 flex items-center mb-6 hover:underline">
+    <i class="fas fa-arrow-left mr-2"></i> Voltar
+</a>
+<div class="max-w-xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow p-8 dark:text-white">
+    <h2 class="text-2xl font-bold mb-2">
+        {% if responder %}Editar{% else %}Nova{% endif %} Permissão de Resposta
+    </h2>
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        {# Exibição de erros de formulário gerais (non-field errors) #}
+        {% if form.non_field_errors %}
+            <div class="mb-4 p-4 text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-md">
+                <p class="font-bold mb-2">Por favor, corrija os seguintes erros:</p>
+                <ul class="list-disc list-inside">
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <div>
+            <label for="user" class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Usuário</label>
+            <select id="user" name="user" class="select2-single w-full
+                   {% if form.user.errors %}border-red-500{% else %}border-gray-200 dark:border-gray-600{% endif %}"
+                   required {% if responder %}disabled{% endif %}>
+                <option value="">Selecione...</option>
+                {% for user in users %}
+                    <option value="{{ user.id }}" {% if responder and responder.user.id == user.id %}selected{% endif %}>
+                        {{ user.get_full_name|default:user.username }} ({{ user.email }})
+                    </option>
+                {% endfor %}
+            </select>
+            {% if responder %}
+                <input type="hidden" name="user" value="{{ responder.user.id }}">
+            {% endif %}
+            {% if form.user.help_text %}
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.user.help_text }}</p>
+            {% endif %}
+            {% for error in form.user.errors %}
+                <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+            {% endfor %}
+        </div>
+
+        <div>
+            <label for="categories" class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Categorias</label>
+            <select id="categories" name="categories" class="select2-multiple w-full
+                   {% if form.categories.errors %}border-red-500{% else %}border-gray-200 dark:border-gray-600{% endif %}"
+                   multiple required>
+                <option value="">Selecione as categorias</option> {# Adicionado placeholder para multi-select #}
+                {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if responder and cat in responder.categories.all %}selected{% endif %}>
+                        {{ cat.name }}
+                    </option>
+                {% endfor %}
+            </select>
+            {% if form.categories.help_text %}
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.categories.help_text }}</p>
+            {% endif %}
+            {% for error in form.categories.errors %}
+                <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+            {% endfor %}
+        </div>
+
+        <div class="flex justify-end gap-2 pt-4"> {# Adicionado gap-2 e pt-4 para espaçamento #}
+            <a href="{% url 'ticket:allowed_responders_list' %}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">
+                {% if responder %}Salvar{% else %}Criar{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Inicializa Select2 com as mesmas opções de antes
+        $('.select2-single').select2({
+            placeholder: 'Selecione um usuário',
+            allowClear: true, // Adicionado allowClear para o single select
+            width: '100%',
+            dropdownAutoWidth: true,
+            language: {
+                noResults: function() { return "Nenhum resultado encontrado"; },
+                searching: function() { return "Buscando..."; }
+            }
+        });
+
+        $('.select2-multiple').select2({
+            placeholder: 'Selecione as categorias',
+            allowClear: true, // Adicionado allowClear para o multiple select
+            width: '100%',
+            dropdownAutoWidth: true,
+            language: {
+                noResults: function() { return "Nenhum resultado encontrado"; },
+                searching: function() { return "Buscando..."; }
+            }
+        });
+
+        // Aplica classe 'dark' ao Select2 se o modo escuro estiver ativo
+        if (document.documentElement.classList.contains('dark')) {
+            $('.select2-container').addClass('dark');
+        }
+    });
+</script>
+{% endblock %}

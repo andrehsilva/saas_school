@@ -9,7 +9,10 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
-from .forms import BlogForm
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+from .forms import BlogForm, CategoryForm
 
 
 
@@ -63,24 +66,63 @@ class ArticleDetailView(DetailView):
 ############dashboard
 
 
-@login_required
+from django.shortcuts import render
+from .models import Blog, Category
+
 def dashboard_blog_list(request):
     search = request.GET.get('q', '')
+    category_id = request.GET.get('category', '')
+    active = request.GET.get('active', '')
+
     posts = Blog.objects.all().order_by('-created')
+
     if search:
         posts = posts.filter(name__icontains=search)
-    paginator = Paginator(posts, 10)
+
+    if category_id:
+        posts = posts.filter(categories__id=category_id)
+
+    if active == '1':
+        posts = posts.filter(active=True)
+    elif active == '0':
+        posts = posts.filter(active=False)
+
+    from django.core.paginator import Paginator
+    paginator = Paginator(posts, 20)
     page_obj = paginator.get_page(request.GET.get('page'))
-    return render(request, 'dashboard/blog/list.html', {
+
+    categories = Category.objects.all()
+
+    context = {
         'page_obj': page_obj,
         'search': search,
-    })
+        'categories': categories,
+        'current_category': category_id,
+        'current_active': active,
+    }
+    return render(request, 'dashboard/blog/list.html', context)
 
 @login_required
 def dashboard_blog_create(request):
     if request.method == 'POST':
-        form = BlogForm(request.POST, request.FILES)
-        selected_categories = request.POST.getlist('categories')
+        # Corrige checkboxes: se não vierem, define como False
+        post_data = request.POST.copy()
+        if 'star' not in post_data:
+            post_data['star'] = False
+        if 'active' not in post_data:
+            post_data['active'] = False
+
+        form = BlogForm(post_data, request.FILES)
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.owner = request.user
+            post.save()
+            form.save_m2m()  # Salva categorias
+            messages.success(request, 'Postagem criada com sucesso!')
+            return redirect('blog:dashboard_blog_list')
+        else:
+            messages.error(request, 'Corrija os erros abaixo.')
+        selected_categories = post_data.getlist('categories')
     else:
         form = BlogForm()
         selected_categories = []
@@ -90,11 +132,24 @@ def dashboard_blog_create(request):
         'selected_categories': selected_categories,
     })
 
+@login_required
 def dashboard_blog_edit(request, pk):
     post = get_object_or_404(Blog, pk=pk)
     if request.method == 'POST':
-        form = BlogForm(request.POST, request.FILES, instance=post)
-        selected_categories = request.POST.getlist('categories')
+        post_data = request.POST.copy()
+        if 'star' not in post_data:
+            post_data['star'] = False
+        if 'active' not in post_data:
+            post_data['active'] = False
+
+        form = BlogForm(post_data, request.FILES, instance=post)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Postagem atualizada com sucesso!')
+            return redirect('blog:dashboard_blog_list')
+        else:
+            messages.error(request, 'Corrija os erros abaixo.')
+        selected_categories = post_data.getlist('categories')
     else:
         form = BlogForm(instance=post)
         selected_categories = [str(cat.id) for cat in post.categories.all()]
@@ -107,13 +162,71 @@ def dashboard_blog_edit(request, pk):
 @login_required
 def dashboard_blog_delete(request, pk):
     post = get_object_or_404(Blog, pk=pk)
-    if request.method == 'POST':
+    if request.method == "POST" and request.headers.get('x-requested-with') == 'XMLHttpRequest':
         post.delete()
-        messages.success(request, 'Postagem excluída com sucesso!')
-        return redirect('blog:dashboard_blog_list')
-    return render(request, 'dashboard/blog/confirm_delete.html', {'post': post})
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False}, status=400)
 
 @login_required
 def dashboard_blog_detail(request, pk):
     post = get_object_or_404(Blog, pk=pk)
     return render(request, 'dashboard/blog/detail.html', {'post': post})
+
+
+
+
+
+############ dashboard categoria
+@login_required
+def dashboard_category_list(request):
+    search = request.GET.get('q', '')
+    categories = Category.objects.all().order_by('name')
+    if search:
+        categories = categories.filter(name__icontains=search)
+    paginator = Paginator(categories, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    return render(request, 'dashboard/blog/category_list.html', {
+        'page_obj': page_obj,
+        'search': search,
+    })
+
+@login_required
+def dashboard_category_create(request):
+    if request.method == 'POST':
+        form = CategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Categoria criada com sucesso!')
+            return redirect('blog:dashboard_category_list')
+    else:
+        form = CategoryForm()
+    return render(request, 'dashboard/blog/category_form.html', {
+        'form': form,
+        'form_title': 'Nova Categoria',
+    })
+
+@login_required
+def dashboard_category_edit(request, pk):
+    category = get_object_or_404(Category, pk=pk)
+    if request.method == 'POST':
+        form = CategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Categoria atualizada com sucesso!')
+            return redirect('blog:dashboard_category_list')
+    else:
+        form = CategoryForm(instance=category)
+    return render(request, 'dashboard/blog/category_form.html', {
+        'form': form,
+        'form_title': 'Editar Categoria',
+    })
+
+from django.http import JsonResponse
+
+@login_required
+def dashboard_category_delete(request, pk):
+    category = get_object_or_404(Category, pk=pk)
+    if request.method == "POST" and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        category.delete()
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False}, status=400)

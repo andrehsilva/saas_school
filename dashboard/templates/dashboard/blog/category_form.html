@@ -1,0 +1,65 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}{{ form_title|default:"Nova Categoria" }}{% endblock %}
+
+{% block content %}
+<a href="{% url 'blog:dashboard_category_list' %}" class="text-primary-600 dark:text-primary-400 flex items-center mb-6 hover:underline">
+    <i class="fas fa-arrow-left mr-2"></i> Voltar
+</a>
+<div class="max-w-9xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow p-8 dark:text-white">
+    <h2 class="text-2xl font-bold mb-2">{{ form_title|default:"Nova Categoria" }}</h2>
+    <form method="post">
+        {% csrf_token %}
+
+        {# Exibição de erros de formulário gerais (non-field errors) #}
+        {% if form.non_field_errors %}
+            <div class="mb-4 p-4 text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-md">
+                <p class="font-bold mb-2">Por favor, corrija os seguintes erros:</p>
+                <ul class="list-disc list-inside">
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <div class="mb-4">
+            <label for="{{ form.name.id_for_label }}" class="block text-gray-700 dark:text-gray-200 font-medium mb-1">{{ form.name.label }}</label>
+            <input type="text"
+                   name="{{ form.name.name }}"
+                   id="{{ form.name.id_for_label }}"
+                   value="{{ form.name.value|default_if_none:'' }}"
+                   class="w-full border {% if form.name.errors %}border-red-500{% else %}border-gray-200 dark:border-gray-600{% endif %} rounded px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                   {% if form.name.field.required %}required{% endif %}
+                   placeholder="{{ form.name.field.widget.attrs.placeholder|default:'' }}">
+            {% if form.name.help_text %}
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.name.help_text }}</p>
+            {% endif %}
+            {% for error in form.name.errors %}
+                <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+            {% endfor %}
+        </div>
+
+        <div class="mb-4">
+            <label for="{{ form.description.id_for_label }}" class="block text-gray-700 dark:text-gray-200 font-medium mb-1">{{ form.description.label }}</label>
+            <textarea name="{{ form.description.name }}"
+                      id="{{ form.description.id_for_label }}"
+                      rows="3"
+                      class="w-full border {% if form.description.errors %}border-red-500{% else %}border-gray-200 dark:border-gray-600{% endif %} rounded px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      {% if form.description.field.required %}required{% endif %}
+                      placeholder="{{ form.description.field.widget.attrs.placeholder|default:'' }}">{{ form.description.value|default_if_none:'' }}</textarea>
+            {% if form.description.help_text %}
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.description.help_text }}</p>
+            {% endif %}
+            {% for error in form.description.errors %}
+                <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+            {% endfor %}
+        </div>
+
+        <div class="flex justify-end mt-6">
+            <button type="submit" class="btn btn-primary flex items-center">
+                <i class="fas fa-save mr-2"></i> Salvar
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -508,3 +508,82 @@ def dashboard_ticket_reopen(request, ticket_id):
         }, status=405)
 
     return redirect('ticket:dashboard_ticket_list')
+
+
+
+##permissão de ticket#######
+############################
+
+@login_required
+@role_required(["Diretor"])
+def allowed_responders_list(request):
+    responders = TicketAllowedResponder.objects.select_related('user').prefetch_related('categories').all()
+    return render(request, 'dashboard/tickets/allowed_responders_list.html', {
+        'responders': responders,
+    })
+
+
+@login_required
+@role_required(["Diretor"])
+def allowed_responder_create(request):
+    users = User.objects.all()
+    categories = TicketCategory.objects.all()
+
+    if request.method == 'POST':
+        user_id = request.POST.get('user')
+        category_ids = request.POST.getlist('categories')
+        user = User.objects.get(id=user_id)
+        responder, created = TicketAllowedResponder.objects.get_or_create(user=user)
+        responder.categories.set(category_ids)
+        responder.save()
+        msg.success(request, "Permissão criada/atualizada com sucesso!")
+        return redirect('ticket:allowed_responders_list')
+
+    return render(request, 'dashboard/tickets/allowed_responder_form.html', {
+        'users': users,
+        'categories': categories,
+    })
+
+
+@login_required
+@role_required(["Diretor"])
+def allowed_responder_edit(request, pk):
+    responder = get_object_or_404(TicketAllowedResponder, pk=pk)
+    users = User.objects.all()
+    categories = TicketCategory.objects.all()
+
+    if request.method == 'POST':
+        user_id = request.POST.get('user')
+        category_ids = request.POST.getlist('categories')
+        responder.user = User.objects.get(id=user_id)
+        responder.categories.set(category_ids)
+        responder.save()
+        msg.success(request, "Permissão atualizada com sucesso!")
+        return redirect('ticket:allowed_responders_list')
+
+    return render(request, 'dashboard/tickets/allowed_responder_form.html', {
+        'responder': responder,
+        'users': users,
+        'categories': categories,
+    })
+
+
+@login_required
+@role_required(["Diretor"])
+def allowed_responder_delete(request, pk):
+    responder = get_object_or_404(TicketAllowedResponder, pk=pk)
+
+    if request.method == 'POST':
+        responder.delete()
+
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': True})
+
+        msg.success(request, "Permissão removida com sucesso!")
+        return redirect('ticket:allowed_responders_list')
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Método não permitido'}, status=405)
+
+    return redirect('ticket:allowed_responders_list')
+
