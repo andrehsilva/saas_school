@@ -44,24 +44,43 @@
 </div>
 
 <!-- Modal de ajuda -->
+<!-- Modal de ajuda -->
 <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
     <div class="bg-white rounded-lg shadow-lg max-w-lg w-full p-6 relative">
         <button onclick="document.getElementById('helpModal').classList.add('hidden')" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700">
             <i class="fas fa-times"></i>
         </button>
         <h3 class="text-lg font-bold mb-2">Como preencher a planilha de usuários</h3>
-        <ul class="list-disc pl-5 text-sm mb-2">
-            <li><b>usuario</b>: Nome de usuário único (ex: aluno1, prof_joao)</li>
-            <li><b>email</b>: E-mail válido do usuário</li>
-            <li><b>nome</b>: Primeiro nome</li>
-            <li><b>sobrenome</b>: Sobrenome</li>
-            <li><b>senha</b>: Senha inicial do usuário</li>
-            <li><b>papel</b>: aluno, professor, coordenador, diretor, colaborador ou responsavel</li>
-            <li><b>serie</b>: (Para coordenador/diretor/colaborador) Nome da série (ex: 1º Ano)</li>
-            <li><b>classe</b>: (Para aluno/professor) Nome da(s) turma(s) (ex: 1A;2B)</li>
-            <li><b>filhos</b>: (Para responsável) E-mails dos filhos separados por ponto e vírgula</li>
-        </ul>
-        <p class="text-xs text-gray-500">Dica: Baixe a planilha modelo para garantir o formato correto.</p>
+        <div class="mb-3 text-sm">
+            <p>
+                <b>1. Baixe a planilha modelo</b> clicando no botão <b>“Baixar Planilha Modelo”</b> nesta página.
+            </p>
+            <p class="mt-2">
+                <b>2. Preencha as colunas da planilha conforme necessário:</b>
+            </p>
+            <ul class="list-disc pl-5 mt-1">
+                <li><b>usuario</b>: Nome de usuário único (ex: aluno1, prof_joao). <span class="text-gray-600">Obrigatório para criar um usuário.</span></li>
+                <li><b>email</b>: E-mail válido do usuário. <span class="text-gray-600">Obrigatório para criar um usuário.</span></li>
+                <li><b>nome</b>: Primeiro nome do usuário.</li>
+                <li><b>sobrenome</b>: Sobrenome do usuário.</li>
+                <li><b>senha</b>: Senha inicial do usuário. <span class="text-gray-600">Obrigatório para criar um usuário.</span></li>
+                <li><b>papel</b>: Função do usuário no sistema. Use: <b>aluno</b>, <b>professor</b>, <b>coordenador</b>, <b>diretor</b>, <b>colaborador</b> ou <b>responsavel</b>.</li>
+                <li><b>serie</b>: (Para coordenador, diretor ou colaborador) Nome da série (ex: 1º Ano). <span class="text-gray-600">Você pode criar uma série sem vincular a um usuário preenchendo apenas esta coluna e deixando as demais em branco.</span></li>
+                <li><b>classe</b>: (Para aluno ou professor) Nome da(s) turma(s) (ex: 1A;2B). <span class="text-gray-600">Você pode criar uma turma sem vincular a um usuário preenchendo apenas esta coluna e deixando as demais em branco.</span></li>
+                <li><b>filhos</b>: (Para responsável) E-mails dos filhos, separados por ponto e vírgula (;).</li>
+            </ul>
+            <p class="mt-3">
+                <b>3. Dicas importantes:</b>
+            </p>
+            <ul class="list-disc pl-5">
+                <li>Para criar apenas uma série ou turma, basta preencher somente a coluna <b>serie</b> ou <b>classe</b> e deixar as outras colunas em branco.</li>
+                <li>Para importar usuários e já vinculá-los a séries ou turmas, preencha as colunas de usuário normalmente e também as colunas <b>serie</b> e/ou <b>classe</b> conforme o papel do usuário.</li>
+                <li>Se tiver dúvidas, utilize sempre a planilha modelo como referência para o formato correto.</li>
+            </ul>
+        </div>
+        <div class="text-xs text-gray-500">
+            Após preencher, salve a planilha em formato CSV e utilize o botão <b>Importar</b> para enviar os dados.
+        </div>
     </div>
 </div>
 {% endblock %}

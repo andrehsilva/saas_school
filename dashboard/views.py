@@ -12,7 +12,7 @@ import csv
 
 
 
-@role_required(["Diretor", "Coordenador"])
+@role_required(["Diretor", "Coordenador", "Professor"])
 def dashboard_home(request):
     user = request.user
     

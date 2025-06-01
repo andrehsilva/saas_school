@@ -12,6 +12,7 @@ from school.models import Grade, Class, Subject, Student, Parent
 from school.models import Role, UserRole
 from django.utils import timezone
 from django.core.paginator import Paginator
+import csv
 
 # Importe a função de notificação (caminho já deve estar correto)
 from notification.utils import send_notification
@@ -49,7 +50,7 @@ def import_users_view(request):
     return HttpResponse("Importar Usuários - função ainda não implementada")
 
 @login_required
-@role_required(["Diretor"])
+@role_required(["Diretor", "Coordenador", "Professor"])
 def grade_list(request):
     name = request.GET.get('name', '').strip()
     grades_qs = Grade.objects.prefetch_related('colaborator', 'coordinators', 'directors').order_by('name')
@@ -256,7 +257,7 @@ def grade_delete(request, grade_id):
 # --- VIEWS DE CLASSE (TURMA) - COM NOTIFICAÇÕES MELHORADAS ---
 
 @login_required
-@role_required(["Diretor"])
+@role_required(["Diretor", "Coordenador","Professor"])
 def class_list(request):
     name = request.GET.get('name', '').strip()
     grade_id = request.GET.get('grade', '')
@@ -521,3 +522,61 @@ def class_delete(request, class_id):
             return JsonResponse({'success': True, 'message': f"Turma '{turma_name}' excluída com sucesso."})
         messages.success(request, f"Turma '{turma_name}' excluída com sucesso.")
     return redirect('school:class_list')
+
+
+
+def class_users_view(request, class_id):
+    turma = get_object_or_404(Class, id=class_id)
+    # Alunos da turma
+    alunos = turma.students.all()
+    # Professores da turma
+    professores = turma.teachers.all()
+    # Responsáveis dos alunos (evita duplicados)
+    responsaveis = set()
+    for aluno in alunos:
+        responsaveis.update(aluno.parents.all())
+    # Outros perfis da série
+    coordenadores = turma.grade.coordinators.all()
+    diretores = turma.grade.directors.all()
+    colaboradores = turma.grade.colaborator.all()
+    return render(request, 'dashboard/classes/class_users.html', {
+        'turma': turma,
+        'alunos': alunos,
+        'professores': professores,
+        'responsaveis': responsaveis,
+        'coordenadores': coordenadores,
+        'diretores': diretores,
+        'colaboradores': colaboradores,
+    })
+
+def class_users_export(request, class_id):
+    turma = get_object_or_404(Class, id=class_id)
+    alunos = turma.students.all()
+    professores = turma.teachers.all()
+    responsaveis = set()
+    for aluno in alunos:
+        responsaveis.update(aluno.parents.all())
+    coordenadores = turma.grade.coordinators.all()
+    diretores = turma.grade.directors.all()
+    colaboradores = turma.grade.colaborator.all()
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename=turma_{turma.id}_usuarios.csv'
+
+    writer = csv.writer(response)
+    writer.writerow(['Perfil', 'Nome', 'Email'])
+
+    for aluno in alunos:
+        writer.writerow(['Aluno', aluno.user.get_full_name(), aluno.user.email])
+    for prof in professores:
+        writer.writerow(['Professor', prof.get_full_name(), prof.email])
+    for resp in responsaveis:
+        writer.writerow(['Responsável', resp.user.get_full_name(), resp.user.email])
+    for coord in coordenadores:
+        writer.writerow(['Coordenador', coord.get_full_name(), coord.email])
+    for dir in diretores:
+        writer.writerow(['Diretor', dir.get_full_name(), dir.email])
+    for colab in colaboradores:
+        writer.writerow(['Colaborador', colab.get_full_name(), colab.email])
+
+    return response

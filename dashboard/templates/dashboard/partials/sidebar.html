@@ -1,16 +1,15 @@
 <aside
-
     class="transition-all duration-300 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-full flex flex-col z-20"
     :class="sidebarOpen ? 'w-64' : 'w-20'"
 >
     <div class="h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700">
-        <p>{{ request.user.role }}</p>
         <div class="flex items-center overflow-hidden">
             <img src="" alt="Logo da Escola" title="Logo da Escola"
                  class="h-8 w-8 flex-shrink-0"
                  onerror="this.src='https://ui-avatars.com/api/?name=E&background=0284c7&color=fff&bold=true'">
             <span class="ml-3 text-lg font-bold text-gray-800 dark:text-white transition-opacity duration-300 whitespace-nowrap"
                   :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'">Escola</span>
+            <p :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'" class="ml-auto text-sm font-semibold text-gray-600 dark:text-gray-400">{{ request.user.role }}</p>
         </div>
         <button @click="sidebarOpen = !sidebarOpen"
                 class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 flex-shrink-0">
@@ -40,16 +39,16 @@
             <span class="font-medium transition-opacity duration-300 whitespace-nowrap"
                   :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'">Dashboard</span>
         </a>
-        
-        
-        
+
+
+        {% if "Diretor" in user_roles or "Coordenador" in user_roles or "Professor" in user_roles%}
             <div class="border-t border-gray-200 dark:border-gray-700 my-2"></div>
-            
+
             <h3 :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'" class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400">
                 Administração da Escola
             </h3>
-            
-            {% with active_school_urls="grade_list grade_create grade_edit class_list class_create class_edit" %}
+
+            {% with active_school_urls="grade_list grade_create grade_edit class_list class_create class_edit import_users" %} {# Added import_users to the active URLs #}
             <div x-data="{ open: {% if request.resolver_match.url_name in active_school_urls.split %}true{% else %}false{% endif %} }">
                 <button @click="open = !open"
                         class="flex items-center justify-between w-full px-3 py-2.5 rounded-lg font-medium transition-colors duration-200
@@ -95,23 +94,24 @@
                         <i class="fas fa-chalkboard w-4 h-4 mr-2"></i>
                         Turmas
                     </a>
-                    
-                    <a href="{% url 'dashboard:import_users' %}"
-                       class="flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-200
-                             {% if request.resolver_match.url_name == 'import_users' %}
-                                 bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 font-semibold
-                             {% else %}
-                                 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-100
-                             {% endif %}">
-                        <i class="fas fa-file-import w-4 h-4 mr-2"></i>
-                        Importar/Exportar Usuários
-                    </a>
+                    {% if "Diretor" in user_roles %}
+                        <a href="{% url 'dashboard:import_users' %}"
+                           class="flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-200
+                                 {% if request.resolver_match.url_name == 'import_users' %}
+                                     bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 font-semibold
+                                 {% else %}
+                                     text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-100
+                                 {% endif %}">
+                            <i class="fas fa-file-import w-4 h-4 mr-2"></i>
+                            Importar/Exportar Usuários
+                        </a>
+                    {% endif %}
                 </div>
             </div>
             {% endwith %}
-        
+        {% endif %}
 
-        {% if request.user.is_authenticated and request.user.role in "Diretor,Coordenador" %}
+        {% if "Diretor" in user_roles or "Coordenador" in user_roles %}
             <div class="border-t border-gray-200 dark:border-gray-700 my-2"></div>
 
             <h3 :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'" class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400">
@@ -224,6 +224,7 @@
         </div>
         {% endwith %}
 
+    {% if "Diretor" in user_roles or "Coordenador" in user_roles %}
         {% with active_event_urls="dashboard_event_list dashboard_event_create dashboard_event_edit" %}
         <div x-data="{ open: {% if request.resolver_match.url_name in active_event_urls.split %}true{% else %}false{% endif %} }">
             <button @click="open = !open"
@@ -273,6 +274,7 @@
             </div>
         </div>
         {% endwith %}
+    {% endif %}
 
         {% with active_note_urls="dashboard_note_list dashboard_note_create dashboard_note_edit dashboard_note_detail" %}
         <div x-data="{ open: {% if request.resolver_match.url_name in active_note_urls.split %}true{% else %}false{% endif %} }">
@@ -324,6 +326,7 @@
         </div>
         {% endwith %}
 
+    {% if "Diretor" in user_roles or "Coordenador" in user_roles %}   
         {% with active_book_urls="dashboard_document_list dashboard_document_create dashboard_document_detail dashboard_document_edit" %}
         <div x-data="{ open: {% if request.resolver_match.url_name in active_book_urls.split %}true{% else %}false{% endif %} }">
             <button @click="open = !open"
@@ -373,6 +376,7 @@
             </div>
         </div>
         {% endwith %}
+    {% endif %}
 
         <div class="border-t border-gray-200 dark:border-gray-700 my-2"></div>
 
@@ -415,7 +419,7 @@
                     <i class="fas fa-list w-4 h-4 mr-2"></i>
                     Listar Tickets
                 </a>
-                {% if request.user.role == "Diretor" %}
+                {% if "Diretor" in user_roles %}
                     <a href="{% url 'ticket:allowed_responders_list' %}"
                        class="flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-200
                               {% if request.resolver_match.url_name in 'allowed_responders_list allowed_responder_create allowed_responder_edit allowed_responder_delete' %}
@@ -430,27 +434,28 @@
             </div>
         </div>
         {% endwith %}
-
-        <div class="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-center"
-             :class="sidebarOpen ? 'px-3' : 'px-0'">
-            <button @click="darkMode = !darkMode"
-                    class="p-2 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500
-                           text-gray-500 hover:bg-gray-100 hover:text-gray-700
-                           dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
-                    :class="sidebarOpen ? 'w-full flex items-center justify-center' : ''">
-                <template x-if="darkMode">
-                    <div class="flex items-center">
-                        <i class="fas fa-sun w-5 h-5" :class="sidebarOpen ? 'mr-2' : ''"></i>
-                        <span x-show="sidebarOpen" class="font-medium">Modo Claro</span>
-                    </div>
-                </template>
-                <template x-if="!darkMode">
-                    <div class="flex items-center">
-                        <i class="fas fa-moon w-5 h-5" :class="sidebarOpen ? 'mr-2' : ''"></i>
-                        <span x-show="sidebarOpen" class="font-medium">Modo Escuro</span>
-                    </div>
-                </template>
-            </button>
-        </div>
     </nav>
+
+    {# Moved the dark mode toggle to the footer of the sidebar for better organization #}
+    <div class="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-center"
+         :class="sidebarOpen ? 'px-3' : 'px-0'">
+        <button @click="darkMode = !darkMode"
+                class="p-2 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500
+                       text-gray-500 hover:bg-gray-100 hover:text-gray-700
+                       dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                :class="sidebarOpen ? 'w-full flex items-center justify-center' : ''">
+            <template x-if="darkMode">
+                <div class="flex items-center">
+                    <i class="fas fa-sun w-5 h-5" :class="sidebarOpen ? 'mr-2' : ''"></i>
+                    <span x-show="sidebarOpen" class="font-medium">Modo Claro</span>
+                </div>
+            </template>
+            <template x-if="!darkMode">
+                <div class="flex items-center">
+                    <i class="fas fa-moon w-5 h-5" :class="sidebarOpen ? 'mr-2' : ''"></i>
+                    <span x-show="sidebarOpen" class="font-medium">Modo Escuro</span>
+                </div>
+            </template>
+        </button>
+    </div>
 </aside>

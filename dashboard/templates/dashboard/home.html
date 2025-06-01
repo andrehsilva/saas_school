@@ -12,7 +12,7 @@
 </div>
 
 <!-- Resumo em cards -->
-    {% if is_director or is_coordinator %}
+    {% if "Diretor" in user_roles or "Coordenador" in user_roles %}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 card-hover">
         <div class="flex items-center justify-between">
@@ -31,7 +31,7 @@
         </div>
     </div>
     {% endif %}
-    {% if is_director or is_coordinator %}
+    {% if "Diretor" in user_roles or "Coordenador" in user_roles %}
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 card-hover">
         <div class="flex items-center justify-between">
             <div>
@@ -50,7 +50,7 @@
     </div>
     {% endif %}
 
-    {% if is_director or is_coordinator %}
+    {% if "Diretor" in user_roles or "Coordenador" in user_roles %}
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 card-hover">
         <div class="flex items-center justify-between">
             <div>
@@ -70,7 +70,7 @@
     {% endif %}
 
 
-    {% if is_director or is_coordinator %}
+    {% if "Diretor" in user_roles or "Coordenador" in user_roles %}
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 card-hover">
         <div class="flex items-center justify-between">
             <div>
@@ -89,7 +89,7 @@
     </div>
     {% endif %}
 
-    {% if is_teacher or is_collaborator %}
+    {% if "Diretor" in user_roles or "Coordenador" in user_roles %}
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 card-hover">
         <div class="flex items-center justify-between">
             <div>
@@ -108,7 +108,7 @@
     </div>
     {% endif %}
 
-    {% if is_director %}
+    {% if "Diretor" in user_roles or "Coordenador" in user_roles %}
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 card-hover">
         <div class="flex items-center justify-between">
             <div>
@@ -129,6 +129,7 @@
 </div>
 
 <!-- Seção de ações rápidas -->
+{% if "Diretor" in user_roles or "Coordenador" in user_roles %}
 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-8">
     <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Ações Rápidas</h2>
     
@@ -203,6 +204,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 
 
 {% endblock %}

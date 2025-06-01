@@ -6,6 +6,7 @@ from django.core.paginator import Paginator
 from django.urls import reverse
 from django.http import JsonResponse
 from django.utils.crypto import get_random_string
+from school.models import Grade, Class, Subject, Student, Parent
 
 from .models import Ticket, TicketMessage, TicketAllowedResponder, TicketCategory
 from school.models import Parent
@@ -529,13 +530,22 @@ def allowed_responders_list(request):
 @login_required
 @role_required(["Diretor"])
 def allowed_responder_create(request):
-    users = User.objects.all()
+    # Exclui alunos e pais da lista de usuários
+    student_user_ids = Student.objects.values_list('user_id', flat=True)
+    parent_user_ids = Parent.objects.values_list('user_id', flat=True)
+    users = User.objects.exclude(id__in=student_user_ids).exclude(id__in=parent_user_ids).order_by('first_name', 'last_name')
     categories = TicketCategory.objects.all()
 
     if request.method == 'POST':
         user_id = request.POST.get('user')
         category_ids = request.POST.getlist('categories')
-        user = User.objects.get(id=user_id)
+        if not user_id or not category_ids:
+            msg.error(request, "Selecione um usuário e pelo menos uma categoria.")
+            return render(request, 'dashboard/tickets/allowed_responder_form.html', {
+                'users': users,
+                'categories': categories,
+            })
+        user = get_object_or_404(User, id=user_id)
         responder, created = TicketAllowedResponder.objects.get_or_create(user=user)
         responder.categories.set(category_ids)
         responder.save()

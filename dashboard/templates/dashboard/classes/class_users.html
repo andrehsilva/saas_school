@@ -1,0 +1,103 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Usuários da Turma: {{ turma.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto mt-10 px-4">
+
+    <div class="flex justify-between mb-4">
+        <a href="{% url 'school:class_list' %}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+        <a href="{% url 'school:class_users_export' turma.id %}" class="btn btn-primary">
+            <i class="fas fa-file-export"></i> Exportar planilha
+        </a>
+    </div>
+
+    <h1 class="text-2xl font-bold mb-6 text-gray-800 dark:text-white mt-4">
+        Usuários da Turma: {{ turma.name }}
+    </h1>
+
+    <div class="mb-8">
+        <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">Alunos</h2>
+        <ul class="space-y-1">
+            {% for aluno in alunos %}
+                <li class="bg-gray-50 dark:bg-gray-800 rounded px-3 py-2">
+                    {{ aluno.user.get_full_name }} ({{ aluno.user.email }})
+                </li>
+            {% empty %}
+                <li class="text-gray-400">Nenhum aluno nesta turma.</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="mb-8">
+        <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">Responsáveis</h2>
+        <ul class="space-y-1">
+            {% for resp in responsaveis %}
+                <li class="bg-gray-50 dark:bg-gray-800 rounded px-3 py-2">
+                    {{ resp.user.get_full_name }} ({{ resp.user.email }})
+                </li>
+            {% empty %}
+                <li class="text-gray-400">Nenhum responsável nesta turma.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="mb-8">
+        <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">Professores</h2>
+        <ul class="space-y-1">
+            {% for prof in professores %}
+                <li class="bg-gray-50 dark:bg-gray-800 rounded px-3 py-2">
+                    {{ prof.get_full_name }} ({{ prof.email }})
+                </li>
+            {% empty %}
+                <li class="text-gray-400">Nenhum professor nesta turma.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    
+
+    <div class="mb-8">
+        <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">Coordenadores</h2>
+        <ul class="space-y-1">
+            {% for coord in coordenadores %}
+                <li class="bg-gray-50 dark:bg-gray-800 rounded px-3 py-2">
+                    {{ coord.get_full_name }} ({{ coord.email }})
+                </li>
+            {% empty %}
+                <li class="text-gray-400">Nenhum coordenador nesta série.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="mb-8">
+        <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">Diretores</h2>
+        <ul class="space-y-1">
+            {% for dir in diretores %}
+                <li class="bg-gray-50 dark:bg-gray-800 rounded px-3 py-2">
+                    {{ dir.get_full_name }} ({{ dir.email }})
+                </li>
+            {% empty %}
+                <li class="text-gray-400">Nenhum diretor nesta série.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="mb-8">
+        <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">Colaboradores</h2>
+        <ul class="space-y-1">
+            {% for colab in colaboradores %}
+                <li class="bg-gray-50 dark:bg-gray-800 rounded px-3 py-2">
+                    {{ colab.get_full_name }} ({{ colab.email }})
+                </li>
+            {% empty %}
+                <li class="text-gray-400">Nenhum colaborador nesta série.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <a href="{% url 'school:class_list' %}" class="btn btn-outline mt-4">
+        <i class="fas fa-arrow-left"></i> Voltar para turmas
+    </a>
+</div>
+{% endblock %}

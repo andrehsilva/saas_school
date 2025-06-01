@@ -6,9 +6,11 @@
 <div class="max-w-9xl mx-auto mt-10 px-4" x-data="gradeCrud()">
     <div class="flex items-center justify-between mb-8">
         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Séries Cadastradas</h1>
-        <a href="{% url 'school:grade_create' %}" class="btn btn-primary flex items-center gap-2">
-            <i class="fas fa-plus"></i> Nova Série
-        </a>
+        {% if "Diretor" in user_roles %}
+            <a href="{% url 'school:grade_create' %}" class="btn btn-primary flex items-center gap-2">
+                <i class="fas fa-plus"></i> Nova Série
+            </a>
+        {% endif %}
     </div>
 
     <form method="get" class="mb-6 bg-gray-50 dark:bg-gray-900 p-4 rounded-lg shadow-sm">
@@ -67,17 +69,19 @@
                         {% endfor %}
                     </td>
                     <td class="px-6 py-4 text-right space-x-2">
-                        <a href="{% url 'school:grade_edit' grade.id %}" class="btn btn-sm btn-outline" title="Editar">
-                            <i class="fas fa-pen"></i>
-                        </a>
-                        <button
-                            type="button"
-                            class="btn btn-sm btn-outline text-red-600"
-                            @click="openDeleteModal({{ grade.id }}, '{{ grade.name }}')"
-                            title="Excluir"
-                        >
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        {% if "Diretor" in user_roles %}
+                            <a href="{% url 'school:grade_edit' grade.id %}" class="btn btn-sm btn-outline" title="Editar">
+                                <i class="fas fa-pen"></i>
+                            </a>
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-outline text-red-600"
+                                @click="openDeleteModal({{ grade.id }}, '{{ grade.name }}')"
+                                title="Excluir"
+                            >
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
