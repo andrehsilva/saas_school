@@ -1,8 +1,10 @@
 <aside
+
     class="transition-all duration-300 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-full flex flex-col z-20"
     :class="sidebarOpen ? 'w-64' : 'w-20'"
 >
     <div class="h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700">
+        <p>{{ request.user.role }}</p>
         <div class="flex items-center overflow-hidden">
             <img src="" alt="Logo da Escola" title="Logo da Escola"
                  class="h-8 w-8 flex-shrink-0"
@@ -38,117 +40,133 @@
             <span class="font-medium transition-opacity duration-300 whitespace-nowrap"
                   :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'">Dashboard</span>
         </a>
+        
+        
+        
+            <div class="border-t border-gray-200 dark:border-gray-700 my-2"></div>
+            
+            <h3 :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'" class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400">
+                Administração da Escola
+            </h3>
+            
+            {% with active_school_urls="grade_list grade_create grade_edit class_list class_create class_edit" %}
+            <div x-data="{ open: {% if request.resolver_match.url_name in active_school_urls.split %}true{% else %}false{% endif %} }">
+                <button @click="open = !open"
+                        class="flex items-center justify-between w-full px-3 py-2.5 rounded-lg font-medium transition-colors duration-200
+                               {% if request.resolver_match.url_name in active_school_urls.split %}
+                                   bg-primary-100 text-primary-800 dark:bg-primary-700 dark:text-primary-100
+                               {% else %}
+                                   text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white
+                               {% endif %}">
+                    <div class="flex items-center overflow-hidden">
+                        <i class="fas fa-school w-5 h-5 mr-3 flex-shrink-0
+                                  {% if request.resolver_match.url_name in active_school_urls.split %}
+                                      text-primary-600 dark:text-primary-300
+                                  {% else %}
+                                      text-gray-500 dark:text-gray-400 group-hover:text-primary-600 dark:group-hover:text-primary-300
+                                  {% endif %}"></i>
+                        <span :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'">Estrutura Escolar</span>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-200 ml-auto flex-shrink-0"
+                         :class="{ 'rotate-90': open, 'opacity-100': sidebarOpen, 'opacity-0 hidden': !sidebarOpen }"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
 
-        <div class="border-t border-gray-200 dark:border-gray-700 my-2"></div>
-
-        <h3 :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'" class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400">
-            Administração da Escola
-        </h3>
-
-        {% with active_school_urls="grade_list grade_create grade_edit class_list class_create class_edit" %}
-        <div x-data="{ open: {% if request.resolver_match.url_name in active_school_urls.split %}true{% else %}false{% endif %} }">
-            <button @click="open = !open"
-                    class="flex items-center justify-between w-full px-3 py-2.5 rounded-lg font-medium transition-colors duration-200
-                           {% if request.resolver_match.url_name in active_school_urls.split %}
-                               bg-primary-100 text-primary-800 dark:bg-primary-700 dark:text-primary-100
-                           {% else %}
-                               text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white
-                           {% endif %}">
-                <div class="flex items-center overflow-hidden">
-                    <i class="fas fa-school w-5 h-5 mr-3 flex-shrink-0
-                              {% if request.resolver_match.url_name in active_school_urls.split %}
-                                  text-primary-600 dark:text-primary-300
+                <div x-show="open" x-cloak class="ml-8 mt-1 space-y-1">
+                    <a href="{% url 'school:grade_list' %}"
+                       class="flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-200
+                              {% if request.resolver_match.url_name in 'grade_list grade_create grade_edit' %}
+                                  bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 font-semibold
                               {% else %}
-                                  text-gray-500 dark:text-gray-400 group-hover:text-primary-600 dark:group-hover:text-primary-300
-                              {% endif %}"></i>
-                    <span :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'">Estrutura Escolar</span>
-                </div>
-                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-200 ml-auto flex-shrink-0"
-                     :class="{ 'rotate-90': open, 'opacity-100': sidebarOpen, 'opacity-0 hidden': !sidebarOpen }"
-                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-            </button>
-
-            <div x-show="open" x-cloak class="ml-8 mt-1 space-y-1">
-                <a href="{% url 'school:grade_list' %}"
-                   class="flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-200
-                          {% if request.resolver_match.url_name in 'grade_list grade_create grade_edit' %}
-                              bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 font-semibold
-                          {% else %}
-                              text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-100
-                          {% endif %}">
-                    <i class="fas fa-layer-group w-4 h-4 mr-2"></i>
-                    Séries
-                </a>
-                <a href="{% url 'school:class_list' %}"
-                   class="flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-200
-                          {% if request.resolver_match.url_name in 'class_list class_create class_edit' %}
-                              bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 font-semibold
-                          {% else %}
-                              text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-100
-                          {% endif %}">
-                    <i class="fas fa-chalkboard w-4 h-4 mr-2"></i>
-                    Turmas
-                </a>
-            </div>
-        </div>
-        {% endwith %}
-
-        <div class="border-t border-gray-200 dark:border-gray-700 my-2"></div>
-
-        <h3 :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'" class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400">
-            Blog
-        </h3>
-
-        {% with active_blog_urls="dashboard_blog_list dashboard_blog_create dashboard_blog_detail dashboard_blog_edit dashboard_blog_delete dashboard_category_list dashboard_category_create dashboard_category_edit dashboard_category_delete" %}
-        <div x-data="{ open: {% if request.resolver_match.url_name in active_blog_urls.split %}true{% else %}false{% endif %} }">
-            <button @click="open = !open"
-                    class="flex items-center justify-between w-full px-3 py-2.5 rounded-lg font-medium transition-colors duration-200
-                           {% if request.resolver_match.url_name in active_blog_urls.split %}
-                               bg-primary-100 text-primary-800 dark:bg-primary-700 dark:text-primary-100
-                           {% else %}
-                               text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white
-                           {% endif %}">
-                <div class="flex items-center overflow-hidden">
-                    <i class="fas fa-blog w-5 h-5 mr-3 flex-shrink-0
-                              {% if request.resolver_match.url_name in active_blog_urls.split %}
-                                  text-primary-600 dark:text-primary-300
+                                  text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-100
+                              {% endif %}">
+                        <i class="fas fa-layer-group w-4 h-4 mr-2"></i>
+                        Séries
+                    </a>
+                    <a href="{% url 'school:class_list' %}"
+                       class="flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-200
+                              {% if request.resolver_match.url_name in 'class_list class_create class_edit' %}
+                                  bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 font-semibold
                               {% else %}
-                                  text-gray-500 dark:text-gray-400 group-hover:text-primary-600 dark:group-hover:text-primary-300
-                              {% endif %}"></i>
-                    <span :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'">Postagens</span>
+                                  text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-100
+                              {% endif %}">
+                        <i class="fas fa-chalkboard w-4 h-4 mr-2"></i>
+                        Turmas
+                    </a>
+                    
+                    <a href="{% url 'dashboard:import_users' %}"
+                       class="flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-200
+                             {% if request.resolver_match.url_name == 'import_users' %}
+                                 bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 font-semibold
+                             {% else %}
+                                 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-100
+                             {% endif %}">
+                        <i class="fas fa-file-import w-4 h-4 mr-2"></i>
+                        Importar/Exportar Usuários
+                    </a>
                 </div>
-                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-200 ml-auto flex-shrink-0"
-                     :class="{ 'rotate-90': open, 'opacity-100': sidebarOpen, 'opacity-0 hidden': !sidebarOpen }"
-                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-            </button>
-            <div x-show="open" x-cloak class="ml-8 mt-1 space-y-1">
-                <a href="{% url 'blog:dashboard_blog_list' %}"
-                   class="flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-200
-                          {% if request.resolver_match.url_name in 'dashboard_blog_list dashboard_blog_create dashboard_blog_detail dashboard_blog_edit dashboard_blog_delete' %}
-                              bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 font-semibold
-                          {% else %}
-                              text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-100
-                          {% endif %}">
-                    <i class="fas fa-list w-4 h-4 mr-2"></i>
-                    Todas as Postagens
-                </a>
-                <a href="{% url 'blog:dashboard_category_list' %}"
-                   class="flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-200
-                          {% if request.resolver_match.url_name in 'dashboard_category_list dashboard_category_create dashboard_category_edit dashboard_category_delete' %}
-                              bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 font-semibold
-                          {% else %}
-                              text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-100
-                          {% endif %}">
-                    <i class="fas fa-tags w-4 h-4 mr-2"></i>
-                    Categorias
-                </a>
             </div>
-        </div>
-        {% endwith %}
+            {% endwith %}
+        
+
+        {% if request.user.is_authenticated and request.user.role in "Diretor,Coordenador" %}
+            <div class="border-t border-gray-200 dark:border-gray-700 my-2"></div>
+
+            <h3 :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'" class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400">
+                Blog
+            </h3>
+
+            {% with active_blog_urls="dashboard_blog_list dashboard_blog_create dashboard_blog_detail dashboard_blog_edit dashboard_blog_delete dashboard_category_list dashboard_category_create dashboard_category_edit dashboard_category_delete" %}
+            <div x-data="{ open: {% if request.resolver_match.url_name in active_blog_urls.split %}true{% else %}false{% endif %} }">
+                <button @click="open = !open"
+                        class="flex items-center justify-between w-full px-3 py-2.5 rounded-lg font-medium transition-colors duration-200
+                               {% if request.resolver_match.url_name in active_blog_urls.split %}
+                                   bg-primary-100 text-primary-800 dark:bg-primary-700 dark:text-primary-100
+                               {% else %}
+                                   text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white
+                               {% endif %}">
+                    <div class="flex items-center overflow-hidden">
+                        <i class="fas fa-blog w-5 h-5 mr-3 flex-shrink-0
+                                  {% if request.resolver_match.url_name in active_blog_urls.split %}
+                                      text-primary-600 dark:text-primary-300
+                                  {% else %}
+                                      text-gray-500 dark:text-gray-400 group-hover:text-primary-600 dark:group-hover:text-primary-300
+                                  {% endif %}"></i>
+                        <span :class="sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'">Postagens</span>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-200 ml-auto flex-shrink-0"
+                         :class="{ 'rotate-90': open, 'opacity-100': sidebarOpen, 'opacity-0 hidden': !sidebarOpen }"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+                <div x-show="open" x-cloak class="ml-8 mt-1 space-y-1">
+                    <a href="{% url 'blog:dashboard_blog_list' %}"
+                       class="flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-200
+                              {% if request.resolver_match.url_name in 'dashboard_blog_list dashboard_blog_create dashboard_blog_detail dashboard_blog_edit dashboard_blog_delete' %}
+                                  bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 font-semibold
+                              {% else %}
+                                  text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-100
+                              {% endif %}">
+                        <i class="fas fa-list w-4 h-4 mr-2"></i>
+                        Todas as Postagens
+                    </a>
+                    <a href="{% url 'blog:dashboard_category_list' %}"
+                       class="flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-200
+                              {% if request.resolver_match.url_name in 'dashboard_category_list dashboard_category_create dashboard_category_edit dashboard_category_delete' %}
+                                  bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 font-semibold
+                              {% else %}
+                                  text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-100
+                              {% endif %}">
+                        <i class="fas fa-tags w-4 h-4 mr-2"></i>
+                        Categorias
+                    </a>
+                </div>
+            </div>
+            {% endwith %}
+        {% endif %}
 
         <div class="border-t border-gray-200 dark:border-gray-700 my-2"></div>
 
@@ -397,16 +415,18 @@
                     <i class="fas fa-list w-4 h-4 mr-2"></i>
                     Listar Tickets
                 </a>
-                <a href="{% url 'ticket:allowed_responders_list' %}"
-                   class="flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-200
-                          {% if request.resolver_match.url_name in 'allowed_responders_list allowed_responder_create allowed_responder_edit allowed_responder_delete' %}
-                              bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 font-semibold
-                          {% else %}
-                              text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-100
-                          {% endif %}">
-                    <i class="fas fa-user-shield w-4 h-4 mr-2"></i>
-                    Permissões de Resposta
-                </a>
+                {% if request.user.role == "Diretor" %}
+                    <a href="{% url 'ticket:allowed_responders_list' %}"
+                       class="flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-200
+                              {% if request.resolver_match.url_name in 'allowed_responders_list allowed_responder_create allowed_responder_edit allowed_responder_delete' %}
+                                  bg-primary-200 text-primary-800 dark:bg-primary-800 dark:text-primary-200 font-semibold
+                              {% else %}
+                                  text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-100
+                              {% endif %}">
+                        <i class="fas fa-user-shield w-4 h-4 mr-2"></i>
+                        Permissões de Resposta
+                    </a>
+                {% endif %}
             </div>
         </div>
         {% endwith %}

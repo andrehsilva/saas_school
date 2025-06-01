@@ -49,7 +49,7 @@ def import_users_view(request):
     return HttpResponse("Importar Usuários - função ainda não implementada")
 
 @login_required
-@role_required(["Diretor", "Coordenador"])
+@role_required(["Diretor"])
 def grade_list(request):
     name = request.GET.get('name', '').strip()
     grades_qs = Grade.objects.prefetch_related('colaborator', 'coordinators', 'directors').order_by('name')
@@ -65,7 +65,7 @@ def grade_list(request):
     })
 
 @login_required
-@role_required(["Diretor", "Coordenador"])
+@role_required(["Diretor"])
 def grade_create(request):
     users_json = get_eligible_users_json()
     if request.method == "POST":
@@ -112,7 +112,7 @@ def grade_create(request):
     })
 
 @login_required
-@role_required(["Diretor", "Coordenador"])
+@role_required(["Diretor"])
 def grade_edit(request, grade_id):
     grade = get_object_or_404(Grade, id=grade_id)
     users_json = get_eligible_users_json()
@@ -225,7 +225,7 @@ def grade_edit(request, grade_id):
     })
 
 @login_required
-@role_required(["Diretor", "Coordenador"])
+@role_required(["Diretor"])
 def grade_delete(request, grade_id):
     grade = get_object_or_404(Grade, id=grade_id)
     grade_name = grade.name
@@ -256,7 +256,7 @@ def grade_delete(request, grade_id):
 # --- VIEWS DE CLASSE (TURMA) - COM NOTIFICAÇÕES MELHORADAS ---
 
 @login_required
-@role_required(["Diretor", "Coordenador"])
+@role_required(["Diretor"])
 def class_list(request):
     name = request.GET.get('name', '').strip()
     grade_id = request.GET.get('grade', '')
@@ -357,7 +357,7 @@ def class_create(request):
     })
 
 @login_required
-@role_required(["Diretor", "Coordenador"])
+@role_required(["Diretor"])
 def class_edit(request, class_id):
     turma = get_object_or_404(Class, id=class_id)
     grades = Grade.objects.all()
@@ -471,7 +471,7 @@ def class_edit(request, class_id):
     })
 
 @login_required
-@role_required(["Diretor", "Coordenador"])
+@role_required(["Diretor"])
 def class_delete(request, class_id):
     turma = get_object_or_404(Class, id=class_id)
     turma_name = turma.name

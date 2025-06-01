@@ -123,7 +123,7 @@ def import_users_view(request):
                                 elif papel == "diretor":
                                     grade.directors.add(user)
                                 elif papel == "colaborador":
-                                    grade.colaboradores.add(user)
+                                    grade.colaborator.add(user)
                             except Grade.DoesNotExist:
                                 errors.append(f"Linha {row_number}: Série '{grade_name}' não encontrada.")
 

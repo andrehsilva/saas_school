@@ -1,0 +1,67 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="max-w-2xl mx-auto mt-8">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold">Importar/Exportar Usuários</h2>
+        <!-- Botão de ajuda -->
+        <button id="helpBtn" type="button" class="ml-1 text-blue-600 hover:text-blue-800 focus:outline-none" onclick="document.getElementById('helpModal').classList.remove('hidden')">
+            <i class="fas fa-question-circle fa-lg"></i>
+        </button>
+        <a href="{% static 'files/usuarios_modelo.csv' %}" download class="bg-gray-600 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 flex items-center">
+            <i class="fas fa-download mr-2"></i> Baixar Planilha Modelo
+        </a>
+    </div>
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-2 sm:space-y-0">
+        <form method="post" enctype="multipart/form-data" class="flex-1 flex items-center space-x-2">
+            {% csrf_token %}
+            <input type="file" name="csv_file" accept=".csv" required class="border rounded px-2 py-1 flex-1">
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Importar</button>
+        </form>
+        <a href="{% url 'dashboard:export_users' %}" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 flex items-center">
+            <i class="fas fa-file-export mr-2"></i> Exportar Usuários
+        </a>
+        
+    </div>
+    {% if actions %}
+        <div class="bg-gray-100 p-4 rounded mb-4">
+            <h3 class="font-semibold mb-2">Ações realizadas:</h3>
+            <ul class="list-disc pl-5">
+                {% for action in actions %}
+                    <li>{{ action }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    {% if messages %}
+        <ul>
+            {% for message in messages %}
+                <li class="text-{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</div>
+
+<!-- Modal de ajuda -->
+<div id="helpModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg shadow-lg max-w-lg w-full p-6 relative">
+        <button onclick="document.getElementById('helpModal').classList.add('hidden')" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700">
+            <i class="fas fa-times"></i>
+        </button>
+        <h3 class="text-lg font-bold mb-2">Como preencher a planilha de usuários</h3>
+        <ul class="list-disc pl-5 text-sm mb-2">
+            <li><b>usuario</b>: Nome de usuário único (ex: aluno1, prof_joao)</li>
+            <li><b>email</b>: E-mail válido do usuário</li>
+            <li><b>nome</b>: Primeiro nome</li>
+            <li><b>sobrenome</b>: Sobrenome</li>
+            <li><b>senha</b>: Senha inicial do usuário</li>
+            <li><b>papel</b>: aluno, professor, coordenador, diretor, colaborador ou responsavel</li>
+            <li><b>serie</b>: (Para coordenador/diretor/colaborador) Nome da série (ex: 1º Ano)</li>
+            <li><b>classe</b>: (Para aluno/professor) Nome da(s) turma(s) (ex: 1A;2B)</li>
+            <li><b>filhos</b>: (Para responsável) E-mails dos filhos separados por ponto e vírgula</li>
+        </ul>
+        <p class="text-xs text-gray-500">Dica: Baixe a planilha modelo para garantir o formato correto.</p>
+    </div>
+</div>
+{% endblock %}

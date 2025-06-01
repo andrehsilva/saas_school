@@ -246,6 +246,7 @@ def close_ticket(request, ticket_id):
 @role_required(["Diretor", "Coordenador", "Colaborador", "Professor"])
 def dashboard_ticket_list(request):
     """
+    
     Lista os tickets do dashboard, mas respeita a regra de permissão para resposta.
     Apenas usuários autorizados a responder podem visualizar os tickets.
     """
@@ -255,6 +256,8 @@ def dashboard_ticket_list(request):
     if not TicketAllowedResponder.objects.filter(user=user).exists():
         msg.error(request, "Você não tem permissão para visualizar os tickets.")
         return redirect('dashboard:home')  # ou para qualquer outra view segura
+    
+    
 
     # Filtros da query string
     search_query = request.GET.get('q', '').strip()

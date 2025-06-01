@@ -1,0 +1,10 @@
+usuario,email,nome,sobrenome,senha,papel,serie,classe,filhos
+aluno,aluno@escola.com,Aluno,da Escola,123456,aluno,1º Ano,1A,
+aluna,aluna@escola.com,Aluna,da Escola,123456,aluno,2º Ano,2A,
+pai,pai@escola.com,Pai,do Aluno,123456,responsavel,,,aluno@escola.com
+mae,mae@escola.com,Mae,do Aluno,123456,responsavel,,,aluna@escola.com;aluno@escola.com
+professor,professor@escola.com,Professor,da Escola,123456,professor,,1A;2A,
+professora,professora@escola.com,Professora,da Escola,123456,professor,,1A;2A,
+coordenador,coordenador@escola.com,Coordenador,da Escola,123456,coordenador,1º Ano;2º Ano,,
+diretor,diretor@escola.com,Diretor,da Escola,123456,diretor,1º Ano;2º Ano,,
+colababorador,colababorador@escola.com,Colaborador,da Escola,123456,colaborador,1º Ano;2º Ano,,
