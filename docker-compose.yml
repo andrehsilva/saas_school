@@ -1,4 +1,4 @@
-name: postgres
+version: "3.9"
 
 services:
   postgres:
@@ -13,5 +13,5 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
 
-  volumes:
-    postgres-data:
+volumes:
+  postgres-data:

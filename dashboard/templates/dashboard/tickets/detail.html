@@ -78,7 +78,7 @@
             </div>
             
         
-        <span class="inline-flex items-center px-2 py-1 text-sm font-medium text-indigo-400 bg-indigo-100 ">Aluno(s): 
+        <span class="inline-flex items-center text-sm font-medium text-indigo-800  dark:text-gray-300">Aluno(s): 
             {% for child in ticket.parent.children.all %}
                 {{ child.user.first_name }} {{ child.user.last_name|default:child.user.username }}{% if not forloop.last %}, {% endif %}
             {% empty %}
@@ -86,7 +86,7 @@
             {% endfor %}
             </span>
             {% for child in ticket.parent.children.all %}
-                            <span class="inline-flex items-center px-2 py-1 text-sm font-medium text-indigo-500 bg-indigo-100 ">
+                            <span class="inline-flex items-center text-sm font-medium text-indigo-800  dark:text-gray-300">
                               {% for turma in child.classes_assigned.all %}
                                 {{ turma.grade.name }} | {{ turma.name }} {% if not forloop.last %}, {% endif %}
                               {% empty %}
