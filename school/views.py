@@ -12,6 +12,7 @@ from school.models import Grade, Class, Subject, Student, Parent
 from school.models import Role, UserRole
 from django.utils import timezone
 from django.core.paginator import Paginator
+from django.db.models import Count, Q
 import csv
 
 # Importe a função de notificação (caminho já deve estar correto)
@@ -256,8 +257,10 @@ def grade_delete(request, grade_id):
 
 # --- VIEWS DE CLASSE (TURMA) - COM NOTIFICAÇÕES MELHORADAS ---
 
+
+
 @login_required
-@role_required(["Diretor", "Coordenador","Professor"])
+@role_required(["Diretor", "Coordenador", "Professor"])
 def class_list(request):
     name = request.GET.get('name', '').strip()
     grade_id = request.GET.get('grade', '')
@@ -271,6 +274,11 @@ def class_list(request):
         classes_qs = classes_qs.filter(grade_id=grade_id)
     if academic_year:
         classes_qs = classes_qs.filter(academic_year=academic_year)
+
+    # Anotações para contagem de alunos e outros usuários
+    classes_qs = classes_qs.annotate(
+        student_count=Count('students', distinct=True),  # Ajuste 'students' para o related_name correto
+    )
 
     grades = Grade.objects.all().order_by('name')
     years = Class.objects.values_list('academic_year', flat=True).distinct().order_by('-academic_year')
@@ -286,6 +294,7 @@ def class_list(request):
         'current_name': name,
         'current_grade': grade_id,
         'current_year': academic_year,
+        
     })
 
 @login_required

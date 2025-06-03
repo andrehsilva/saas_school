@@ -1,93 +1,5 @@
 {% extends 'layouts/blank.html' %}
-
 {% block content %}
-
-{% comment %}
-    Adicionando estilos CSS específicos para o slider da timeline.
-    É importante que esses estilos sejam isolados para não impactar
-    outras partes do seu site, ou que sejam movidos para um arquivo CSS
-    global se forem reutilizáveis.
-{% endcomment %}
-{% block extra_css %}
-<style>
-    /* Estilos para o slider de imagens na timeline */
-    .timeline-image-slider-container {
-        width: 100%;
-        max-width: 100%; /* Ocupa a largura total do card */
-        margin: 10px 0; /* Espaçamento vertical */
-        text-align: center;
-        background-color: #f0f0f0; /* Fundo claro para o slider */
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Sombra suave */
-        border: 1px solid #e0e0e0;
-    }
-
-    .timeline-main-image-display {
-        width: 100%;
-        height: 250px; /* Altura fixa para a imagem principal no card */
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #e2e8f0; /* Cor de placeholder */
-        border-bottom: 1px solid #ccc;
-    }
-
-    .timeline-main-image-display img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain; /* Garante que a imagem caiba sem cortar */
-        transition: opacity 0.3s ease-in-out;
-        cursor: pointer; /* Adiciona cursor de clique */
-    }
-
-    .timeline-image-thumbnails {
-        display: flex;
-        justify-content: center;
-        padding: 8px;
-        gap: 8px;
-        overflow-x: auto; /* Permite rolagem horizontal se muitas imagens */
-        -webkit-overflow-scrolling: touch; /* Suporte para rolagem suave em iOS */
-    }
-    /* Estilos para a barra de rolagem das miniaturas */
-    .timeline-image-thumbnails::-webkit-scrollbar {
-        height: 6px;
-    }
-    .timeline-image-thumbnails::-webkit-scrollbar-thumb {
-        background: #ccc;
-        border-radius: 3px;
-    }
-    .timeline-image-thumbnails::-webkit-scrollbar-track {
-        background: #f1f1f1;
-    }
-
-    .timeline-thumbnail-item {
-        cursor: pointer;
-        border: 2px solid transparent;
-        border-radius: 4px;
-        overflow: hidden;
-        flex-shrink: 0; /* Impede que as miniaturas encolham */
-        width: 60px; /* Tamanho fixo para as miniaturas */
-        height: 60px;
-        transition: border-color 0.2s ease-in-out, transform 0.2s ease-in-out;
-    }
-    .timeline-thumbnail-item:hover {
-        border-color: #a0aec0; /* Cor ao passar o mouse */
-        transform: translateY(-1px);
-    }
-    .timeline-thumbnail-item.active {
-        border-color: #4f46e5; /* Cor do active (azul primário) */
-        box-shadow: 0 0 0 2px #4f46e5; /* Adiciona um brilho */
-    }
-    .thumbnail-item img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover; /* Recorta a imagem para preencher */
-        display: block;
-    }
-</style>
-{% endblock %}
 
 <div class="max-w-7xl mx-auto mt-10 px-4">
     <div class="flex justify-between items-center mb-6">
@@ -101,6 +13,7 @@
     {% if filhos|length > 1 %}
     <div class="mb-6">
         <div class="flex flex-wrap gap-2 px-4 py-2">
+            <!-- Botão Todos -->
             <form method="get">
                 <input type="hidden" name="filho" value="">
                 {% if request.GET.type %}<input type="hidden" name="type" value="{{ request.GET.type }}">{% endif %}
@@ -113,6 +26,7 @@
                 </button>
             </form>
 
+            <!-- Botões por filho -->
             {% for filho in filhos %}
             <form method="get">
                 <input type="hidden" name="filho" value="{{ filho.id }}">
@@ -122,7 +36,7 @@
                     {% if filho_selecionado and filho_selecionado.id == filho.id %} bg-blue-100 text-blue-700 shadow {% else %} bg-gray-100 text-gray-500 hover:bg-gray-200 {% endif %}"
                     aria-pressed="{% if filho_selecionado and filho_selecionado.id == filho.id %}true{% else %}false{% endif %}">
                     <img src="{% if filho.user.profile.image %}{{ filho.user.profile.image.url }}{% else %}https://placehold.co/24x24/4F46E5/FFFFFF?text={{ filho.user.first_name|first|default:'F' }}{% endif %}" 
-                         alt="{{ filho.user.get_full_name|default:filho.user.username }}" class="w-5 h-5 rounded-full mr-2">
+                         alt="{{ filho.user.get_full_name|default:filho.user.username }}" class="w- h-5 rounded-full mr-2">
                     {{ filho.user.first_name|default:filho.user.username }}
                 </button>
             </form>
@@ -135,6 +49,11 @@
         <main class="md:col-span-3 space-y-6">
             {% now "Y-m-d H:i" as now_str %}
             {% for item in page_obj %}
+                {% comment %}
+                    Verifica se a mensagem está agendada para o futuro.
+                    Se scheduled_time existir e for maior que agora, não exibe.
+                {% endcomment %}
+                
                 <div class="bg-white shadow rounded-2xl border border-gray-200 overflow-hidden">
                     <div class="bg-gray-50 px-4 py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b">
                         <div class="flex-1 space-y-1">
@@ -184,30 +103,9 @@
                     <div class="px-4 py-3 space-y-2">
                         <h2 class="text-xl font-semibold text-gray-900">{{ item.item.title }}</h2>
 
-                        {% if item.item.gallery_images.exists %}
-                            {% if item.item.gallery_images.count > 1 %}
-                                <div class="timeline-image-slider-container" id="timeline-slider-{{ item.item.id }}">
-                                    <div class="timeline-main-image-display">
-                                        <img class="main-slider-image cursor-pointer" src="{{ item.item.gallery_images.first.image.url }}" alt="Imagem principal da galeria" data-image-urls="{% for img in item.item.gallery_images.all %}{{ img.image.url }},{% endfor %}" data-current-index="0">
-                                    </div>
-                                    <div class="timeline-image-thumbnails">
-                                        {% for img in item.item.gallery_images.all %}
-                                            <div class="timeline-thumbnail-item {% if forloop.first %}active{% endif %}" data-image-url="{{ img.image.url }}" data-index="{{ forloop.counter0 }}">
-                                                <img src="{{ img.image.url }}" alt="Thumbnail {{ forloop.counter }}">
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            {% else %}
-                                {# Se houver apenas uma imagem na galeria, exibe-a como capa #}
-                                <img src="{{ item.item.gallery_images.first.image.url }}" alt="Imagem da mensagem" class="rounded-lg w-full max-h-60 object-cover mt-2 cursor-pointer" data-image-urls="{{ item.item.gallery_images.first.image.url }}" data-current-index="0">
-                            {% endif %}
-                        {% endif %}
                         {# Exibe o conteúdo principal se existir #}
                         {% if item.item.context %}
-                            <div class="prose max-w-none text-gray-700 leading-relaxed">
-                                {{ item.item.context|safe }}
-                            </div>
+                            <p class="text-gray-700 leading-relaxed">{{ item.item.context|safe }}</p>
                         {% endif %}
 
                         {# Se for "Rotina diária" e tiver atividades ou tarefa, exibe #}
@@ -228,8 +126,12 @@
                                     </div>
                                 </div>
                             {% endif %}
+
                         {% endif %}
 
+                        {% if item.item.image %}
+                        <img src="{{ item.item.image.url }}" alt="Imagem da mensagem" class="rounded-lg w-full max-h-60 object-cover mt-2">
+                        {% endif %}
                         <div class="flex justify-between items-center pt-4">
                             {% if item.item.attachments %}
                             <a href="{{ item.item.attachments.url }}" download class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
@@ -247,11 +149,12 @@
             <div class="text-center py-16 bg-gray-50 rounded-lg border-2 border-dashed">
                 <p class="text-gray-500">Nenhuma mensagem encontrada</p>
                 {% if search_query or selected_type or filho_selecionado %}
-                <p class="text-sm mt-2 text-gray-500">Tente ajustar seus filtros de busca</p>
+                <p class="text-sm mt-2">Tente ajustar seus filtros de busca</p>
                 {% endif %}
             </div>
             {% endfor %}
 
+            <!-- Paginação -->
             <div class="flex justify-center space-x-2 mt-6 p-4">
                 {% if page_obj.has_previous %}
                 <a href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&type={{ selected_type }}" 
@@ -274,7 +177,7 @@
         </main>
 
         <aside class="md:col-span-1 bg-gray-50 p-4 rounded-2xl border border-gray-200 shadow-sm h-fit">
-            <h2 class="text-lg font-semibold mb-4 text-gray-900">Filtros</h2>
+            <h2 class="text-lg font-semibold mb-4">Filtros</h2>
             <form method="GET" class="space-y-4">
                 <div>
                     <label for="type" class="block text-sm font-medium text-gray-700 mb-1">Tipo de mensagem:</label>
@@ -295,106 +198,5 @@
         </aside>
     </div>
 </div>
-
-<!-- Modal/Lightbox com navegação -->
-<div id="imageModal" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 hidden z-50 flex items-center justify-center">
-    <button id="prevImage" class="absolute left-4 top-1/2 transform -translate-y-1/2 text-white text-3xl font-bold px-4 py-2 hover:bg-black/50 rounded select-none cursor-pointer">&lt;</button>
-    <img id="modalImage" src="" alt="Imagem Ampliada" class="max-w-5xl max-h-5xl rounded-lg mx-auto">
-    <button id="nextImage" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-white text-3xl font-bold px-4 py-2 hover:bg-black/50 rounded select-none cursor-pointer">&gt;</button>
-    <button id="closeModal" class="absolute top-4 right-4 bg-gray-800 text-white rounded-full p-2 hover:bg-gray-700">
-        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
-    </button>
-</div>
-
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const imageModal = document.getElementById('imageModal');
-        const modalImage = document.getElementById('modalImage');
-        const closeModal = document.getElementById('closeModal');
-        const prevBtn = document.getElementById('prevImage');
-        const nextBtn = document.getElementById('nextImage');
-
-        // Função para abrir o modal
-        function openModal(imageUrls, currentIndex) {
-            modalImage.src = imageUrls[currentIndex];
-            imageModal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden'; // Impede rolagem da página
-            modalImage.dataset.imageUrls = JSON.stringify(imageUrls); // Armazena URLs no modal
-            modalImage.dataset.currentIndex = currentIndex; // Armazena índice atual
-        }
-
-        // Função para fechar o modal
-        function closeModalHandler() {
-            imageModal.classList.add('hidden');
-            document.body.style.overflow = 'auto'; // Restaura rolagem
-        }
-
-        // Evento para abrir modal ao clicar na imagem principal
-        document.querySelectorAll('.timeline-main-image-display img').forEach(img => {
-            img.addEventListener('click', function() {
-                const sliderContainer = this.closest('.timeline-image-slider-container');
-                const imageUrlsStr = sliderContainer.querySelector('.timeline-main-image-display img').dataset.imageUrls;
-                const imageUrls = imageUrlsStr ? imageUrlsStr.slice(0, -1).split(',') : [];
-                const currentIndex = 0; // Sempre começa na primeira imagem
-                openModal(imageUrls, currentIndex);
-            });
-        });
-
-        // Fechar modal ao clicar no botão
-        closeModal.addEventListener('click', closeModalHandler);
-
-        // Fechar modal ao clicar fora da imagem
-        imageModal.addEventListener('click', function(event) {
-            if (event.target === this) {
-                closeModalHandler();
-            }
-        });
-
-        // Botão anterior
-        prevBtn.addEventListener('click', function(event) {
-            event.stopPropagation();
-            let imageUrls = JSON.parse(modalImage.dataset.imageUrls);
-            let currentIndex = parseInt(modalImage.dataset.currentIndex);
-            currentIndex = (currentIndex - 1 + imageUrls.length) % imageUrls.length;
-            modalImage.src = imageUrls[currentIndex];
-            modalImage.dataset.currentIndex = currentIndex;
-        });
-
-        // Botão próximo
-        nextBtn.addEventListener('click', function(event) {
-            event.stopPropagation();
-            let imageUrls = JSON.parse(modalImage.dataset.imageUrls);
-            let currentIndex = parseInt(modalImage.dataset.currentIndex);
-            currentIndex = (currentIndex + 1) % imageUrls.length;
-            modalImage.src = imageUrls[currentIndex];
-            modalImage.dataset.currentIndex = currentIndex;
-        });
-
-        // Atualizar imagem principal ao clicar na miniatura (timeline)
-        document.querySelectorAll('.timeline-image-thumbnails .timeline-thumbnail-item').forEach(thumbnail => {
-            thumbnail.addEventListener('click', function(event) {
-                event.preventDefault();
-                const imageUrl = this.dataset.imageUrl;
-                const sliderContainer = this.closest('.timeline-image-slider-container');
-                const mainImage = sliderContainer.querySelector('.timeline-main-image-display img');
-
-                // Remove active de todas as miniaturas do slider atual
-                sliderContainer.querySelectorAll('.timeline-thumbnail-item').forEach(item => {
-                    item.classList.remove('active');
-                });
-
-                // Adiciona active na miniatura clicada
-                this.classList.add('active');
-
-                // Atualiza imagem principal
-                mainImage.src = imageUrl;
-            });
-        });
-    });
-</script>
-{% endblock %}
 
 {% endblock %}

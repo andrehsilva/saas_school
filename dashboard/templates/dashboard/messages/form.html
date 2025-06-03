@@ -4,6 +4,7 @@
 {% block extra_css %}
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
+    /* Seu CSS existente para select2 */
     .select2-container--default .select2-selection--multiple {
         background-color: #fff;
         border: 1px solid #d1d5db;
@@ -51,6 +52,58 @@
         color: #fff !important;
         font-weight: bold;
     }
+    /* Esconde campos extras por padrão */
+    #rotina-fields {
+        display: none;
+    }
+
+    /* Estilos para a galeria de imagens */
+    .image-gallery-preview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 15px;
+        padding: 10px;
+        border-radius: 5px;
+        background-color: #f8f8f8; /* Light background for the gallery area */
+        border: 1px solid #e0e0e0;
+    }
+    .dark .image-gallery-preview {
+        background-color: #2d3748; /* Dark background for the gallery area */
+        border-color: #4a5568;
+    }
+    .image-item {
+        text-align: center;
+        border: 1px solid #ddd;
+        padding: 8px;
+        border-radius: 5px;
+        background-color: #fff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        position: relative;
+    }
+    .dark .image-item {
+        background-color: #1f2937;
+        border-color: #4b5563;
+        box-shadow: none;
+    }
+    .image-item img {
+        max-width: 120px;
+        height: auto;
+        display: block;
+        margin: 0 auto 8px; /* Center image and add bottom margin */
+        border-radius: 3px;
+    }
+    .image-item input[type="checkbox"] {
+        margin-right: 5px;
+        accent-color: #4f46e5; /* Primary color for checkbox */
+    }
+    .image-item label {
+        font-size: 0.9em;
+        color: #555;
+    }
+    .dark .image-item label {
+        color: #cbd5e0;
+    }
 </style>
 {% endblock %}
 
@@ -66,21 +119,15 @@
 
         <div class="mb-4">
             <label class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Título</label>
-            <input type="text" name="title" value="{% if current_title %}{{ current_title }}{% elif message and message.title %}{{ message.title }}{% else %}{% endif %}"
+            <input type="text" name="title" value="{{ current_title|default_if_none:'' }}"
                    class="w-full border border-gray-200 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
                    required>
         </div>
 
         <div class="mb-4">
-            <label class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Conteúdo</label>
-            <div id="quill-editor" style="height: 200px;">{{ current_content|default_if_none:'' }}{{ message.context|default_if_none:''|safe }}</div>
-            <input type="hidden" name="content" id="content-input">
-        </div>
-
-        <div class="mb-4">
-            <label class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Tipo de Mensagem</label>
-            <select name="type"
-                    class="w-full border border-gray-200 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+            <label class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Categoria da Mensagem</label>
+            <select name="type" id="message-type-select"
+                    class="w-full border border-gray-200 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500" required>
                 <option value="">Selecionar...</option>
                 {% for t in message_types %}
                 <option value="{{ t.id }}" {% if t.id|stringformat:"s" == current_type|stringformat:"s" %}selected{% endif %}>
@@ -90,17 +137,51 @@
             </select>
         </div>
 
+        <div id="rotina-fields">
+            <div class="mb-4">
+                <label class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Atividades na Classe</label>
+                <div id="quill-editor-activities" style="height: 150px;">{{ current_activities|default_if_none:''|safe }}</div>
+                <input type="hidden" name="activities" id="activities-input">
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Tarefa de Casa</label>
+                <div id="quill-editor-homework" style="height: 150px;">{{ current_homework|default_if_none:''|safe }}</div>
+                <input type="hidden" name="homework" id="homework-input">
+            </div>
+        </div>
+
+        <div id="content-field" class="mb-4">
+            <label class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Conteúdo</label>
+            <div id="quill-editor-content" style="height: 200px;">{{ current_content|default_if_none:''|safe }}</div>
+            <input type="hidden" name="content" id="content-input">
+        </div>
+
         <div class="mb-4">
-            <label class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Imagem de Capa</label>
-            <input type="file" name="image" accept="image/*"
+            <label class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Data e Hora Agendada</label>
+            <input type="datetime-local" name="scheduled_time" value="{{ current_scheduled_time|default_if_none:'' }}"
                    class="w-full border border-gray-200 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
-            {% if message and message.image %}
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Galeria de Imagens (máximo 10)</label>
+            <input type="file" name="gallery_images" id="gallery_images" multiple accept="image/*"
+                   class="w-full border border-gray-200 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+            {% if message and message.gallery_images.exists %}
                 <div class="mt-2">
-                    <img src="{{ message.image.url }}" alt="Imagem atual" class="h-24 rounded shadow">
+                    <h4 class="text-gray-700 dark:text-gray-200 font-medium mb-1">Imagens Atuais:</h4>
+                    <div class="image-gallery-preview">
+                        {% for img in message.gallery_images.all %}
+                            <div class="image-item">
+                                <img src="{{ img.image.url }}" alt="{{ img.description|default:'Imagem da galeria' }}">
+                                <input type="checkbox" name="delete_images" value="{{ img.id }}" id="delete_image_{{ img.id }}">
+                                <label for="delete_image_{{ img.id }}">Remover</label>
+                            </div>
+                        {% endfor %}
+                    </div>
                 </div>
             {% endif %}
         </div>
-
         <div class="mb-4">
             <label class="block text-gray-700 dark:text-gray-200 font-medium mb-1">Anexo</label>
             <input type="file" name="attachments"
@@ -160,18 +241,14 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- jQuery deve vir antes do Select2 -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<!-- Select2 -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<!-- Quill e Quill Emoji -->
 <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/quill-emoji@0.1.7/dist/quill-emoji.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/quill-emoji@0.1.7/dist/quill-emoji.css" rel="stylesheet">
 
 <script>
-  // Inicializa Select2
   $(document).ready(function() {
       $('#users-select, #classes-select, #grades-select').select2({
           placeholder: "Selecione...",
@@ -186,40 +263,121 @@
       if (document.documentElement.classList.contains('dark')) {
           $('.select2-container').addClass('dark');
       }
+
+      // Inicializa Quill editors
+      var quillContent = new Quill('#quill-editor-content', {
+        theme: 'snow',
+        placeholder: 'Digite a mensagem...',
+        modules: {
+          toolbar: [
+            [{ header: [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'color': [] }, { 'background': [] }],
+            [{ 'script': 'sub'}, { 'script': 'super' }],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            [{ 'indent': '-1'}, { 'indent': '+1' }],
+            [{ 'align': [] }],
+            ['blockquote', 'code-block'],
+            ['link', 'image', 'video'],
+            ['clean'],
+            ['emoji']
+          ],
+          "emoji-toolbar": true,
+          "emoji-textarea": false,
+          "emoji-shortname": true,
+        }
+      });
+      var quillActivities = new Quill('#quill-editor-activities', {
+        theme: 'snow',
+        placeholder: 'Digite as atividades...',
+        modules: {
+          toolbar: [
+            [{ header: [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'color': [] }, { 'background': [] }],
+            [{ 'script': 'sub'}, { 'script': 'super' }],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            [{ 'indent': '-1'}, { 'indent': '+1' }],
+            [{ 'align': [] }],
+            ['blockquote', 'code-block'],
+            ['link', 'image', 'video'],
+            ['clean'],
+            ['emoji']
+          ],
+          "emoji-toolbar": true,
+          "emoji-textarea": false,
+          "emoji-shortname": true,
+        }
+      });
+      var quillHomework = new Quill('#quill-editor-homework', {
+        theme: 'snow',
+        placeholder: 'Digite a tarefa de casa...',
+        modules: {
+          toolbar: [
+            [{ header: [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'color': [] }, { 'background': [] }],
+            [{ 'script': 'sub'}, { 'script': 'super' }],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            [{ 'indent': '-1'}, { 'indent': '+1' }],
+            [{ 'align': [] }],
+            ['blockquote', 'code-block'],
+            ['link', 'image', 'video'],
+            ['clean'],
+            ['emoji']
+          ],
+          "emoji-toolbar": true,
+          "emoji-textarea": false,
+          "emoji-shortname": true,
+        }
+      });
+
+      // Preenche os editores com conteúdo existente
+      {% if current_content or message %}
+        {% with content=current_content|default:message.context %}
+          quillContent.root.innerHTML = `{{ content|default_if_none:''|escapejs }}`;
+        {% endwith %}
+      {% endif %}
+      {% if current_activities or message %}
+        {% with content=current_activities|default:message.activities %}
+          quillActivities.root.innerHTML = `{{ content|default_if_none:''|escapejs }}`;
+        {% endwith %}
+      {% endif %}
+      {% if current_homework or message %}
+        {% with content=current_homework|default:message.homework %}
+          quillHomework.root.innerHTML = `{{ content|default_if_none:''|escapejs }}`;
+        {% endwith %}
+      {% endif %}
+
+      // Mostrar/ocultar campos extras conforme categoria selecionada
+      function toggleRotinaFields() {
+          var selectedText = $("#message-type-select option:selected").text().trim().toLowerCase();
+          if (selectedText === "rotina diária" || selectedText === "rotina diaria") {
+              $("#rotina-fields").show();
+              $("#content-field").hide();
+          } else {
+              $("#rotina-fields").hide();
+              $("#content-field").show();
+          }
+      }
+      toggleRotinaFields();
+      $("#message-type-select").change(toggleRotinaFields);
+
+      // Ao enviar o formulário, atualiza os inputs hidden com conteúdo dos editores Quill
+      $('form').submit(function() {
+        const quillHTML = quillContent.root.innerHTML.trim();
+        const cleanedHTML = quillHTML.replace(/<p><br><\/p>/gi, '').replace(/<br>/gi, '').trim();
+        
+        document.getElementById('content-input').value = cleanedHTML ? quillHTML : '';
+        
+        const quillActivitiesHTML = quillActivities.root.innerHTML.trim();
+        const cleanedActivities = quillActivitiesHTML.replace(/<p><br><\/p>/gi, '').replace(/<br>/gi, '').trim();
+        document.getElementById('activities-input').value = cleanedActivities ? quillActivitiesHTML : '';
+        
+        const quillHomeworkHTML = quillHomework.root.innerHTML.trim();
+        const cleanedHomework = quillHomeworkHTML.replace(/<p><br><\/p>/gi, '').replace(/<br>/gi, '').trim();
+        document.getElementById('homework-input').value = cleanedHomework ? quillHomeworkHTML : '';
+    });
   });
-
-  // Inicializa Quill
-  var quill = new Quill('#quill-editor', {
-    theme: 'snow',
-    placeholder: 'Digite a mensagem...',
-    modules: {
-      toolbar: [
-        [{ header: [1, 2, 3, false] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ 'color': [] }, { 'background': [] }],
-        [{ 'script': 'sub'}, { 'script': 'super' }],
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-        [{ 'indent': '-1'}, { 'indent': '+1' }],
-        [{ 'align': [] }],
-        ['blockquote', 'code-block'],
-        ['link', 'image', 'video'],
-        ['clean'],
-        ['emoji']
-      ],
-      "emoji-toolbar": true,
-      "emoji-textarea": false,
-      "emoji-shortname": true,
-    }
-  });
-
-  // Preenche o editor com o conteúdo existente (se houver)
-  {% if current_content or message.context %}
-    quill.root.innerHTML = `{{ current_content|default_if_none:message.context|escapejs }}`;
-  {% endif %}
-
-  // Ao enviar o formulário, coloca o HTML do Quill no input oculto
-  document.querySelector('form').onsubmit = function() {
-    document.getElementById('content-input').value = quill.root.innerHTML;
-  };
 </script>
 {% endblock %}

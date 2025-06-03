@@ -5,13 +5,19 @@
     <div class="bg-white shadow rounded-2xl border border-gray-200 overflow-hidden">
         
         <!-- Cabeçalho -->
-        <div class="bg-gray-50 px-4 py-3 flex justify-between items-center border-b">
-            <div class="text-sm text-gray-500">
-                Enviado por: <span class="font-bold text-gray-800">{{ message.created_by.username }}</span> |
-                {{ message.created_at|date:"d M Y - H:i" }}
+        <div class="bg-gray-50 px-4 py-3 flex justify-between items-center border-b flex-wrap gap-2">
+            <div class="text-sm text-gray-600 space-y-1">
+                <p><strong>Enviado por:</strong> 
+                    <span class="font-semibold text-gray-800">{{ message.created_by.get_full_name|default:message.created_by.username }}</span>
+                </p>
+                <p><strong>Data de Cadastro:</strong> {{ message.created_at|date:"d \d\e M \d\e Y, H:i" }}</p>
+                {% if message.scheduled_time %}
+                <p><strong>Agendado para:</strong> {{ message.scheduled_time|date:"d \d\e M \d\e Y, H:i" }}</p>
+                {% endif %}
             </div>
+        
             {% if message.type %}
-            <span class="px-3 py-1 text-sm font-medium rounded-full"
+            <span class="px-3 py-1 text-sm font-medium rounded-full self-start"
                   style="background-color: {{ message.type.color }}; color: white;">
                 {{ message.type.name }}
             </span>
@@ -21,14 +27,59 @@
         <!-- Conteúdo -->
         <div class="px-4 py-5 space-y-4">
             <h1 class="text-2xl font-semibold text-gray-900">{{ message.title }}</h1>
-            <p class="text-gray-700 leading-relaxed">{{ message.context|safe}}</p>
+
+            {% if message.gallery_images.exists %}
+                {% if message.gallery_images.count > 1 %}
+                    <div class="timeline-image-slider-container mt-4" id="timeline-slider-{{ message.id }}">
+                        <div class="timeline-main-image-display">
+                            <img class="main-slider-image cursor-pointer" src="{{ message.gallery_images.first.image.url }}" alt="Imagem principal da galeria">
+                        </div>
+                        <div class="timeline-image-thumbnails">
+                            {% for img in message.gallery_images.all %}
+                                <div class="timeline-thumbnail-item {% if forloop.first %}active{% endif %}" data-image-url="{{ img.image.url }}" data-index="{{ forloop.counter0 }}">
+                                    <img src="{{ img.image.url }}" alt="Thumbnail {{ forloop.counter }}">
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="mt-4">
+                        <img src="{{ message.gallery_images.first.image.url }}" alt="Imagem da mensagem" class="rounded-lg w-full max-h-60 object-cover cursor-pointer" id="single-image">
+                    </div>
+                {% endif %}
+            {% endif %}
+
+            {% if message.context %}
+            <div>
+                <h2 class="text-lg font-semibold text-gray-800">Conteúdo:</h2>
+                <div class="text-gray-700 leading-relaxed">{{ message.context|safe }}</div>
+            </div>
+            {% endif %}
+
+            {% if message.activities %}
+            <div class="mt-4 border-l-4 border-blue-600 bg-blue-50 p-4 rounded-md">
+                <h2 class="text-lg font-semibold text-blue-800 mb-2">📘 Atividades em sala</h2>
+                <div class="text-gray-800 leading-relaxed">{{ message.activities|safe }}</div>
+            </div>
+            {% endif %}
+
+            {% if message.homework %}
+            <div class="mt-4 border-l-4 border-yellow-500 bg-yellow-50 p-4 rounded-md">
+                <h2 class="text-lg font-semibold text-yellow-800 mb-2">📚 Tarefa de casa</h2>
+                <div class="text-gray-800 leading-relaxed">{{ message.homework|safe }}</div>
+            </div>
+            {% endif %}
 
             {% if message.image %}
-            <img src="{{ message.image.url }}" alt="Imagem da mensagem" class="rounded-lg w-full max-h-60 object-cover">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-800">Imagem:</h2>
+                <img src="{{ message.image.url }}" alt="Imagem da mensagem" class="rounded-lg w-full max-h-60 object-cover">
+            </div>
             {% endif %}
 
             {% if message.attachments %}
             <div>
+                <h2 class="text-lg font-semibold text-gray-800">Anexo:</h2>
                 <a href="{{ message.attachments.url }}" download
                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
                     📎 Baixar Anexo
@@ -41,8 +92,16 @@
         <div class="bg-gray-50 px-4 py-3 text-sm text-gray-700 border-t space-y-1">
             {% if message.classes.exists %}
             <p><strong>Turmas:</strong>
-                {% for class in message.classes.all %}
-                <span class="font-medium">{{ class.name }}</span>{% if not forloop.last %}, {% endif %}
+                {% for turma in message.classes.all %}
+                <span class="font-medium">{{ turma.name }}</span>{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+            {% endif %}
+
+            {% if message.grades.exists %}
+            <p><strong>Séries:</strong>
+                {% for grade in message.grades.all %}
+                <span class="font-medium">{{ grade.name }}</span>{% if not forloop.last %}, {% endif %}
                 {% endfor %}
             </p>
             {% endif %}
@@ -50,12 +109,173 @@
             {% if message.users.exists %}
             <p><strong>Usuários:</strong>
                 {% for user in message.users.all %}
-                <span class="font-medium">{{ user.username }}</span>{% if not forloop.last %}, {% endif %}
+                <span class="font-medium">{{ user.get_full_name|default:user.username }}</span>{% if not forloop.last %}, {% endif %}
                 {% endfor %}
             </p>
             {% endif %}
         </div>
     </div>
 </div>
+
+<!-- Modal/Lightbox com navegação -->
+<div id="imageModal" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 hidden z-50 flex items-center justify-center">
+    <button id="prevImage" class="absolute left-4 top-1/2 transform -translate-y-1/2 text-white text-3xl font-bold px-4 py-2 hover:bg-black/50 rounded select-none cursor-pointer">&lt;</button>
+    <img id="modalImage" src="" alt="Imagem Ampliada" class="max-w-5xl max-h-5xl rounded-lg mx-auto">
+    <button id="nextImage" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-white text-3xl font-bold px-4 py-2 hover:bg-black/50 rounded select-none cursor-pointer">&gt;</button>
+    <button id="closeModal" class="absolute top-4 right-4 bg-gray-800 text-white rounded-full p-2 hover:bg-gray-700">
+        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+    </button>
+</div>
+
+{% block extra_css %}
+<style>
+    .timeline-image-slider-container {
+        width: 100%;
+        max-width: 100%;
+        margin: 10px 0;
+        text-align: center;
+        background-color: #f0f0f0;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        border: 1px solid #e0e0e0;
+    }
+    .timeline-main-image-display {
+        width: 100%;
+        height: 250px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #e2e8f0;
+        border-bottom: 1px solid #ccc;
+    }
+    .timeline-main-image-display img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        transition: opacity 0.3s ease-in-out;
+        cursor: pointer;
+    }
+    .timeline-image-thumbnails {
+        display: flex;
+        justify-content: center;
+        padding: 8px;
+        gap: 8px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .timeline-image-thumbnails::-webkit-scrollbar {
+        height: 6px;
+    }
+    .timeline-image-thumbnails::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 3px;
+    }
+    .timeline-image-thumbnails::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    .timeline-thumbnail-item {
+        cursor: pointer;
+        border: 2px solid transparent;
+        border-radius: 4px;
+        overflow: hidden;
+        flex-shrink: 0;
+        width: 60px;
+        height: 60px;
+        transition: border-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+    }
+    .timeline-thumbnail-item:hover {
+        border-color: #a0aec0;
+        transform: translateY(-1px);
+    }
+    .timeline-thumbnail-item.active {
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 2px #4f46e5;
+    }
+    .thumbnail-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sliderContainer = document.getElementById('timeline-slider-{{ message.id }}');
+        const imageModal = document.getElementById('imageModal');
+        const modalImage = document.getElementById('modalImage');
+        const closeModal = document.getElementById('closeModal');
+        const prevBtn = document.getElementById('prevImage');
+        const nextBtn = document.getElementById('nextImage');
+
+        if (!sliderContainer) return;
+
+        const thumbnails = sliderContainer.querySelectorAll('.timeline-thumbnail-item');
+        const mainImage = sliderContainer.querySelector('.main-slider-image');
+
+        // Array com URLs das imagens
+        const images = Array.from(thumbnails).map(t => t.dataset.imageUrl);
+        let currentIndex = 0;
+
+        function setActiveThumbnail(index) {
+            thumbnails.forEach(t => t.classList.remove('active'));
+            if (thumbnails[index]) thumbnails[index].classList.add('active');
+        }
+
+        function showImage(index) {
+            if (index < 0) index = images.length - 1;
+            if (index >= images.length) index = 0;
+            currentIndex = index;
+            mainImage.src = images[currentIndex];
+            setActiveThumbnail(currentIndex);
+        }
+
+        thumbnails.forEach((thumbnail, index) => {
+            thumbnail.addEventListener('click', () => {
+                showImage(index);
+            });
+        });
+
+        mainImage.addEventListener('click', () => {
+            modalImage.src = images[currentIndex];
+            imageModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+
+        closeModal.addEventListener('click', () => {
+            imageModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        });
+
+        imageModal.addEventListener('click', (e) => {
+            if (e.target === imageModal) {
+                imageModal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showImage(currentIndex - 1);
+            modalImage.src = images[currentIndex];
+        });
+
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showImage(currentIndex + 1);
+            modalImage.src = images[currentIndex];
+        });
+
+        // Inicializa com a primeira imagem ativa
+        showImage(0);
+    });
+</script>
+{% endblock %}
 
 {% endblock %}

@@ -54,55 +54,79 @@
     {% if messages_with_permissions %}
     <div class="dark:text-white bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead class="bg-gray-100 dark:bg-gray-900">
-                <tr>
-                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Título</th>
-                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Tipo</th>
-                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Criado por</th>
-                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Data</th>
-                    <th class="px-6 py-3"></th>
-                </tr>
-            </thead>
-            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {% for msg in messages_with_permissions %}
-                <tr>
-                    <td class="px-6 py-4 text-gray-900 dark:text-white">{{ msg.message.title }}</td>
-                    <td class="px-6 py-4">
-                        {% if msg.message.type %}
-                        <span class="px-3 py-1 text-sm font-medium rounded-full"
-                              style="background-color: {{ msg.message.type.color }}; color: white;">
-                            {{ msg.message.type.name }}
-                        </span>
-                        {% else %}
-                        -
-                        {% endif %}
-                    </td>
-                    <td class="px-6 py-4 text-gray-900 dark:text-white">
-                        {{ msg.message.created_by.get_full_name|default:msg.message.created_by.username }}
-                    </td>
-                    <td class="px-6 py-4 text-gray-900 dark:text-white">
-                        {{ msg.message.created_at|date:"d/m/Y H:i" }}
-                    </td>
-                    <td class="px-6 py-4 text-right space-x-2">
-                        <a href="{% url 'message:dashboard_message_detail' msg.message.id %}" class="btn btn-sm btn-outline" title="Ver">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                        <a href="{% url 'message:dashboard_message_edit' msg.message.id %}"
-                           class="btn btn-sm btn-outline" title="Editar">
-                            <i class="fas fa-pen"></i>
-                        </a>
-                        <button
-                            type="button"
-                            class="btn btn-sm btn-outline text-red-600"
-                            @click="openDeleteModal({{ msg.message.id }}, '{{ msg.message.title }}')"
-                            title="Excluir"
-                        >
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
+<thead class="bg-gray-100 dark:bg-gray-900">
+<tr>
+    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Título</th>
+    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Tipo</th>
+    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Criado por</th>
+    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Turmas / Séries</th> <!-- Nova coluna -->
+    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Criado em</th>
+    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Agendado para</th>
+    <th class="px-6 py-3"></th>
+</tr>
+</thead>
+<tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+{% for msg in messages_with_permissions %}
+<tr>
+    <td class="px-6 py-4 text-gray-900 dark:text-white">{{ msg.message.title }}</td>
+    <td class="px-6 py-4">
+        {% if msg.message.type %}
+        <span class="px-3 py-1 text-sm font-medium rounded-full"
+              style="background-color: {{ msg.message.type.color }}; color: white;">
+            {{ msg.message.type.name }}
+        </span>
+        {% else %}
+        -
+        {% endif %}
+    </td>
+    <td class="px-6 py-4 text-gray-900 dark:text-white">
+        {{ msg.message.created_by.get_full_name|default:msg.message.created_by.username }}
+    </td>
+    <td class="px-6 py-4 text-gray-900 dark:text-white">
+        {# Exibe turmas e séries separadas por vírgula #}
+        {% with classes=msg.message.classes.all grades=msg.message.grades.all %}
+            {% if classes or grades %}
+                {% for class in classes %}
+                    {{ class.grade.name }} - {{ class.name }}{% if not forloop.last or grades %}, {% endif %}
                 {% endfor %}
-            </tbody>
+                {% for grade in grades %}
+                    {{ grade.name }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            {% else %}
+                <span class="italic text-gray-500 dark:text-gray-400">Nenhuma</span>
+            {% endif %}
+        {% endwith %}
+    </td>
+    <td class="px-6 py-4 text-gray-900 dark:text-white">
+        {{ msg.message.created_at|date:"d/m/Y H:i" }}
+    </td>
+    <td class="px-6 py-4 text-gray-900 dark:text-white">
+        {% if msg.message.scheduled_time %}
+            {{ msg.message.scheduled_time|date:"d/m/Y H:i" }}
+        {% else %}
+            <span class="italic text-gray-500 dark:text-gray-400">Publicado</span>
+        {% endif %}
+    </td>
+    <td class="px-6 py-4 text-right space-x-2">
+        <a href="{% url 'message:dashboard_message_detail' msg.message.id %}" class="btn btn-sm btn-outline" title="Ver">
+            <i class="fas fa-eye"></i>
+        </a>
+        <a href="{% url 'message:dashboard_message_edit' msg.message.id %}" class="btn btn-sm btn-outline" title="Editar">
+            <i class="fas fa-pen"></i>
+        </a>
+        <button
+            type="button"
+            class="btn btn-sm btn-outline text-red-600"
+            @click="openDeleteModal({{ msg.message.id }}, '{{ msg.message.title }}')"
+            title="Excluir"
+        >
+            <i class="fas fa-trash"></i>
+        </button>
+    </td>
+</tr>
+{% endfor %}
+</tbody>
+
         </table>
     </div>
 

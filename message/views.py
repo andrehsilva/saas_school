@@ -1,3 +1,5 @@
+# message/views.py
+
 """
 Views para o sistema de mensagens e eventos.
 Organizado em duas seções:
@@ -14,10 +16,12 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.models import User
 from django.utils import timezone
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.core.paginator import Paginator
 from django.core.exceptions import PermissionDenied
 from .forms import EventForm  # Importe o formulário
+from django.utils import timezone
+import datetime
 
 from school.models import Grade, Class, Student, Parent, Role, UserRole
 from dashboard.permissions import role_required
@@ -26,7 +30,7 @@ from notification.utils import (
     send_notification_to_class,
     send_notification_to_class_staff
 )
-from message.models import Message, MessageType, ReceivedMessage, MessageReadLog, Event
+from message.models import Message, MessageType, ReceivedMessage, MessageReadLog, Event, MessageImage # Importe MessageImage
 from message.utils import get_user_visibility_context, get_visible_messages
 
 # ---------------------------------------------------------------------
@@ -81,8 +85,11 @@ def get_user_children(user):
 def dashboard_message_list(request):
     """
     Lista todas as mensagens que o usuário tem permissão para ver,
-    com filtros e paginação.
+    com filtros, paginação e filtragem por mensagens agendadas.
     """
+    from django.utils import timezone
+    from django.db.models import Q
+
     # Filtros vindos da query string
     title = request.GET.get('title', '').strip()
     type_id = request.GET.get('type', '')
@@ -148,12 +155,16 @@ def dashboard_message_list(request):
         'current_grades': []
     })
 
+
 @login_required
 @role_required(["Diretor", "Coordenador", "Professor", "Colaborador"])
 def dashboard_message_create(request):
     """
     ✅ Criação de Mensagem
       - notifica todos os destinatários (usuários, turmas, séries) de forma genérica
+      - suporta campos activities, homework e scheduled_time
+      - salva todos os campos sem limpar nenhum
+      - **AGORA SUPORTA GALERIA DE IMAGENS**
     """
     recipients = get_eligible_recipients()
     message_types = get_message_types()
@@ -161,13 +172,19 @@ def dashboard_message_create(request):
     if request.method == "POST":
         title = request.POST.get('title', '').strip()
         content = request.POST.get('content', '').strip()
+        activities = request.POST.get('activities', '').strip()
+        homework = request.POST.get('homework', '').strip()
         type_id = request.POST.get('type')
         user_ids = request.POST.getlist('users')
         class_ids = request.POST.getlist('classes')
         grade_ids = request.POST.getlist('grades')
+        scheduled_time_str = request.POST.get('scheduled_time', '').strip()
+        # Captura as imagens da galeria
+        gallery_images = request.FILES.getlist('gallery_images') # Alterado para getlist
 
-        if not title or not content:
-            messages.error(request, "Título e conteúdo são obrigatórios.")
+        # Validação básica: título e pelo menos um conteúdo
+        if not title or (not content and not activities and not homework):
+            messages.error(request, "Título e pelo menos um conteúdo são obrigatórios.")
             return render(request, 'dashboard/messages/form.html', {
                 'users': recipients['users'],
                 'grades': recipients['grades'],
@@ -175,26 +192,82 @@ def dashboard_message_create(request):
                 'message_types': message_types,
                 'current_title': title,
                 'current_content': content,
+                'current_activities': activities,
+                'current_homework': homework,
                 'current_type': type_id,
                 'current_users': user_ids,
                 'current_classes': class_ids,
                 'current_grades': grade_ids,
+                'current_scheduled_time': scheduled_time_str,
+                'form_title': "Nova Mensagem",
+                'message': None
+            })
+        
+        # Validação do número de imagens na galeria
+        if len(gallery_images) > 10:
+            messages.error(request, "Você pode enviar no máximo 10 imagens para a galeria.")
+            return render(request, 'dashboard/messages/form.html', {
+                'users': recipients['users'],
+                'grades': recipients['grades'],
+                'classes': recipients['classes'],
+                'message_types': message_types,
+                'current_title': title,
+                'current_content': content,
+                'current_activities': activities,
+                'current_homework': homework,
+                'current_type': type_id,
+                'current_users': user_ids,
+                'current_classes': class_ids,
+                'current_grades': grade_ids,
+                'current_scheduled_time': scheduled_time_str,
                 'form_title': "Nova Mensagem",
                 'message': None
             })
 
+
+        scheduled_time = None
+        if scheduled_time_str:
+            try:
+                scheduled_time = datetime.datetime.strptime(scheduled_time_str, '%Y-%m-%dT%H:%M')
+                scheduled_time = timezone.make_aware(scheduled_time)
+            except ValueError:
+                messages.error(request, "Formato de data e hora inválido.")
+                return render(request, 'dashboard/messages/form.html', {
+                    'users': recipients['users'],
+                    'grades': recipients['grades'],
+                    'classes': recipients['classes'],
+                    'message_types': message_types,
+                    'current_title': title,
+                    'current_content': content,
+                    'current_activities': activities,
+                    'current_homework': homework,
+                    'current_type': type_id,
+                    'current_users': user_ids,
+                    'current_classes': class_ids,
+                    'current_grades': grade_ids,
+                    'current_scheduled_time': scheduled_time_str,
+                    'form_title': "Nova Mensagem",
+                    'message': None
+                })
+
         new_message = Message.objects.create(
             title=title,
-            context=content,
+            context=content if content else None,
+            activities=activities if activities else None,
+            homework=homework if homework else None,
             created_by=request.user,
-            type_id=type_id if type_id else None
+            type_id=type_id if type_id else None,
+            scheduled_time=scheduled_time
         )
 
-        if 'image' in request.FILES:
-            new_message.image = request.FILES['image']
         if 'attachments' in request.FILES:
             new_message.attachments = request.FILES['attachments']
         new_message.save()
+
+        # Salva as imagens da galeria
+        for img_file in gallery_images:
+            MessageImage.objects.create(message=new_message, image=img_file)
+
 
         # Adiciona destinatários
         if user_ids:
@@ -208,55 +281,86 @@ def dashboard_message_create(request):
         message_url = request.build_absolute_uri(reverse('message:parent_message_detail', args=[new_message.id]))
         notified_users = set()
 
-        # Notificar todos os usuários selecionados diretamente
+        # Notifica usuários diretos
         for user in new_message.users.all():
             if user.id not in notified_users:
                 send_notification(
                     recipients=user,
                     title=new_message.title,
-                    message=new_message.context[:100] + "..." if len(new_message.context) > 100 else new_message.context,
+                    message=(new_message.context or '')[:100] + "..." if new_message.context and len(new_message.context) > 100 else (new_message.context or ''),
                     url=message_url
                 )
+                ReceivedMessage.objects.get_or_create(message=new_message, recipient=user, defaults={'read': False})
                 notified_users.add(user.id)
 
-        # Notificar alunos das turmas
+        # Notifica pais/alunos de turmas
         for turma in new_message.classes.all():
             for student in Student.objects.filter(classes_assigned=turma):
                 if student.user and student.user.id not in notified_users:
-                    ReceivedMessage.objects.create(
-                        message=new_message,
-                        recipient=student.user,
-                        read=False
-                    )
                     send_notification(
                         recipients=student.user,
                         title=new_message.title,
-                        message=new_message.context[:100] + "..." if len(new_message.context) > 100 else new_message.context,
+                        message=(new_message.context or '')[:100] + "..." if new_message.context and len(new_message.context) > 100 else (new_message.context or ''),
                         url=message_url
                     )
+                    ReceivedMessage.objects.get_or_create(message=new_message, recipient=student.user, defaults={'read': False})
                     notified_users.add(student.user.id)
+            # Notifica professores da turma
+            for teacher in turma.teachers.all():
+                if teacher.id not in notified_users:
+                    send_notification(
+                        recipients=teacher,
+                        title=new_message.title,
+                        message=(new_message.context or '')[:100] + "..." if new_message.context and len(new_message.context) > 100 else (new_message.context or ''),
+                        url=message_url
+                    )
+                    ReceivedMessage.objects.get_or_create(message=new_message, recipient=teacher, defaults={'read': False})
+                    notified_users.add(teacher.id)
 
-        # Notificar alunos das séries
+        # Notifica pais/alunos e staff de séries
         for grade in new_message.grades.all():
             for turma in Class.objects.filter(grade=grade):
                 for student in Student.objects.filter(classes_assigned=turma):
                     if student.user and student.user.id not in notified_users:
-                        ReceivedMessage.objects.create(
-                            message=new_message,
-                            recipient=student.user,
-                            read=False
-                        )
                         send_notification(
                             recipients=student.user,
                             title=new_message.title,
-                            message=new_message.context[:100] + "..." if len(new_message.context) > 100 else new_message.context,
+                            message=(new_message.context or '')[:100] + "..." if new_message.context and len(new_message.context) > 100 else (new_message.context or ''),
                             url=message_url
                         )
+                        ReceivedMessage.objects.get_or_create(message=new_message, recipient=student.user, defaults={'read': False})
                         notified_users.add(student.user.id)
-
+                for teacher in turma.teachers.all():
+                    if teacher.id not in notified_users:
+                        send_notification(
+                            recipients=teacher,
+                            title=new_message.title,
+                            message=(new_message.context or '')[:100] + "..." if new_message.context and len(new_message.context) > 100 else (new_message.context or ''),
+                            url=message_url
+                        )
+                        ReceivedMessage.objects.get_or_create(message=new_message, recipient=teacher, defaults={'read': False})
+                        notified_users.add(teacher.id)
+            
+            # Notifica coordenadores/diretores/colaboradores da série
+            staff_users_in_grade = set()
+            for role_type in ['coordinators', 'directors', 'colaborator']:
+                if hasattr(grade, role_type):
+                    for user_staff in getattr(grade, role_type).all():
+                        if user_staff.id not in notified_users:
+                            send_notification(
+                                recipients=user_staff,
+                                title=new_message.title,
+                                message=(new_message.context or '')[:100] + "..." if new_message.context and len(new_message.context) > 100 else (new_message.context or ''),
+                                url=message_url
+                            )
+                            ReceivedMessage.objects.get_or_create(message=new_message, recipient=user_staff, defaults={'read': False})
+                            notified_users.add(user_staff.id)
+                            staff_users_in_grade.add(user_staff.id)
+            
         messages.success(request, f"Mensagem '{new_message.title}' enviada com sucesso.")
         return redirect('message:dashboard_message_list')
 
+    # GET
     return render(request, 'dashboard/messages/form.html', {
         'users': recipients['users'],
         'grades': recipients['grades'],
@@ -265,10 +369,13 @@ def dashboard_message_create(request):
         'form_title': "Nova Mensagem",
         'current_title': '',
         'current_content': '',
+        'current_activities': '',
+        'current_homework': '',
         'current_type': '',
         'current_users': [],
         'current_classes': [],
-        'current_grades': []
+        'current_grades': [],
+        'current_scheduled_time': ''
     })
 
 
@@ -278,8 +385,15 @@ def dashboard_message_edit(request, message_id):
     """
     ✏️ Edição de Mensagem
       - atualiza mensagem e envia notificação genérica aos destinatários
+      - suporta campos activities, homework e scheduled_time
+      - salva todos os campos sem limpar nenhum
+      - não exige mais conteúdo obrigatório (content)
+      - **AGORA SUPORTA GALERIA DE IMAGENS**
     """
-    message_obj = get_object_or_404(Message, id=message_id)
+    message_obj = get_object_or_404(
+        Message.objects.prefetch_related('users', 'grades', 'classes', 'gallery_images'), # Pré-carrega gallery_images
+        id=message_id
+    )
 
     if not (request.user == message_obj.created_by or request.user.roles.filter(role__name__in=["Diretor", "Coordenador", "Colaborador"]).exists()):
         raise PermissionDenied()
@@ -290,13 +404,19 @@ def dashboard_message_edit(request, message_id):
     if request.method == "POST":
         title = request.POST.get('title', '').strip()
         content = request.POST.get('content', '').strip()
+        activities = request.POST.get('activities', '').strip()
+        homework = request.POST.get('homework', '').strip()
         type_id = request.POST.get('type')
         user_ids = request.POST.getlist('users')
         class_ids = request.POST.getlist('classes')
         grade_ids = request.POST.getlist('grades')
+        scheduled_time_str = request.POST.get('scheduled_time', '').strip()
+        gallery_images = request.FILES.getlist('gallery_images') # Novas imagens
+        images_to_delete_ids = request.POST.getlist('delete_images') # IDs das imagens a serem deletadas
 
-        if not title or not content:
-            messages.error(request, "Título e conteúdo são obrigatórios.")
+        # Validação: título obrigatório, conteúdo opcional
+        if not title:
+            messages.error(request, "Título é obrigatório.")
             return render(request, 'dashboard/messages/form.html', {
                 'users': recipients['users'],
                 'grades': recipients['grades'],
@@ -304,26 +424,85 @@ def dashboard_message_edit(request, message_id):
                 'message_types': message_types,
                 'current_title': title,
                 'current_content': content,
+                'current_activities': activities,
+                'current_homework': homework,
                 'current_type': type_id,
                 'current_users': user_ids,
                 'current_classes': class_ids,
                 'current_grades': grade_ids,
+                'current_scheduled_time': scheduled_time_str,
+                'form_title': "Editar Mensagem",
+                'message': message_obj
+            })
+        
+        # Contagem de imagens existentes + novas imagens
+        existing_images_count = message_obj.gallery_images.count()
+        if (existing_images_count - len(images_to_delete_ids)) + len(gallery_images) > 10:
+            messages.error(request, "Você pode ter no máximo 10 imagens na galeria (contando as existentes e as novas).")
+            return render(request, 'dashboard/messages/form.html', {
+                'users': recipients['users'],
+                'grades': recipients['grades'],
+                'classes': recipients['classes'],
+                'message_types': message_types,
+                'current_title': title,
+                'current_content': content,
+                'current_activities': activities,
+                'current_homework': homework,
+                'current_type': type_id,
+                'current_users': user_ids,
+                'current_classes': class_ids,
+                'current_grades': grade_ids,
+                'current_scheduled_time': scheduled_time_str,
                 'form_title': "Editar Mensagem",
                 'message': message_obj
             })
 
+        scheduled_time = None
+        if scheduled_time_str:
+            try:
+                scheduled_time = datetime.datetime.strptime(scheduled_time_str, '%Y-%m-%dT%H:%M')
+                scheduled_time = timezone.make_aware(scheduled_time)
+            except ValueError:
+                messages.error(request, "Formato de data e hora inválido.")
+                return render(request, 'dashboard/messages/form.html', {
+                    'users': recipients['users'],
+                    'grades': recipients['grades'],
+                    'classes': recipients['classes'],
+                    'message_types': message_types,
+                    'current_title': title,
+                    'current_content': content,
+                    'current_activities': activities,
+                    'current_homework': homework,
+                    'current_type': type_id,
+                    'current_users': user_ids,
+                    'current_classes': class_ids,
+                    'current_grades': grade_ids,
+                    'current_scheduled_time': scheduled_time_str,
+                    'form_title': "Editar Mensagem",
+                    'message': message_obj
+                })
+
         # Atualiza os campos
         message_obj.title = title
-        message_obj.context = content
+        message_obj.context = content if content else None
+        message_obj.activities = activities if activities else None
+        message_obj.homework = homework if homework else None
         message_obj.type_id = type_id if type_id else None
+        message_obj.scheduled_time = scheduled_time
 
-        # Atualiza imagem e anexo, se enviados
-        if 'image' in request.FILES:
-            message_obj.image = request.FILES['image']
         if 'attachments' in request.FILES:
             message_obj.attachments = request.FILES['attachments']
-
+        
         message_obj.save()
+
+        # Deleta imagens selecionadas
+        if images_to_delete_ids:
+            MessageImage.objects.filter(id__in=images_to_delete_ids, message=message_obj).delete()
+
+        # Salva as novas imagens da galeria
+        for img_file in gallery_images:
+            MessageImage.objects.create(message=message_obj, image=img_file)
+
 
         # Atualiza destinatários
         message_obj.users.set(User.objects.filter(id__in=user_ids))
@@ -334,7 +513,7 @@ def dashboard_message_edit(request, message_id):
         message_url = request.build_absolute_uri(reverse('message:parent_message_detail', args=[message_obj.id]))
         notified_users = set()
 
-        # Notificar usuários diretos
+        # Notifica usuários diretos
         for user in message_obj.users.all():
             if user.id not in notified_users:
                 send_notification(
@@ -343,9 +522,10 @@ def dashboard_message_edit(request, message_id):
                     message=message_obj.title,
                     url=message_url
                 )
+                ReceivedMessage.objects.get_or_create(message=message_obj, recipient=user, defaults={'read': False})
                 notified_users.add(user.id)
 
-        # Notificar alunos das turmas
+        # Notifica pais/alunos de turmas
         for turma in message_obj.classes.all():
             for student in Student.objects.filter(classes_assigned=turma):
                 if student.user and student.user.id not in notified_users:
@@ -355,9 +535,21 @@ def dashboard_message_edit(request, message_id):
                         message=message_obj.title,
                         url=message_url
                     )
+                    ReceivedMessage.objects.get_or_create(message=message_obj, recipient=student.user, defaults={'read': False})
                     notified_users.add(student.user.id)
+            # Notifica professores da turma
+            for teacher in turma.teachers.all():
+                if teacher.id not in notified_users:
+                    send_notification(
+                        recipients=teacher,
+                        title="Mensagem Atualizada",
+                        message=message_obj.title,
+                        url=message_url
+                    )
+                    ReceivedMessage.objects.get_or_create(message=message_obj, recipient=teacher, defaults={'read': False})
+                    notified_users.add(teacher.id)
 
-        # Notificar alunos das séries
+        # Notifica pais/alunos e staff de séries
         for grade in message_obj.grades.all():
             for turma in Class.objects.filter(grade=grade):
                 for student in Student.objects.filter(classes_assigned=turma):
@@ -368,7 +560,34 @@ def dashboard_message_edit(request, message_id):
                             message=message_obj.title,
                             url=message_url
                         )
+                        ReceivedMessage.objects.get_or_create(message=message_obj, recipient=student.user, defaults={'read': False})
                         notified_users.add(student.user.id)
+                for teacher in turma.teachers.all():
+                    if teacher.id not in notified_users:
+                        send_notification(
+                            recipients=teacher,
+                            title="Mensagem Atualizada",
+                            message=message_obj.title,
+                            url=message_url
+                        )
+                        ReceivedMessage.objects.get_or_create(message=message_obj, recipient=teacher, defaults={'read': False})
+                        notified_users.add(teacher.id)
+            
+            # Notifica coordenadores/diretores/colaboradores da série
+            staff_users_in_grade = set()
+            for role_type in ['coordinators', 'directors', 'colaborator']:
+                if hasattr(grade, role_type):
+                    for user_staff in getattr(grade, role_type).all():
+                        if user_staff.id not in notified_users:
+                            send_notification(
+                                recipients=user_staff,
+                                title="Mensagem Atualizada",
+                                message=message_obj.title,
+                                url=message_url
+                            )
+                            ReceivedMessage.objects.get_or_create(message=message_obj, recipient=user_staff, defaults={'read': False})
+                            notified_users.add(user_staff.id)
+                            staff_users_in_grade.add(user_staff.id)
 
         messages.success(request, f"Mensagem '{message_obj.title}' atualizada com sucesso.")
         return redirect('message:dashboard_message_list')
@@ -381,12 +600,16 @@ def dashboard_message_edit(request, message_id):
         'message_types': message_types,
         'form_title': "Editar Mensagem",
         'current_title': message_obj.title,
-        'current_content': message_obj.context,
+        'current_content': message_obj.context or '',
+        'current_activities': message_obj.activities or '',
+        'current_homework': message_obj.homework or '',
         'current_type': message_obj.type_id,
-        'current_users': message_obj.users.values_list('id', flat=True),
-        'current_classes': message_obj.classes.values_list('id', flat=True),
-        'current_grades': message_obj.grades.values_list('id', flat=True),
-        'message': message_obj
+        'current_users': list(map(str, message_obj.users.values_list('id', flat=True))),
+        'current_classes': list(map(str, message_obj.classes.values_list('id', flat=True))),
+        'current_grades': list(map(str, message_obj.grades.values_list('id', flat=True))),
+        'current_scheduled_time': message_obj.scheduled_time.strftime('%Y-%m-%dT%H:%M') if message_obj.scheduled_time else '',
+        'message': message_obj,
+        'gallery_images': message_obj.gallery_images.all() # Passa as imagens existentes para o template
     })
 
 
@@ -416,7 +639,7 @@ def dashboard_message_delete(request, message_id):
 
     # Alunos das turmas
     for turma in message_obj.classes.all():
-        for student in Student.objects.filter(classes_assigned=turma):  # CORRIGIDO: current_class → classes_assigned
+        for student in Student.objects.filter(classes_assigned=turma):
             if student.user:
                 notified_users.add(student.user.id)
         for teacher in turma.teachers.all():
@@ -431,7 +654,7 @@ def dashboard_message_delete(request, message_id):
 
         # Alunos e professores das turmas da série
         for turma in Class.objects.filter(grade=grade):
-            for student in Student.objects.filter(classes_assigned=turma):  # CORRIGIDO: current_class → classes_assigned
+            for student in Student.objects.filter(classes_assigned=turma):
                 if student.user:
                     notified_users.add(student.user.id)
             for teacher in turma.teachers.all():
@@ -472,7 +695,7 @@ def dashboard_message_detail(request, message_id):
     Visualização detalhada de uma mensagem no dashboard
     - marca como lida para o usuário atual
     """
-    message_obj = get_object_or_404(Message, id=message_id)
+    message_obj = get_object_or_404(Message.objects.prefetch_related('gallery_images'), id=message_id) # Pré-carrega gallery_images
 
     # Verifica se o usuário tem permissão para ver esta mensagem
     has_permission = False
@@ -490,7 +713,7 @@ def dashboard_message_detail(request, message_id):
         has_permission = True
 
     # Aluno de uma turma destinatária
-    elif Student.objects.filter(user=request.user, classes_assigned__in=message_obj.classes.all()).exists():  # CORRIGIDO: current_class → classes_assigned
+    elif Student.objects.filter(user=request.user, classes_assigned__in=message_obj.classes.all()).exists():
         has_permission = True
 
     # Coordenador/Diretor/Colaborador de uma série destinatária
@@ -504,7 +727,7 @@ def dashboard_message_detail(request, message_id):
     # Aluno de uma turma de uma série destinatária
     elif Student.objects.filter(
         user=request.user,
-        classes_assigned__grade__in=message_obj.grades.all()  # CORRIGIDO: current_class → classes_assigned
+        classes_assigned__grade__in=message_obj.grades.all()
     ).exists():
         has_permission = True
 
@@ -562,8 +785,11 @@ def dashboard_mark_message_read(request, message_id):
 @login_required
 def parent_messages_timeline(request):
     """
-    Timeline de mensagens para pais/responsáveis com filtro de filhos
+    Timeline de mensagens para pais/responsáveis com filtro de filhos,
+    aplicando filtro para mostrar apenas mensagens já disponíveis (scheduled_time).
     """
+    
+
     user = request.user
 
     # Buscar filhos do usuário
@@ -596,6 +822,10 @@ def parent_messages_timeline(request):
         # Sem filtro específico, exibir mensagens para todos os filhos
         visible_messages = get_visible_messages(user)
 
+    # Aplicar filtro para mensagens já disponíveis (scheduled_time <= agora ou null)
+    now = timezone.now()
+    visible_messages = visible_messages.filter(Q(scheduled_time__lte=now) | Q(scheduled_time__isnull=True))
+
     # Aplicar filtros adicionais (tipo e busca)
     selected_type = request.GET.get('type','').strip()
     search_query = request.GET.get('q', '')
@@ -614,7 +844,7 @@ def parent_messages_timeline(request):
     # Construir lista de itens
     all_items = [
         {"type": "message", "item": msg, "created_at": msg.created_at}
-        for msg in visible_messages
+        for msg in visible_messages.prefetch_related('gallery_images') # Pré-carrega as imagens da galeria
     ]
 
     # Ordenar e paginar
@@ -639,7 +869,7 @@ def parent_message_detail(request, id):
     """
     Visualização detalhada de uma mensagem para pais/responsáveis
     """
-    queryset = get_visible_messages(request.user)
+    queryset = get_visible_messages(request.user).prefetch_related('gallery_images') # Pré-carrega as imagens da galeria
     message = get_object_or_404(queryset, id=id)
 
     # Marca como lida

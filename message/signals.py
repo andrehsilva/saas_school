@@ -9,15 +9,15 @@ def create_default_message_types(sender, **kwargs):
     """Cria os tipos de mensagem padrão com cores após a migração."""
     if sender.name == 'message':
         default_types = {
+            'Rotina diária':"#135752",
             'Pedagógica': '#3498db',  # Azul
-            'Dia-a-dia': '#2ecc71',  # Verde
             'Informativa': '#f1c40f',  # Amarelo
-            'Evento': '#9b59b6',  # Roxo
             'Atenção/Comunicado Importante': '#e74c3c',  # Vermelho
             'Saúde/Enfermaria': '#1abc9c',  # Verde-água
             'Cultural e Social': '#e67e22',  # Laranja
             'Feedback de Pais/Entrevistas': '#95a5a6',  # Cinza
             'Reconhecimento e Premiações': '#ff69b4',  # Rosa
+            'Evento': '#9b59b6',  # Roxo
         }
 
         for type_name, color in default_types.items():

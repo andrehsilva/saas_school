@@ -14,40 +14,40 @@
     </div>
 
     <form method="get" class="mb-6 bg-gray-50 dark:bg-gray-900 p-4 rounded-lg shadow-sm">
-  <div class="flex flex-col md:flex-row md:items-end gap-2 md:gap-4">
-    <div class="flex-1">
-      <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300">Nome da turma</label>
-      <input type="text" name="name" value="{{ current_name }}" placeholder="Buscar por nome"
-             class="w-full text-lg rounded border-gray-300 dark:border-gray-600 px-2 py-2 bg-white dark:bg-gray-700 dark:text-white focus:ring-primary-500 focus:border-primary-500 transition" />
-    </div>
-    <div class="flex-1">
-      <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300">Série</label>
-      <select name="grade" class="w-full rounded border-gray-300 dark:border-gray-600 px-2 py-3 bg-white dark:bg-gray-700 dark:text-white focus:ring-primary-500 focus:border-primary-500 transition">
-        <option value="">Todas</option>
-        {% for grade in grades %}
-        <option value="{{ grade.id }}" {% if grade.id|stringformat:"s" == current_grade|stringformat:"s" %}selected{% endif %}>{{ grade.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="flex-1">
-      <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300">Ano acadêmico</label>
-      <select name="academic_year" class="w-full rounded border-gray-300 dark:border-gray-600 px-2 py-3 bg-white dark:bg-gray-700 dark:text-white focus:ring-primary-500 focus:border-primary-500 transition">
-        <option value="">Todos</option>
-        {% for year in years %}
-        <option value="{{ year }}" {% if year|stringformat:"s" == current_year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="flex gap-2 mt-2 md:mt-0">
-      <button type="submit" class="btn btn-primary flex items-center gap-2 px-4 py-2">
-        <i class="fas fa-filter"></i> Filtrar
-      </button>
-      <a href="{% url 'school:class_list' %}" class="btn btn-outline flex items-center gap-2 px-4 py-2">
-        <i class="fas fa-times"></i> Limpar
-      </a>
-    </div>
-  </div>
-</form>
+        <div class="flex flex-col md:flex-row md:items-end gap-2 md:gap-4">
+            <div class="flex-1">
+                <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300">Nome da turma</label>
+                <input type="text" name="name" value="{{ current_name }}" placeholder="Buscar por nome"
+                       class="w-full text-lg rounded border-gray-300 dark:border-gray-600 px-2 py-2 bg-white dark:bg-gray-700 dark:text-white focus:ring-primary-500 focus:border-primary-500 transition" />
+            </div>
+            <div class="flex-1">
+                <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300">Série</label>
+                <select name="grade" class="w-full rounded border-gray-300 dark:border-gray-600 px-2 py-3 bg-white dark:bg-gray-700 dark:text-white focus:ring-primary-500 focus:border-primary-500 transition">
+                    <option value="">Todas</option>
+                    {% for grade in grades %}
+                    <option value="{{ grade.id }}" {% if grade.id|stringformat:"s" == current_grade|stringformat:"s" %}selected{% endif %}>{{ grade.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex-1">
+                <label class="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300">Ano acadêmico</label>
+                <select name="academic_year" class="w-full rounded border-gray-300 dark:border-gray-600 px-2 py-3 bg-white dark:bg-gray-700 dark:text-white focus:ring-primary-500 focus:border-primary-500 transition">
+                    <option value="">Todos</option>
+                    {% for year in years %}
+                    <option value="{{ year }}" {% if year|stringformat:"s" == current_year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex gap-2 mt-2 md:mt-0">
+                <button type="submit" class="btn btn-primary flex items-center gap-2 px-4 py-2">
+                    <i class="fas fa-filter"></i> Filtrar
+                </button>
+                <a href="{% url 'school:class_list' %}" class="btn btn-outline flex items-center gap-2 px-4 py-2">
+                    <i class="fas fa-times"></i> Limpar
+                </a>
+            </div>
+        </div>
+    </form>
 
     {% if classes %}
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden">
@@ -57,6 +57,7 @@
                     <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Nome da turma</th>
                     <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Série</th>
                     <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Ano acadêmico</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Alunos</th>
                     <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Professores</th>
                     <th class="px-6 py-3"></th>
                 </tr>
@@ -67,6 +68,8 @@
                     <td class="px-6 py-4">{{ class.name }}</td>
                     <td class="px-6 py-4">{{ class.grade.name }}</td>
                     <td class="px-6 py-4">{{ class.academic_year }}</td>
+                    <td class="px-6 py-4">{{ class.student_count  }}</td>
+                    
                     <td class="px-6 py-4">
                         {% for teacher in class.teachers.all %}
                         <span class="inline-block bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 text-xs rounded">{{ teacher.get_full_name }}</span>
@@ -96,8 +99,6 @@
                 {% endfor %}
             </tbody>
         </table>
-    </div>
-    <!-- ... tabela ... -->
     </div>
 
     <!-- Paginação -->

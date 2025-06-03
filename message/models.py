@@ -1,3 +1,5 @@
+# message/models.py
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
@@ -37,11 +39,27 @@ class Message(models.Model):
     title = models.CharField(
         max_length=255,
         verbose_name=_("Título"),
-        help_text=_("Título da mensagem.")
+        help_text=_("Título da mensagem."),
+        blank=True,
+        null=True
     )
     context = models.TextField(
         verbose_name=_("Conteúdo"),
-        help_text=_("Conteúdo da mensagem.")
+        help_text=_("Conteúdo da mensagem."),
+        blank=True,
+        null=True
+    )
+    activities = models.TextField(
+        verbose_name=_("Atividades na Classe"),
+        help_text=_("Atividades realizadas na classe (para mensagens de rotina diária)."),
+        blank=True,
+        null=True
+    )
+    homework = models.TextField(
+        verbose_name=_("Tarefa de Casa"),
+        help_text=_("Tarefa de casa (para mensagens de rotina diária)."),
+        blank=True,
+        null=True
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
@@ -78,13 +96,14 @@ class Message(models.Model):
         verbose_name=_("Usuários"),
         help_text=_("Usuários específicos que receberão a mensagem.")
     )
-    image = models.ImageField(
-        upload_to='messages/',
-        null=True,
-        blank=True,
-        verbose_name=_("Imagem"),
-        help_text=_("Imagem associada à mensagem (opcional).")
-    )
+    # Remove a imagem de capa do modelo Message
+    # image = models.ImageField(
+    #     upload_to='messages/',
+    #     null=True,
+    #     blank=True,
+    #     verbose_name=_("Imagem"),
+    #     help_text=_("Imagem associada à mensagem (opcional).")
+    # )
     attachments = models.FileField(
         upload_to='attachments/',
         null=True,
@@ -100,6 +119,12 @@ class Message(models.Model):
         verbose_name=_("Tipo"),
         help_text=_("Tipo de mensagem (ex: Aviso, Urgente, Informação).")
     )
+    scheduled_time = models.DateTimeField(
+        verbose_name=_("Data e Hora Agendada"),
+        help_text=_("Data e hora em que a mensagem estará disponível."),
+        blank=True,
+        null=True
+    )
 
     def __str__(self):
         return self.title
@@ -110,6 +135,37 @@ class Message(models.Model):
     class Meta:
         verbose_name = _("Mensagem")
         verbose_name_plural = _("Mensagens")
+
+
+class MessageImage(models.Model):
+    message = models.ForeignKey(
+        Message,
+        on_delete=models.CASCADE,
+        related_name='gallery_images', # Usamos related_name para acessar as imagens de uma mensagem
+        verbose_name=_("Mensagem")
+    )
+    image = models.ImageField(
+        upload_to='message_gallery/', # Novo diretório para as imagens da galeria
+        verbose_name=_("Imagem")
+    )
+    description = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name=_("Descrição da Imagem")
+    )
+    uploaded_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_("Data de Upload")
+    )
+
+    def __str__(self):
+        return f"Imagem para '{self.message.title}'"
+
+    class Meta:
+        verbose_name = _("Imagem da Mensagem")
+        verbose_name_plural = _("Imagens da Mensagem")
+        ordering = ['uploaded_at'] # Opcional: ordenar as imagens por data de upload
 
 
 class ReceivedMessage(models.Model):
