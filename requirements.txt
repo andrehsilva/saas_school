@@ -10,3 +10,6 @@ django-storages
 boto3
 django-cleanup
 django-widget-tweaks
+gunicorn
+django-environ
+whitenoise>=6.0
