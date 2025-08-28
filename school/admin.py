@@ -1,59 +1,66 @@
 from django.contrib import admin
-from .models import Role, Series, Class, Parent, Student
+from django.contrib.auth.admin import UserAdmin
+from django.urls import path
+from .models import Grade, Class, Role, Parent, Student, UserRole
+from .admin_views import import_users_view
 
-# Personalizando o admin para o modelo Role
-class RoleAdmin(admin.ModelAdmin):
-    list_display = ('name', 'description')
-    search_fields = ('name', 'description')
+from django.contrib.auth.models import User
 
-# Personalizando o admin para o modelo Series
-class SeriesAdmin(admin.ModelAdmin):
-    list_display = ('name', 'description')
+
+@admin.register(Grade)
+class GradeAdmin(admin.ModelAdmin):
+    list_display = ('name',)
     search_fields = ('name',)
-    list_filter = ('name',)
 
-# Personalizando o admin para o modelo Class
-class ClassAdmin(admin.ModelAdmin):
-    list_display = ('name', 'series', 'teacher', 'student_count')
-    search_fields = ('name', 'teacher__username', 'series__name')
-    list_filter = ('series', 'teacher')
-    filter_horizontal = ('students',)
+@admin.register(Class)
+class SchoolClassAdmin(admin.ModelAdmin):
+    list_display = ('name', 'grade', 'get_teachers')
+    list_filter = ('grade',)
+    search_fields = ('name',)
 
-    # Usado para exibir uma lista de alunos em uma classe específica de forma mais organizada
-    def teacher_name(self, obj):
-        return obj.teacher.username
-    teacher_name.short_description = 'Teacher'
+    def get_teachers(self, obj):
+        return ", ".join([t.username for t in obj.teachers.all()])
+    get_teachers.short_description = "Professores"
 
-    def student_count(self, obj):
-        return obj.students.count()  # Corrigido aqui para contar os alunos relacionados
-    student_count.short_description = 'Número de alunos na turma'
+@admin.register(Role)
+class RoleAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+    search_fields = ('name',)
 
-# Personalizando o admin para o modelo Parent
+@admin.register(UserRole)
+class RoleUserAdmin(admin.ModelAdmin):
+    list_display = ('user', 'role')
+    list_filter = ('role',)
+    search_fields = ('user__username', 'role__name')
+    verbose_name = "Papel do Usuário"
+    verbose_name_plural = "Papéis dos Usuários"
+
+@admin.register(Parent)
 class ParentAdmin(admin.ModelAdmin):
-    list_display = ('user', 'children_count')
+    list_display = ('user', 'get_children')
     search_fields = ('user__username',)
-    
-    # Contagem de filhos
-    def children_count(self, obj):
-        return obj.children.count()
-    children_count.short_description = 'Number of Children'
 
-# Personalizando o admin para o modelo Student
+    def get_children(self, obj):
+        return ", ".join([child.user.username for child in obj.children.all()])
+    get_children.short_description = "Filhos"
+
+@admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ('user', 'series', 'class_count')
-    search_fields = ('user__username', 'series__name')
-    list_filter = ('series',)
-    filter_horizontal = ('classes',)
+    list_display = ('user', 'get_classes')  # Substitui class_assigned por get_classes
+    list_filter = ('classes_assigned',)  # Pode não funcionar, talvez precise de um filtro customizado
 
-    # Contagem de turmas
-    def class_count(self, obj):
-        return obj.classes.count()
-    class_count.short_description = 'Number of Classes'
+    def get_classes(self, obj):
+        return ", ".join([c.name for c in obj.classes_assigned.all()])
+    get_classes.short_description = "Classes"
 
-# Registrando os modelos no admin
-admin.site.register(Role, RoleAdmin)
-admin.site.register(Series, SeriesAdmin)
-admin.site.register(Class, ClassAdmin)
-admin.site.register(Parent, ParentAdmin)
-admin.site.register(Student, StudentAdmin)
 
+class CustomUserAdmin(UserAdmin):
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path("import-users/", self.admin_site.admin_view(import_users_view), name="import-users"),
+        ]
+        return custom_urls + urls
+
+admin.site.unregister(User)
+admin.site.register(User, CustomUserAdmin)

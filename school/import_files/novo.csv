@@ -1,0 +1,4 @@
+username,email,first_name,last_name,password,role,class_name,grade_name,is_parent_of
+ana.maria,ana@email.com,Ana,Maria,senha123,Student,6A,6º ano,
+joao.pai,joao@email.com,João,Pai,senha123,Parent,,,ana.maria
+maria.prof,maria@email.com,Maria,Prof,senha123,Teacher,6A,6º ano,

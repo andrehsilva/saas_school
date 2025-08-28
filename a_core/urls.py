@@ -20,16 +20,18 @@ from django.conf.urls.static import static
 from django.conf import settings
 from a_users.views import profile_view
 from a_home.views import *
-from school.views import *
 from blog.views import *
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('accounts/', include('allauth.urls')),
     path('', include('blog.urls')),
+    path('accounts/', include('allauth.urls')),
     path('profile/', include('a_users.urls')),
-    path('school/', include('school.urls')),
     path('contact/', include('contact.urls')),
+    path('messages/', include('message.urls')),
+    path('books/', include('books.urls')),
+    path('school/', include('school.urls')), 
+    path('collection/', include('collection.urls')),
     path('@<username>/', profile_view, name="profile"),
 ]
 

@@ -1,5 +1,11 @@
 Django
 pillow
-django-cleanup
+django-tenants
 django-allauth
 django-htmx
+psycopg2-binary
+psycopg
+django-admin-interface
+django-storages
+boto3
+django-cleanup

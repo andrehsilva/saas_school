@@ -1,0 +1,18 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+  <h1>Importar Usuários via CSV</h1>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <label>Arquivo CSV:</label>
+    <input type="file" name="csv_file" required>
+    <button type="submit">Importar</button>
+  </form>
+  {% if messages %}
+    <ul>
+      {% for message in messages %}
+        <li>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endblock %}

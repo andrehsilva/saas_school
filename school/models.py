@@ -1,75 +1,147 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils.translation import gettext_lazy as _
+
+
 
 # Papéis (Roles)
 class Role(models.Model):
-    name = models.CharField(max_length=50, unique=True)
-    description = models.TextField(null=True, blank=True)
+    name = models.CharField(
+        max_length=50, 
+        unique=True, 
+        verbose_name=_("Nome"),
+        help_text=_("Nome do papel ou função (ex: Professor, Responsável, Aluno).")
+    )
+    can_post = models.BooleanField(
+        default=True,
+        verbose_name=_("Pode Postar"),
+        help_text=_("Indica se esse papel tem permissão para criar postagens.")
+    )
 
     def __str__(self):
         return self.name
 
     class Meta:
-        verbose_name = "Papel"
-        verbose_name_plural = "Papéis"
+        verbose_name = _("Papel")
+        verbose_name_plural = _("Papéis")
+
+
+# Relacionamento entre Usuário e Papel
+class UserRole(models.Model):
+    user = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name="roles",
+        verbose_name=_("Usuário"),
+        help_text=_("Usuário associado ao papel.")
+    )
+    role = models.ForeignKey(
+        Role, 
+        on_delete=models.CASCADE, 
+        related_name="users",
+        verbose_name=_("Papel"),
+        help_text=_("Papel atribuído ao usuário.")
+    )
+
+    def __str__(self):
+        return f"{self.user.username} - {self.role.name}"
+
+    class Meta:
+        verbose_name = _("Papel do Usuário")
+        verbose_name_plural = _("Papéis dos Usuários")
+        unique_together = ('user', 'role')
+
 
 # Série
-class Series(models.Model):
-    name = models.CharField(max_length=50)
-    description = models.TextField(null=True, blank=True)
+class Grade(models.Model):
+    name = models.CharField(
+        max_length=50,
+        verbose_name=_("Nome da Série"),
+        help_text=_("Nome da série escolar (ex: 1º Ano, 6ª Série).")
+    )
 
     def __str__(self):
         return self.name
-    
+
     class Meta:
-        verbose_name = "Série"
-        verbose_name_plural = "Séries"
+        verbose_name = _("Série")
+        verbose_name_plural = _("Séries")
+
 
 # Classe
 class Class(models.Model):
-    name = models.CharField(max_length=50)
-    series = models.ForeignKey(Series, on_delete=models.CASCADE)
-    teacher = models.ForeignKey(User, related_name='classes_taught', on_delete=models.SET_NULL, null=True)
-    students = models.ManyToManyField(User, related_name='enrolled_classes')
-
-    def teacher_full_name(self):
-        try:
-            teacher = User.objects.get(id=self.teacher_id)
-            return f"{teacher.first_name} {teacher.last_name}"
-        except User.DoesNotExist:
-            return "Professor não encontrado"
-    
-    teacher_full_name.short_description = "Nome do professor"
+    name = models.CharField(
+        max_length=50,
+        verbose_name=_("Nome da Classe"),
+        help_text=_("Nome ou código identificador da classe (ex: Turma A, 6B).")
+    )
+    grade = models.ForeignKey(
+        Grade, 
+        on_delete=models.CASCADE,
+        verbose_name=_("Série"),
+        help_text=_("Série escolar associada à classe.")
+    )
+    teachers = models.ManyToManyField(
+        User, 
+        related_name='classes_taught',
+        verbose_name=_("Professores"),
+        help_text=_("Professores responsáveis por esta classe.")
+    )
+    is_regular = models.BooleanField(
+        default=True,
+        verbose_name=_("Classe Regular"),
+        help_text=_("Indica se esta classe é uma classe regular.")
+    )
 
     def __str__(self):
         return self.name
-    
+
     class Meta:
-        verbose_name = "Classe"
-        verbose_name_plural = "Classes"
+        verbose_name = _("Classe")
+        verbose_name_plural = _("Classes")
 
 
 # Pais
 class Parent(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    children = models.ManyToManyField(User, related_name='parent_of')
+    user = models.OneToOneField(
+        User, 
+        on_delete=models.CASCADE,
+        verbose_name=_("Usuário"),
+        help_text=_("Usuário do pai, mãe ou responsável.")
+    )
+    children = models.ManyToManyField(
+        'Student', 
+        related_name='parents',
+        verbose_name=_("Filhos"),
+        help_text=_("Alunos associados a este responsável.")
+    )
 
     def __str__(self):
-        return f"Parent of {', '.join([child.username for child in self.children.all()])}"
-    
+        return f"Parent of {', '.join([child.user.username for child in self.children.all()])}"
+
     class Meta:
-        verbose_name = "Pai/Mãe"
-        verbose_name_plural = "Pais"
+        verbose_name = _("Pai/Mãe")
+        verbose_name_plural = _("Pais")
+
 
 # Alunos
 class Student(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    series = models.ForeignKey(Series, on_delete=models.SET_NULL, null=True)
-    classes = models.ManyToManyField(Class, related_name='students_in_class')
+    user = models.OneToOneField(
+        User, 
+        on_delete=models.CASCADE,
+        verbose_name=_("Usuário"),
+        help_text=_("Usuário correspondente ao aluno.")
+    )
+    classes_assigned = models.ManyToManyField(
+        Class, 
+        related_name='students',
+        verbose_name=_("Classes"),
+        help_text=_("Classes nas quais o aluno está matriculado.")
+    )
 
     def __str__(self):
         return self.user.username
-    
+
     class Meta:
-        verbose_name = "Aluno"
-        verbose_name_plural = "Alunos"
+        verbose_name = _("Aluno")
+        verbose_name_plural = _("Alunos")

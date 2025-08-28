@@ -36,6 +36,7 @@ ENVIRONMENT = "development"  # Ou "production"
 SHARED_APPS = [
     'django_tenants',
     'a_tenant_manager',
+    'admin_interface',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -52,14 +53,13 @@ SHARED_APPS = [
     # My apps
     'a_home',
     'a_users',
-    'school',
-    'blog',
-    'contact',
    
+    
 
 ]
 
 TENANT_APPS = [
+    'admin_interface',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -71,10 +71,13 @@ TENANT_APPS = [
     'allauth.account',
     'a_home',
     'a_users',
-    'school',
     'blog',
     'contact',
-  
+    'school',
+    'message',
+    'books',
+    'collection'
+ 
 ]
 
 INSTALLED_APPS = SHARED_APPS + [
@@ -204,3 +207,13 @@ LOGIN_REDIRECT_URL = '/'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_EMAIL_REQUIRED = True
+
+
+# Necessário para o admin_interface
+X_FRAME_OPTIONS = "SAMEORIGIN"
+SILENCED_SYSTEM_CHECKS = ["security.W019"]
+
+# Se estiver usando HTTPS, adicione:
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True

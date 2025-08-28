@@ -1,9 +1,7 @@
+# school/urls.py
 from django.urls import path
-from . import views
+from .admin_views import export_users_view
 
 urlpatterns = [
-#     path('students/', views.student_list, name='student_list'),
-#     path('parents/', views.parent_dashboard, name='parent_dashboard'),
-#     path('students/create/', views.create_student, name='create_student'),
-#     path('parents/create/', views.create_parent, name='create_parent'),
+    path('admin/export-users/', export_users_view, name='export-users'),
 ]

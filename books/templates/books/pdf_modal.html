@@ -1,0 +1,39 @@
+{% block content %}
+<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <!-- Aumentei o max-w para 7xl e h-[95vh] -->
+    <div class="bg-white rounded-lg shadow-xl w-full h-full flex flex-col">
+        <!-- Cabeçalho do modal -->
+        <div class="flex justify-between items-center p-4 border-b">
+            <h3 class="text-xl font-semibold">{{ document.title }}</h3>
+        </div>
+        
+        <!-- Conteúdo do PDF - agora com mais espaço -->
+        <div class="flex-grow">
+            <iframe src="{{ pdf_url }}#toolbar=0&navpanes=0&scrollbar=0" 
+                    class="w-full h-full border-0" 
+                    frameborder="0">
+            </iframe>
+        </div>
+        
+        <!-- Rodapé do modal -->
+        <div class="p-4 border-t flex justify-between items-center">
+            <span class="text-sm text-gray-500">
+                Documento protegido por senha
+            </span>
+            <button onclick="closeModal()" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 rounded">
+                Fechar
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function closeModal() {
+        // Encontra o contêiner do modal e o remove do DOM
+        const modal = document.querySelector('.fixed.inset-0');
+        if (modal) {
+            modal.remove();
+        }
+    }
+    </script>
+{% endblock %}

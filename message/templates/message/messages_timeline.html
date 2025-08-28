@@ -1,0 +1,120 @@
+{% extends 'layouts/blank.html' %}
+{% block content %}
+
+<div class="max-w-7xl mx-auto mt-10 px-4">
+    <h1 class="text-2xl font-bold mb-6">Mensagens</h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+
+        <!-- COLUNA PRINCIPAL (75%) -->
+        <main class="md:col-span-3 space-y-6">
+            {% for message in msgs %}
+            <div class="bg-white shadow hover:shadow-lg transition-shadow rounded-2xl border border-gray-200 overflow-hidden">
+    
+                <!-- Cabeçalho -->
+                <div class="bg-gray-50 px-4 py-3 flex justify-between items-center border-b">
+                    <div class="flex flex-wrap gap-2 text-lg text-gray-500">
+                        <span class="text-sm text-gray-500 flex">Enviado por:</span><p class="font-bold text-sm text-gray-800">{{ message.created_by.username }}</p>
+                        <p class="text-sm text-gray-500">  |  {{ message.created_at|date:"d M Y - H:i" }}</p>
+                    </div>
+                    {% if message.type %}
+                    <span class="px-3 py-1 text-sm font-medium rounded-full"
+                          style="background-color: {{ message.type.color }}; color: white;">
+                        {{ message.type.name }}
+                    </span>
+                    {% endif %}
+                </div>
+            
+                <!-- Conteúdo -->
+                <div class="px-4 py-3 space-y-2">
+                    <h2 class="text-xl font-semibold text-gray-900">{{ message.title }}</h2>
+                    <p class="text-gray-700 leading-relaxed">{{ message.context }}</p>
+            
+                    {% if message.image %}
+                    <img src="{{ message.image.url }}" alt="Imagem da mensagem" class="rounded-lg w-full max-h-60 object-cover mt-2">
+                    {% endif %}
+            
+                    {% if message.attachments %}
+                    <div class="pt-2">
+                        <a href="{{ message.attachments.url }}" download
+                           class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
+                            📎 Baixar Anexo
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            
+                <!-- Rodapé -->
+                <div class="bg-gray-50 px-4 py-3 text-sm text-gray-700 border-t space-y-1">
+                    {% if message.classes.exists %}
+                    <p><strong>Turmas:</strong>
+                        {% for class in message.classes.all %}
+                        <span class="font-medium">{{ class.name }}</span>{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </p>
+                    {% endif %}
+            
+                    {% if message.users.exists %}
+                    <p><strong>Usuários:</strong>
+                        {% for user in message.users.all %}
+                        <span class="font-medium">{{ user.username }}</span>{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-gray-500">Nenhuma mensagem encontrada.</p>
+            {% endfor %}
+
+            <!-- Paginação -->
+            <div class="flex justify-center space-x-2 mt-6">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&type={{ selected_type }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Anterior</a>
+                {% endif %}
+
+                <span class="px-3 py-1 bg-blue-500 text-white rounded">{{ page_obj.number }}</span>
+
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&type={{ selected_type }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Próxima</a>
+                {% endif %}
+            </div>
+        </main>
+        <!-- COLUNA LATERAL ESQUERDA (25%) -->
+        <aside class="md:col-span-1 bg-gray-50 p-4 rounded-2xl border border-gray-200 shadow-sm h-fit">
+            <h2 class="text-lg font-semibold mb-4">Filtros</h2>
+            <form method="GET" class="space-y-4">
+                
+                <!-- Filtro por tipo -->
+                <div>
+                    <label for="type" class="block text-sm font-medium text-gray-700 mb-1">Tipo de mensagem:</label>
+                    <select name="type" id="type"
+                            class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                            onchange="this.form.submit()">
+                        <option value="">Todos</option>
+                        {% for type in message_types %}
+                        <option value="{{ type.id }}" {% if request.GET.type == type.id|stringformat:"s" %}selected{% endif %}>
+                            {{ type.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <p class="block text-sm font-medium text-gray-700">Título ou conteúdo:</p>
+                <div class="flex items-stretch rounded-md shadow-sm w-fit">
+                    <input type="text" name="q" id="q" value="{{ search_query }}"
+                           class="w-40 text-sm border border-gray-300 rounded-l-md px-2 py-1 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Digite..." />
+                    <button type="submit"
+                            class="text-sm bg-blue-100 text-blue-700 border border-gray-300 border-l-0 rounded-r-md px-3 py-1 hover:bg-blue-200 transition">
+                        Filtrar
+                    </button>
+                  </div>
+                  
+                
+            </form>
+        </aside>
+    </div>
+</div>
+
+<script src="//unpkg.com/alpinejs" defer></script>
+{% endblock %}
